@@ -1,0 +1,264 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #1f2937;
+  background: #f7fbff;
+  line-height: 1.5;
+  font-weight: 400;
+
+  --bg-main: #f7fbff;
+  --bg-card: #ffffff;
+  --bg-soft: #eef7ff;
+  --text-main: #1f2937;
+  --text-soft: #5b6472;
+  --primary: #5b8def;
+  --primary-dark: #4476d9;
+  --secondary: #e8f3ff;
+  --border: #d8e6f5;
+  --success: #dff7e8;
+  --shadow: 0 10px 30px rgba(80, 120, 180, 0.08);
+  --radius-lg: 24px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --max-width: 1200px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, #edf7ff 0%, transparent 35%),
+    radial-gradient(circle at top right, #f3f0ff 0%, transparent 30%),
+    var(--bg-main);
+  color: var(--text-main);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.top-nav {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 20px 24px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #7ec8ff, #8a7dff);
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.brand-subtitle {
+  margin: 2px 0 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.nav-link {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid transparent;
+  color: var(--text-soft);
+  transition: 0.2s ease;
+}
+
+.nav-link:hover {
+  background: white;
+  border-color: var(--border);
+}
+
+.active-link {
+  background: white;
+  color: var(--primary-dark);
+  border-color: var(--border);
+  font-weight: 600;
+}
+
+.page-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 12px 24px 40px;
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hero-card,
+.content-card,
+.info-card,
+.feature-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.hero-card {
+  padding: 32px;
+}
+
+.content-card {
+  padding: 28px;
+}
+
+.info-card,
+.feature-card {
+  padding: 24px;
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--primary-dark);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.page-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1.15;
+}
+
+.page-text {
+  margin: 0;
+  max-width: 760px;
+  color: var(--text-soft);
+  font-size: 1rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: white;
+}
+
+.primary-button:hover {
+  background: var(--primary-dark);
+}
+
+.secondary-button {
+  background: var(--secondary);
+  color: var(--primary-dark);
+  border: 1px solid var(--border);
+}
+
+.secondary-button:hover {
+  background: white;
+}
+
+.small-button {
+  margin-top: 14px;
+  width: fit-content;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 18px 16px 8px;
+  }
+
+  .page-container {
+    padding: 10px 16px 28px;
+  }
+
+  .hero-card,
+  .content-card,
+  .info-card,
+  .feature-card {
+    padding: 20px;
+  }
+
+  .nav-links {
+    width: 100%;
+  }
+}

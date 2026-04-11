@@ -262,3 +262,9 @@ p {
     width: 100%;
   }
 }
+
+.info-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

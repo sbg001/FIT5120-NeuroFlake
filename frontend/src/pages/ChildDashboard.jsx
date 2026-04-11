@@ -1,40 +1,51 @@
 import { Link } from "react-router-dom";
+import InfoCard from "../components/ui/InfoCard";
+import childProfile from "../data/childProfile";
+import tasks from "../data/tasks";
+import rewards from "../data/rewards";
 
 function ChildDashboard() {
+  const availableTasks = tasks.slice(0, 3);
+  const nextReward = rewards[0];
+
   return (
     <section className="page-section">
       <div className="section-header">
         <p className="eyebrow">Child Dashboard</p>
-        <h2 className="page-title">Choose what you want to do</h2>
+        <h2 className="page-title">Hi {childProfile.name}, what would you like to do today?</h2>
         <p className="page-text">
-          This page will become the main starting point for the child experience.
+          A calm, simple space to help you move through tasks one step at a time.
         </p>
       </div>
 
       <div className="card-grid">
-        <article className="feature-card">
-          <h3>Start a Task</h3>
-          <p>Go through a task one step at a time.</p>
-          <Link to="/tasks" className="primary-button small-button">
-            Open Tasks
-          </Link>
-        </article>
+        <InfoCard title="My Support Style">
+          <p>Theme: {childProfile.favouriteTheme}</p>
+          <p>Points: {childProfile.rewardPoints}</p>
+        </InfoCard>
 
-        <article className="feature-card">
-          <h3>Use Focus Mode</h3>
-          <p>Enter a calmer view for guided task completion.</p>
-          <Link to="/focus" className="primary-button small-button">
-            Open Focus Mode
-          </Link>
-        </article>
+        <InfoCard title="Next Reward">
+          <p>{nextReward.title}</p>
+          <p>{nextReward.pointsRequired} points needed</p>
+        </InfoCard>
 
-        <article className="feature-card">
-          <h3>See Rewards</h3>
-          <p>View encouragement, points, and achievements.</p>
-          <Link to="/rewards" className="primary-button small-button">
-            Open Rewards
-          </Link>
-        </article>
+        <InfoCard title="Today's Tasks">
+          <p>{availableTasks.length} tasks ready to start</p>
+        </InfoCard>
+      </div>
+
+      <div className="card-grid">
+        {availableTasks.map((task) => (
+          <article key={task.id} className="feature-card">
+            <h3>{task.title}</h3>
+            <p>Category: {task.category}</p>
+            <p>Steps: {task.stepsCount}</p>
+            <p>Time: {task.estimatedMinutes} mins</p>
+            <Link to="/tasks" className="primary-button small-button">
+              Open Task
+            </Link>
+          </article>
+        ))}
       </div>
     </section>
   );

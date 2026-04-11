@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import childProfile from "../data/childProfile";
+import parentProfile from "../data/parentProfile";
 
 function Home() {
   return (
@@ -7,34 +9,34 @@ function Home() {
         <p className="eyebrow">Welcome to NeuroFlake</p>
         <h2 className="page-title">A calm and supportive space for daily tasks</h2>
         <p className="page-text">
-          NeuroFlake helps children move through tasks step by step in a simple,
-          gentle, and encouraging way.
+          NeuroFlake supports neurodivergent children through simple task guidance,
+          calmer focus spaces, and encouraging rewards, while helping parents guide the journey.
         </p>
 
         <div className="button-row">
           <Link to="/child" className="primary-button">
-            Enter Child Dashboard
+            Child Dashboard
           </Link>
           <Link to="/parent" className="secondary-button">
-            Open Parent Dashboard
+            Parent Dashboard
           </Link>
         </div>
       </div>
 
       <div className="card-grid">
         <article className="info-card">
-          <h3>Task Support</h3>
-          <p>Clear, simple steps to reduce overwhelm.</p>
+          <h3>Child Journey</h3>
+          <p>Step-by-step tasks, focus support, and visible rewards.</p>
         </article>
 
         <article className="info-card">
-          <h3>Focus Mode</h3>
-          <p>A distraction-light screen for better concentration.</p>
+          <h3>Parent Journey</h3>
+          <p>Task setup, progress awareness, and reward guidance.</p>
         </article>
 
         <article className="info-card">
-          <h3>Rewards</h3>
-          <p>Encouraging feedback to help build confidence.</p>
+          <h3>Built for Calm</h3>
+          <p>Structured, clear, and sensory-considerate interface design.</p>
         </article>
       </div>
     </section>

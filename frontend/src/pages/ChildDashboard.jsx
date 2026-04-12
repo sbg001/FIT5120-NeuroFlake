@@ -3,8 +3,18 @@ import InfoCard from "../components/ui/InfoCard";
 import childProfile from "../data/childProfile";
 import tasks from "../data/tasks";
 import rewards from "../data/rewards";
+import { useEffect } from "react";
+import { getTasks } from "../services/taskService";
 
 function ChildDashboard() {
+  useEffect(() => {
+  async function testTasks() {
+    const result = await getTasks();
+    console.log("tasks result:", result);
+  }
+
+  testTasks();
+}, []);
   const availableTasks = tasks.slice(0, 3);
   const nextReward = rewards[0];
 

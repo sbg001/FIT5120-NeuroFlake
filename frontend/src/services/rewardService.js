@@ -15,3 +15,23 @@ export function getRewardTransactions() {
 export function getLatestRewardSummary() {
   return mockLatestRewardSummary;
 }
+
+export async function createRewardTransaction({
+  child_id,
+  task_id,
+  points_earned,
+  steps_completed,
+  transaction_type = "earn",
+}) {
+  const newTransaction = {
+    transaction_id: Date.now(),
+    child_id,
+    task_id,
+    points_earned,
+    steps_completed,
+    transaction_type,
+    created_at: new Date().toISOString(),
+  };
+
+  return { data: newTransaction, error: null };
+}

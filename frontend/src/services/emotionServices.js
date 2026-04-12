@@ -18,3 +18,17 @@ export function saveEmotionSelection({ child_id, emotion_type, linked_task_id, n
     notes,
   };
 }
+
+export async function skipEmotionCheckIn(child_id, linked_task_id) {
+  return {
+    data: {
+      emotion_id: Date.now(),
+      child_id,
+      emotion_type: "skipped",
+      logged_at: new Date().toISOString(),
+      linked_task_id,
+      notes: null,
+    },
+    error: null,
+  };
+}

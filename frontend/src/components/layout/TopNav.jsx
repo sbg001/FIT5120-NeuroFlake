@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 
-function TopNav() {
+// Accept the onOpenAssistant prop passed down from AppLayout
+function TopNav({ onOpenAssistant }) {
   const navItems = [
     { to: "/", label: "Home" },
     { to: "/child", label: "Child" },
@@ -20,7 +21,7 @@ function TopNav() {
         </div>
       </div>
 
-      <nav className="nav-links">
+      <nav className="nav-links" style={{ display: "flex", alignItems: "center" }}>
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -32,6 +33,23 @@ function TopNav() {
             {item.label}
           </NavLink>
         ))}
+        
+        {/*The AI Assistant Button */}
+        <button 
+          onClick={onOpenAssistant}
+          className="primary-button"
+          style={{ 
+            marginLeft: "1rem", 
+            padding: "0.5rem 1rem", 
+            borderRadius: "20px", 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "0.5rem",
+            fontSize: "0.9rem"
+          }}
+        >
+          Task Help
+        </button>
       </nav>
     </header>
   );

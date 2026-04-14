@@ -1,10 +1,42 @@
+import { useEffect, useState } from "react";
 import InfoCard from "../components/ui/InfoCard";
-import parentProfile from "../data/parentProfile";
-import childProfile from "../data/childProfile";
-import tasks from "../data/tasks";
-import rewards from "../data/rewards";
+import {
+  getParentProfile,
+  getChildProfile,
+  getTasks,
+  getPointsBalance,
+} from "../services";
 
 function ParentDashboard() {
+  const [parentProfile, setParentProfile] = useState(null);
+  const [childProfile, setChildProfile] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [pointsData, setPointsData] = useState(null);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      const parentResult = await getParentProfile();
+      const childResult = await getChildProfile();
+      const tasksResult = await getTasks();
+      const pointsResult = await getPointsBalance();
+
+      setParentProfile(parentResult.data);
+      setChildProfile(childResult.data);
+      setTasks(tasksResult.data || []);
+      setPointsData(pointsResult.data);
+    }
+
+    loadDashboardData();
+  }, []);
+  
+  if (!parentProfile || !childProfile || !pointsData) {
+    return (
+      <section className="page-section">
+        <p>Loading dashboard...</p>
+      </section>
+    );
+  }
+
   return (
     <section className="page-section">
       <div className="section-header">
@@ -17,19 +49,19 @@ function ParentDashboard() {
 
       <div className="card-grid">
         <InfoCard title="Support Goals">
-          {parentProfile.goals.map((goal) => (
-            <p key={goal}>{goal}</p>
-          ))}
+          <p>Support independence</p>
+          <p>Reduce reminder overload</p>
+          <p>Track task progress clearly</p>
         </InfoCard>
 
         <InfoCard title="Task Overview">
           <p>Total tasks: {tasks.length}</p>
-          <p>Ready tasks: {tasks.filter((task) => task.status === "Ready").length}</p>
+          <p>Ready tasks: {tasks.filter((task) => task.status !== "completed").length}</p>
         </InfoCard>
 
         <InfoCard title="Reward Overview">
-          <p>Available rewards: {rewards.length}</p>
-          <p>Current points: {childProfile.rewardPoints}</p>
+          <p>Available rewards: Coming soon</p>
+          <p>Current points: {pointsData.points_balance}</p>
         </InfoCard>
       </div>
 

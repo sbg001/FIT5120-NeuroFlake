@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTaskById, getTaskSteps } from "../services";
+import { getTaskById, getTaskSteps, completeStep, completeTask } from "../services";
 import { useParams } from "react-router-dom";
 
 function TaskFlow() {
@@ -19,8 +19,7 @@ function TaskFlow() {
 
       setTask(taskData);
       setSteps(stepsData || []);
-      setCurrentStepIndex(0); // ✅ reset step
-
+      setCurrentStepIndex(0);
       setLoading(false);
     }
 
@@ -31,11 +30,54 @@ function TaskFlow() {
 
   const currentStep = steps[currentStepIndex];
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (!currentStep) return;
+
+    await completeStep(taskId, currentStep.step_id);
+
     if (currentStepIndex < steps.length - 1) {
+      setSteps((prevSteps) =>
+        prevSteps.map((step, index) =>
+          index === currentStepIndex
+            ? {
+                ...step,
+                is_completed: true,
+                completed_at: new Date().toISOString(),
+              }
+            : step
+        )
+      );
+
       setCurrentStepIndex((prev) => prev + 1);
+    } else {
+      await completeTask(taskId);
+
+      setSteps((prevSteps) =>
+        prevSteps.map((step, index) =>
+          index === currentStepIndex
+            ? {
+                ...step,
+                is_completed: true,
+                completed_at: new Date().toISOString(),
+              }
+            : step
+        )
+      );
+
+      setTask((prevTask) =>
+        prevTask
+          ? {
+              ...prevTask,
+              status: "completed",
+            }
+          : prevTask
+      );
     }
   };
+
+  if (!taskId) {
+    return <p className="page-text">No task selected</p>;
+  }
 
   if (loading) {
     return <p className="page-text">Loading task...</p>;
@@ -66,10 +108,12 @@ function TaskFlow() {
             <button
               className="primary-button"
               onClick={handleNext}
-              disabled={currentStepIndex === steps.length - 1}
+              disabled={task.status === "completed"}
             >
               {currentStepIndex === steps.length - 1
-                ? "Finish Task"
+                ? task.status === "completed"
+                  ? "Task Completed"
+                  : "Finish Task"
                 : "Next Step"}
             </button>
           </div>

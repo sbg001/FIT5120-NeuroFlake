@@ -1,15 +1,24 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 // Accept the onOpenAssistant prop passed down from AppLayout
 function TopNav({ onOpenAssistant }) {
+  const navigate = useNavigate();
+
   const navItems = [
-    { to: "/", label: "Home" },
+    { to: "/home", label: "Home" },
     { to: "/child", label: "Child" },
     { to: "/tasks/a1111111-1111-1111-1111-111111111111", label: "Tasks" },
     { to: "/focus", label: "Focus" },
     { to: "/rewards", label: "Rewards" },
     { to: "/parent", label: "Parent" },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("current_user_id");
+    localStorage.removeItem("current_user_role");
+    localStorage.removeItem("current_user_name");
+    navigate("/login");
+  };
 
   return (
     <header className="top-nav">
@@ -21,35 +30,58 @@ function TopNav({ onOpenAssistant }) {
         </div>
       </div>
 
-      <nav className="nav-links" style={{ display: "flex", alignItems: "center" }}>
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              isActive ? "nav-link active-link" : "nav-link"
-            }
+      <nav
+        className="nav-links"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          gap: "1rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                isActive ? "nav-link active-link" : "nav-link"
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <button
+            onClick={onOpenAssistant}
+            className="primary-button"
+            style={{
+              padding: "0.5rem 1rem",
+              borderRadius: "20px",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.9rem",
+            }}
           >
-            {item.label}
-          </NavLink>
-        ))}
-        
-        {/*The AI Assistant Button */}
-        <button 
-          onClick={onOpenAssistant}
-          className="primary-button"
-          style={{ 
-            marginLeft: "1rem", 
-            padding: "0.5rem 1rem", 
-            borderRadius: "20px", 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "0.5rem",
-            fontSize: "0.9rem"
-          }}
-        >
-          Task Help
-        </button>
+            Task Help
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="secondary-button"
+            style={{
+              padding: "0.5rem 1rem",
+              borderRadius: "20px",
+              fontSize: "0.9rem",
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </nav>
     </header>
   );

@@ -36,10 +36,6 @@ export async function getTaskById(taskId) {
     .eq("task_id", normalizedTaskId)
     .limit(1)
     .maybeSingle();
-  
-  console.log("getTaskById taskId:", normalizedTaskId);
-  console.log("getTaskById supabase result:", data, error);
-
 
   if (error || !data) {
     const mockTask =

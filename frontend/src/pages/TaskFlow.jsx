@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getTaskById, getTaskSteps, completeStep, completeTask } from "../services";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 function TaskFlow() {
   const [task, setTask] = useState(null);
@@ -9,6 +9,7 @@ function TaskFlow() {
   const [loading, setLoading] = useState(true);
 
   const { taskId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadTask() {
@@ -72,6 +73,8 @@ function TaskFlow() {
             }
           : prevTask
       );
+
+      navigate("/rewards");
     }
   };
 

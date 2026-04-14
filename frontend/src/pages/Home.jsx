@@ -1,6 +1,30 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  getChildProfile,
+  getParentProfile,
+  getTasks,
+} from "../services";
 
 function Home() {
+  const [child, setChild] = useState(null);
+  const [parent, setParent] = useState(null);
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    async function loadHomeData() {
+      const { data: childData } = await getChildProfile();
+      const { data: parentData } = await getParentProfile();
+      const { data: tasksData } = await getTasks();
+
+      setChild(childData);
+      setParent(parentData);
+      setTasks(tasksData || []);
+    }
+
+    loadHomeData();
+  }, []);
+
   return (
     <section className="page-section">
       <div className="hero-card">
@@ -25,11 +49,14 @@ function Home() {
         <article className="info-card">
           <h3>Child Journey</h3>
           <p>Step-by-step tasks, focus support, and visible rewards.</p>
+          {child && <p>Current child profile: {child.name}</p>}
+          <p>{tasks.length} tasks available</p>
         </article>
 
         <article className="info-card">
           <h3>Parent Journey</h3>
           <p>Task setup, progress awareness, and reward guidance.</p>
+          {parent && <p>Current parent profile: {parent.name}</p>}
         </article>
 
         <article className="info-card">

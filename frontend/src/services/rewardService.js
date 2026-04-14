@@ -113,3 +113,35 @@ export async function createRewardTransaction({
 
   return { data, error: null };
 }
+
+export async function updatePointsBalance(childId, newPointsBalance) {
+  const normalizedChildId = String(childId);
+  const now = new Date().toISOString();
+
+  if (!supabase) {
+    mockUserPoints.points_balance = newPointsBalance;
+    mockUserPoints.updated_at = now;
+
+    return { data: mockUserPoints, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("user_points")
+    .update({
+      points_balance: newPointsBalance,
+      updated_at: now,
+    })
+    .eq("child_id", normalizedChildId)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    mockUserPoints.points_balance = newPointsBalance;
+    mockUserPoints.updated_at = now;
+
+    return { data: mockUserPoints, error: null };
+  }
+
+  return { data, error: null };
+}

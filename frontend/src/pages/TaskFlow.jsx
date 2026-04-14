@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { getTaskById, getTaskSteps, completeStep, completeTask } from "../services";
+import {
+  getTaskById,
+  getTaskSteps,
+  completeStep,
+  completeTask,
+  getPointsBalance,
+  createRewardTransaction,
+  updatePointsBalance,
+} from "../services";
 import { useNavigate, useParams } from "react-router-dom";
 
 function TaskFlow() {
@@ -52,6 +60,21 @@ function TaskFlow() {
       setCurrentStepIndex((prev) => prev + 1);
     } else {
       await completeTask(taskId);
+
+      const pointsResult = await getPointsBalance();
+      const currentPoints = pointsResult.data?.points_balance ?? 0;
+      const earnedPoints = 10;
+      const updatedPoints = currentPoints + earnedPoints;
+
+      await createRewardTransaction({
+        child_id: task.child_id,
+        task_id: task.task_id,
+        points_earned: earnedPoints,
+        steps_completed: steps.length,
+        transaction_type: "earn",
+      });
+
+      await updatePointsBalance(task.child_id, updatedPoints);
 
       setSteps((prevSteps) =>
         prevSteps.map((step, index) =>
@@ -111,7 +134,7 @@ function TaskFlow() {
             <button
               className="primary-button"
               onClick={handleNext}
-              disabled={task.status === "completed"}
+              disabled={!currentStep}
             >
               {currentStepIndex === steps.length - 1
                 ? task.status === "completed"

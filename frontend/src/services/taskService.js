@@ -22,22 +22,28 @@ export async function getTasks() {
 // GET TASK BY ID
 // =======================
 export async function getTaskById(taskId) {
+  const normalizedTaskId = String(taskId);
+
   if (!supabase) {
     const mockTask =
-      mockTasks.find((task) => task.task_id === Number(taskId)) || null;
+      mockTasks.find((task) => String(task.task_id) === normalizedTaskId) || null;
     return { data: mockTask, error: null };
   }
 
   const { data, error } = await supabase
     .from("tasks")
     .select("*")
-    .eq("task_id", Number(taskId))
+    .eq("task_id", normalizedTaskId)
     .limit(1)
     .maybeSingle();
+  
+  console.log("getTaskById taskId:", normalizedTaskId);
+  console.log("getTaskById supabase result:", data, error);
+
 
   if (error || !data) {
     const mockTask =
-      mockTasks.find((task) => task.task_id === Number(taskId)) || null;
+      mockTasks.find((task) => String(task.task_id) === normalizedTaskId) || null;
     return { data: mockTask, error: null };
   }
 
@@ -48,21 +54,23 @@ export async function getTaskById(taskId) {
 // GET TASK STEPS
 // =======================
 export async function getTaskSteps(taskId) {
+  const normalizedTaskId = String(taskId);
+
   if (!supabase) {
     const mockTask =
-      mockTasks.find((task) => task.task_id === Number(taskId)) || null;
+      mockTasks.find((task) => String(task.task_id) === normalizedTaskId) || null;
     return { data: mockTask ? mockTask.steps : [], error: null };
   }
 
   const { data, error } = await supabase
     .from("task_steps")
     .select("*")
-    .eq("task_id", Number(taskId))
+    .eq("task_id", normalizedTaskId)
     .order("step_order", { ascending: true });
 
   if (error || !data || data.length === 0) {
     const mockTask =
-      mockTasks.find((task) => task.task_id === Number(taskId)) || null;
+      mockTasks.find((task) => String(task.task_id) === normalizedTaskId) || null;
     return { data: mockTask ? mockTask.steps : [], error: null };
   }
 
@@ -95,18 +103,20 @@ export async function getTodayTask() {
 // COMPLETE STEP
 // =======================
 export async function completeStep(taskId, stepId) {
+  const normalizedTaskId = String(taskId);
+  const normalizedStepId = String(stepId);
   const now = new Date().toISOString();
 
   if (!supabase) {
     const task =
-      mockTasks.find((item) => item.task_id === Number(taskId)) || null;
+      mockTasks.find((item) => String(item.task_id) === normalizedTaskId) || null;
 
     if (!task) {
       return { data: null, error: "Task not found." };
     }
 
     const step = task.steps.find(
-      (item) => item.step_id === Number(stepId)
+      (item) => String(item.step_id) === normalizedStepId
     );
 
     if (!step) {
@@ -129,8 +139,8 @@ export async function completeStep(taskId, stepId) {
       is_completed: true,
       completed_at: now,
     })
-    .eq("step_id", Number(stepId))
-    .eq("task_id", Number(taskId))
+    .eq("step_id", normalizedStepId)
+    .eq("task_id", normalizedTaskId)
     .select()
     .limit(1)
     .maybeSingle();
@@ -146,11 +156,12 @@ export async function completeStep(taskId, stepId) {
 // COMPLETE TASK
 // =======================
 export async function completeTask(taskId) {
+  const normalizedTaskId = String(taskId);
   const now = new Date().toISOString();
 
   if (!supabase) {
     const task =
-      mockTasks.find((item) => item.task_id === Number(taskId)) || null;
+      mockTasks.find((item) => String(item.task_id) === normalizedTaskId) || null;
 
     if (!task) {
       return { data: null, error: "Task not found." };
@@ -173,14 +184,14 @@ export async function completeTask(taskId) {
       status: "completed",
       updated_at: now,
     })
-    .eq("task_id", Number(taskId));
+    .eq("task_id", normalizedTaskId);
 
   if (error) {
     return { data: null, error };
   }
 
   return {
-    data: { task_id: Number(taskId), status: "completed" },
+    data: { task_id: normalizedTaskId, status: "completed" },
     error: null,
   };
 }

@@ -5,7 +5,7 @@ function TopNav({ onOpenAssistant }) {
   const navItems = [
     { to: "/", label: "Home" },
     { to: "/child", label: "Child" },
-    { to: "/tasks/1", label: "Tasks" },
+    { to: "/tasks/a1111111-1111-1111-1111-111111111111", label: "Tasks" },
     { to: "/focus", label: "Focus" },
     { to: "/rewards", label: "Rewards" },
     { to: "/parent", label: "Parent" },

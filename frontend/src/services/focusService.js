@@ -55,7 +55,7 @@ export async function endFocusSession(sessionId) {
 }
 
 export async function getCurrentFocusStep(taskId, stepId) {
-  const task = getTaskById(taskId);
+  const { data: task } = await getTaskById(taskId);
 
   if (!task) {
     return { data: null, error: "Task not found." };

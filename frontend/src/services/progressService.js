@@ -6,6 +6,10 @@ import {
 import { supabase } from "../lib/supabase";
 
 export async function getWeeklySummary() {
+  if (!supabase) {
+    return { data: mockWeeklySummary, error: null };
+  }
+
   const { data, error } = await supabase
     .from("progress_summary")
     .select("*")
@@ -21,6 +25,10 @@ export async function getWeeklySummary() {
 }
 
 export async function getRecentTasks() {
+  if (!supabase) {
+    return { data: mockRecentTasks, error: null };
+  }
+
   const { data, error } = await supabase
     .from("recent_tasks")
     .select("*")

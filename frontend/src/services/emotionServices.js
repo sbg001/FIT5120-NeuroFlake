@@ -1,4 +1,4 @@
-import { mockEmotionOptions, mockEmotionLogs } from "../data/mockEmotions";
+import { mockEmotionOptions, mockEmotionLogs } from "../data/mockEmotion";
 import { supabase } from "../lib/supabase";
 
 export async function getEmotionOptions() {

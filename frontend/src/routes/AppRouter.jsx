@@ -15,7 +15,7 @@ function AppRouter() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
           <Route path="child" element={<ChildDashboard />} />
-          <Route path="tasks" element={<TaskFlow />} />
+          <Route path="/tasks/:taskId" element={<TaskFlow />} />
           <Route path="focus" element={<FocusMode />} />
           <Route path="rewards" element={<Rewards />} />
           <Route path="parent" element={<ParentDashboard />} />

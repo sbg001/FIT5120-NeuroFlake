@@ -6,6 +6,10 @@ import {
 import { supabase } from "../lib/supabase";
 
 export async function getPointsBalance() {
+  if (!supabase) {
+    return { data: mockUserPoints, error: null };
+  }
+
   const { data, error } = await supabase
     .from("user_points")
     .select("*")
@@ -20,6 +24,10 @@ export async function getPointsBalance() {
 }
 
 export async function getRewardTransactions() {
+  if (!supabase) {
+    return { data: mockRewardTransactions, error: null };
+  }
+
   const { data, error } = await supabase
     .from("reward_transactions")
     .select("*")
@@ -33,6 +41,10 @@ export async function getRewardTransactions() {
 }
 
 export async function getLatestRewardSummary() {
+  if (!supabase) {
+    return { data: mockLatestRewardSummary, error: null };
+  }
+
   const { data, error } = await supabase
     .from("reward_transactions")
     .select("*")
@@ -71,6 +83,16 @@ export async function createRewardTransaction({
     transaction_type,
     created_at: new Date().toISOString(),
   };
+
+  if (!supabase) {
+    return {
+      data: {
+        transaction_id: Date.now(),
+        ...payload,
+      },
+      error: null,
+    };
+  }
 
   const { data, error } = await supabase
     .from("reward_transactions")

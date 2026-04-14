@@ -6,6 +6,10 @@ import {
 import { supabase } from "../lib/supabase";
 
 export async function getChildProfile() {
+  if (!supabase) {
+    return { data: mockChildProfile, error: null };
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -21,6 +25,10 @@ export async function getChildProfile() {
 }
 
 export async function getParentProfile() {
+  if (!supabase) {
+    return { data: mockParentProfile, error: null };
+  }
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -36,6 +44,10 @@ export async function getParentProfile() {
 }
 
 export async function getParentChildRelation() {
+  if (!supabase) {
+    return { data: mockParentChildRelation, error: null };
+  }
+
   const { data, error } = await supabase
     .from("parent_child_relation")
     .select("*")

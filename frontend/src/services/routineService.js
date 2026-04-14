@@ -2,6 +2,10 @@ import { mockRoutines, mockRoutineItems } from "../data/mockRoutines";
 import { supabase } from "../lib/supabase";
 
 export async function getRoutines() {
+  if (!supabase) {
+    return { data: mockRoutines, error: null };
+  }
+
   const { data, error } = await supabase
     .from("routines")
     .select("*")
@@ -15,6 +19,13 @@ export async function getRoutines() {
 }
 
 export async function getRoutineItems(routineId) {
+  if (!supabase) {
+    const items = mockRoutineItems.filter(
+      (item) => item.routine_id === Number(routineId)
+    );
+    return { data: items, error: null };
+  }
+
   const { data, error } = await supabase
     .from("routine_items")
     .select("*")
@@ -59,6 +70,22 @@ export async function updateRoutineItem(itemId, isCompleted) {
     completed_at: isCompleted ? new Date().toISOString() : null,
   };
 
+  if (!supabase) {
+    const item =
+      mockRoutineItems.find(
+        (routineItem) => routineItem.item_id === Number(itemId)
+      ) || null;
+
+    if (!item) {
+      return { data: null, error: "Routine item not found." };
+    }
+
+    item.is_completed = isCompleted;
+    item.completed_at = payload.completed_at;
+
+    return { data: item, error: null };
+  }
+
   const { data, error } = await supabase
     .from("routine_items")
     .update(payload)
@@ -69,7 +96,9 @@ export async function updateRoutineItem(itemId, isCompleted) {
 
   if (error) {
     const item =
-      mockRoutineItems.find((routineItem) => routineItem.item_id === Number(itemId)) || null;
+      mockRoutineItems.find(
+        (routineItem) => routineItem.item_id === Number(itemId)
+      ) || null;
 
     if (!item) {
       return { data: null, error: "Routine item not found." };

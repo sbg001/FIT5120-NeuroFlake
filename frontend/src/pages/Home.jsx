@@ -1,6 +1,4 @@
 import { Link } from "react-router-dom";
-import childProfile from "../data/childProfile";
-import parentProfile from "../data/parentProfile";
 
 function Home() {
   return (

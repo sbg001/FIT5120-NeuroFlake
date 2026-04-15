@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 // Accept the onOpenAssistant prop passed down from AppLayout
 function TopNav({ onOpenAssistant }) {
   const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem("current_user_id");
 
   const navItems = [
     { to: "/home", label: "Home" },
@@ -17,6 +18,10 @@ function TopNav({ onOpenAssistant }) {
     localStorage.removeItem("current_user_id");
     localStorage.removeItem("current_user_role");
     localStorage.removeItem("current_user_name");
+    navigate("/");
+  };
+
+  const handleLogin = () => {
     navigate("/login");
   };
 
@@ -70,17 +75,33 @@ function TopNav({ onOpenAssistant }) {
             Task Help
           </button>
 
-          <button
-            onClick={handleLogout}
-            className="secondary-button"
-            style={{
-              padding: "0.5rem 1rem",
-              borderRadius: "20px",
-              fontSize: "0.9rem",
-            }}
-          >
-            Logout
-          </button>
+          {!isLoggedIn && (
+            <button
+              onClick={handleLogin}
+              className="secondary-button"
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                fontSize: "0.9rem",
+              }}
+            >
+              Login
+            </button>
+          )}
+
+          {isLoggedIn && (
+            <button
+              onClick={handleLogout}
+              className="secondary-button"
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                fontSize: "0.9rem",
+              }}
+            >
+              Logout
+            </button>
+          )}
         </div>
       </nav>
     </header>

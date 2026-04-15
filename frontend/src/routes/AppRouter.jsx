@@ -23,7 +23,10 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Home />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
 
         <Route

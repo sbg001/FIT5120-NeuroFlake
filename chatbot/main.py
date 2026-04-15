@@ -2,21 +2,29 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
 import requests
 import json
+import os
+
+# Load the variables from your .env file
+load_dotenv() 
 
 app = FastAPI()
 
 # Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 class TaskRequest(BaseModel):
     task_name: str
+
+#Groq API key
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # system prompt enforces Acceptance Criteria (AC 1.1.1 - 1.1.3)
 SYSTEM_PROMPT = """
@@ -42,27 +50,57 @@ JSON FORMAT EXAMPLE:
 
 @app.post("/api/breakdown-task")
 async def breakdown_task(request: TaskRequest):
-    # Call local Ollama instance (default port 11434)
-    ollama_url = "http://localhost:11434/api/generate"
-    
-    payload = {
-        "model": "llama3", # or "phi3"
-        "prompt": f"Task to break down: {request.task_name}",
-        "system": SYSTEM_PROMPT,
-        "stream": False,
-        "format": "json" # Forces the open-source model to output strict JSON
+    groq_url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
     }
-    
+
+    payload = {
+        # Using the latest supported Llama 3.1 model on Groq
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": f"Task to break down: {request.task_name}"}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.2
+    }
+
     try:
-        response = requests.post(ollama_url, json=payload)
+        response = requests.post(groq_url, headers=headers, json=payload)
+
+        # NEW: If Groq sends an error, this grabs the exact detailed message!
+        if not response.ok:
+            print(f"GROQ REJECTED THE REQUEST. Reason: {response.text}")
+
         response.raise_for_status()
         data = response.json()
-        
-        # Parse the JSON string returned by the LLM
-        structured_data = json.loads(data["response"])
+
+        raw_response = data["choices"][0]["message"]["content"]
+        print(f"Raw AI Output: {raw_response}")
+
+        # Clean up markdown blocks before parsing
+        clean_text = raw_response.strip()
+        if clean_text.startswith("```json"):
+            clean_text = clean_text[7:]
+        if clean_text.startswith("```"):
+            clean_text = clean_text[3:]
+        if clean_text.endswith("```"):
+            clean_text = clean_text[:-3]
+        clean_text = clean_text.strip()
+
+        structured_data = json.loads(clean_text)
         return structured_data
-        
+       
+    except requests.exceptions.RequestException as e:
+        print(f"Groq API Connection Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not connect to Groq.")
+    except json.JSONDecodeError as e:
+        print(f"JSON Parsing Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON.")
     except Exception as e:
+        print(f"General Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

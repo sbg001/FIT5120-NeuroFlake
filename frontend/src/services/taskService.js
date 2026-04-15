@@ -96,6 +96,137 @@ export async function getTodayTask() {
 }
 
 // =======================
+// CREATE TASK
+// =======================
+export async function createTask(payload) {
+  const taskPayload = {
+    child_id: payload.child_id,
+    created_by: payload.created_by,
+    title: payload.title,
+    description: payload.description,
+    status: payload.status || "pending",
+    total_steps: payload.total_steps || 0,
+    completed_steps: payload.completed_steps || 0,
+    priority_type: payload.priority_type || null,
+    priority_rank: payload.priority_rank || null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!supabase) {
+    const newTask = {
+      task_id: `mock-${Date.now()}`,
+      ...taskPayload,
+    };
+
+    mockTasks.push(newTask);
+
+    return { data: newTask, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert(taskPayload)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
+// CREATE TASK STEP
+// =======================
+export async function createTaskStep(payload) {
+  const stepPayload = {
+    task_id: payload.task_id,
+    step_order: payload.step_order,
+    step_title: payload.step_title,
+    step_description: payload.step_description || null,
+    is_completed: payload.is_completed || false,
+    completed_at: payload.completed_at || null,
+    visual_hint: payload.visual_hint || null,
+    example_text: payload.example_text || null,
+  };
+
+  if (!supabase) {
+    return {
+      data: {
+        step_id: `mock-step-${Date.now()}`,
+        ...stepPayload,
+      },
+      error: null,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("task_steps")
+    .insert(stepPayload)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
+// UPDATE TASK STEP COUNT
+// =======================
+export async function updateTaskStepCount(taskId) {
+  const normalizedTaskId = String(taskId);
+  console.log("updateTaskStepCount taskId:", normalizedTaskId);
+
+  if (!supabase) {
+    const task =
+      mockTasks.find((item) => String(item.task_id) === normalizedTaskId) || null;
+
+    if (!task) {
+      return { data: null, error: "Task not found." };
+    }
+
+    task.total_steps = task.steps ? task.steps.length : task.total_steps;
+    return { data: task, error: null };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("task_steps")
+    .select("*", { count: "exact", head: true })
+    .eq("task_id", normalizedTaskId);
+
+  console.log("step count result:", count, countError);
+
+  if (countError) {
+    return { data: null, error: countError };
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({
+      total_steps: count || 0,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("task_id", normalizedTaskId)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  console.log("updateTaskStepCount update result:", data, error);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+// =======================
 // COMPLETE STEP
 // =======================
 export async function completeStep(taskId, stepId) {

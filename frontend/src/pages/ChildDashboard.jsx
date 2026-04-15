@@ -26,7 +26,9 @@ function ChildDashboard() {
     loadData();
   }, []);
 
-  const availableTasks = tasks.slice(0, 3);
+  const availableTasks = [...tasks]
+    .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0))
+    .slice(0, 3);
 
   if (!child) {
     return <p className="page-text">Loading dashboard...</p>;
@@ -67,6 +69,11 @@ function ChildDashboard() {
             <p>
               Steps: {task.completed_steps} / {task.total_steps}
             </p>
+            {task.priority_type && (
+              <p>
+                Priority: {task.priority_type} ({task.priority_rank})
+              </p>
+            )}
 
             <Link to={`/tasks/${task.task_id}`} className="primary-button small-button">
               Open Task

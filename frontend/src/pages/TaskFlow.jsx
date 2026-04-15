@@ -38,6 +38,7 @@ function TaskFlow() {
   }, [taskId]);
 
   const currentStep = steps[currentStepIndex];
+  console.log("currentStep data:", currentStep);
 
   const handleNext = async () => {
     if (!currentStep) return;
@@ -129,6 +130,14 @@ function TaskFlow() {
         <div className="hero-card">
           <h3>{currentStep.step_title}</h3>
           <p>{currentStep.step_description}</p>
+
+          {currentStep.visual_hint && (
+            <p className="page-text">Visual hint: {currentStep.visual_hint}</p>
+          )}
+
+          {currentStep.example_text && (
+            <p className="page-text">Example: {currentStep.example_text}</p>
+          )}
 
           <div className="button-row">
             <button

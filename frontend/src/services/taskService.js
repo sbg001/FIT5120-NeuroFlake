@@ -178,11 +178,144 @@ export async function createTaskStep(payload) {
 }
 
 // =======================
+// UPDATE TASK
+// =======================
+export async function updateTask(taskId, payload) {
+  const normalizedTaskId = String(taskId);
+
+  const updatePayload = {
+    title: payload.title,
+    description: payload.description,
+    priority_type: payload.priority_type || null,
+    priority_rank: payload.priority_rank || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!supabase) {
+    const task =
+      mockTasks.find((item) => String(item.task_id) === normalizedTaskId) || null;
+
+    if (!task) {
+      return { data: null, error: "Task not found." };
+    }
+
+    task.title = updatePayload.title;
+    task.description = updatePayload.description;
+    task.priority_type = updatePayload.priority_type;
+    task.priority_rank = updatePayload.priority_rank;
+    task.updated_at = updatePayload.updated_at;
+
+    return { data: task, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update(updatePayload)
+    .eq("task_id", normalizedTaskId)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
+// UPDATE TASK STEP
+// =======================
+export async function updateTaskStep(stepId, payload) {
+  const normalizedStepId = String(stepId);
+
+  const updatePayload = {
+    step_order: payload.step_order,
+    step_title: payload.step_title,
+    step_description: payload.step_description || null,
+    visual_hint: payload.visual_hint || null,
+    example_text: payload.example_text || null,
+  };
+
+  if (!supabase) {
+    return {
+      data: {
+        step_id: normalizedStepId,
+        ...updatePayload,
+      },
+      error: null,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("task_steps")
+    .update(updatePayload)
+    .eq("step_id", normalizedStepId)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
+// DELETE TASK
+// =======================
+export async function deleteTask(taskId) {
+  const normalizedTaskId = String(taskId);
+
+  if (!supabase) {
+    return { data: { task_id: normalizedTaskId }, error: null };
+  }
+
+  await supabase
+    .from("task_steps")
+    .delete()
+    .eq("task_id", normalizedTaskId);
+
+  const { error } = await supabase
+    .from("tasks")
+    .delete()
+    .eq("task_id", normalizedTaskId);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: { task_id: normalizedTaskId }, error: null };
+}
+
+// =======================
+// DELETE TASK STEP
+// =======================
+export async function deleteTaskStep(stepId) {
+  const normalizedStepId = String(stepId);
+
+  if (!supabase) {
+    return { data: { step_id: normalizedStepId }, error: null };
+  }
+
+  const { error } = await supabase
+    .from("task_steps")
+    .delete()
+    .eq("step_id", normalizedStepId);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: { step_id: normalizedStepId }, error: null };
+}
+
+// =======================
 // UPDATE TASK STEP COUNT
 // =======================
 export async function updateTaskStepCount(taskId) {
   const normalizedTaskId = String(taskId);
-  console.log("updateTaskStepCount taskId:", normalizedTaskId);
 
   if (!supabase) {
     const task =
@@ -201,8 +334,6 @@ export async function updateTaskStepCount(taskId) {
     .select("*", { count: "exact", head: true })
     .eq("task_id", normalizedTaskId);
 
-  console.log("step count result:", count, countError);
-
   if (countError) {
     return { data: null, error: countError };
   }
@@ -218,14 +349,13 @@ export async function updateTaskStepCount(taskId) {
     .limit(1)
     .maybeSingle();
 
-  console.log("updateTaskStepCount update result:", data, error);
-
   if (error) {
     return { data: null, error };
   }
 
   return { data, error: null };
 }
+
 // =======================
 // COMPLETE STEP
 // =======================

@@ -37,11 +37,22 @@ function TaskFlow() {
       setTask(taskData);
       setSteps(orderedSteps);
       setTaskReady(validStepCount);
-      setCurrentStepIndex(0);
+
+      // Find the index of the first step that is NOT completed yet
+      const firstIncompleteIndex = orderedSteps.findIndex(step => step.is_completed === false);
+      
+      // If all steps are done (returns -1), stay on the last step. 
+      // Otherwise, jump directly to the unfinished step!
+      if (firstIncompleteIndex === -1 && orderedSteps.length > 0) {
+        setCurrentStepIndex(orderedSteps.length - 1);
+      } else {
+        setCurrentStepIndex(firstIncompleteIndex !== -1 ? firstIncompleteIndex : 0);
+      }
+
       setLoading(false);
 
       // We check if Nova should open AFTER the data is loaded!
-      if (orderedSteps.length < 2) {
+      if (orderedSteps.length < 1) {
         setIsNovaOpen(true);
       }
     }
@@ -180,11 +191,68 @@ function TaskFlow() {
 
       <div className="content-card">
         <p className="eyebrow">Step Plan</p>
-        {steps.map((step, index) => (
-          <p key={step.step_id} style={{ margin: "0.45rem 0", fontWeight: index === currentStepIndex ? 700 : 400, opacity: step.is_completed ? 0.7 : 1 }}>
-            {step.is_completed ? "✅" : index === currentStepIndex ? "👉" : "•"} {index + 1}. {step.step_title}
-          </p>
-        ))}
+        
+        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginTop: "1rem" }}>
+          
+          {/* Nova Avatar Image */}
+          <div style={{ flexShrink: 0, marginTop: "0.5rem" }}>
+            <img 
+              src="/nova-robot.png" 
+              alt="Nova the Robot" 
+              style={{ 
+                width: "80px", 
+                height: "80px", 
+                objectFit: "cover",
+                borderRadius: "50%", 
+                border: "2px solid #E2E8F0",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.05)" 
+              }} 
+            />
+          </div>
+
+          {/* Steps as Speech Bubbles */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", flex: 1 }}>
+            {steps.map((step, index) => {
+              const isActive = index === currentStepIndex;
+              const isCompleted = step.is_completed;
+
+              return (
+                <div 
+                  key={step.step_id} 
+                  style={{ 
+                    padding: "1rem 1.25rem", 
+                    // This creates the "speech bubble" look, pointing left towards Nova
+                    borderRadius: "0 20px 20px 20px", 
+                    // Dynamic colors based on step status
+                    backgroundColor: isActive ? "#EEF2FF" : isCompleted ? "#F8FAFC" : "#FFFFFF",
+                    border: isActive ? "2px solid #6366F1" : "1px solid #E2E8F0",
+                    opacity: isCompleted ? 0.6 : 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    transition: "all 0.3s ease"
+                  }}
+                >
+                  {/* Visual Status Indicator */}
+                  <div style={{ fontSize: "1.2rem", flexShrink: 0 }}>
+                    {isCompleted ? "✅" : isActive ? "👉" : "⏳"}
+                  </div>
+
+                  {/* Step Text */}
+                  <span style={{ 
+                    fontSize: "1.05rem", 
+                    color: isActive ? "#312E81" : "#475569", 
+                    fontWeight: isActive ? "600" : "500",
+                    textDecoration: isCompleted ? "line-through" : "none"
+                  }}>
+                    {step.step_title}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
 
       {currentStep && (

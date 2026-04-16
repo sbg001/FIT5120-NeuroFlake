@@ -6,14 +6,12 @@ function TopNav() {
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
 
   const childNavItems = [
-    { to: "/home", label: "Home" },
-    { to: "/child", label: "Tasks" },
+    { to: "/child", label: "Child Dashboard" },
     { to: "/focus", label: "Focus" },
     { to: "/rewards", label: "Rewards" },
   ];
 
   const parentNavItems = [
-    { to: "/home", label: "Home" },
     { to: "/parent", label: "Parent Dashboard" },
   ];
 

@@ -41,15 +41,30 @@ JSON FORMAT EXAMPLE:
 {
   "task": "Original Task Name",
   "steps": [
-    {"step_number": 1, "description": "Simple action 1"},
-    {"step_number": 2, "description": "Simple action 2"},
-    {"step_number": 3, "description": "Simple action 3"}
+    {
+      "step_number": 1,
+      "step_title": "Short step name",
+      "description": "Simple action 1"
+    },
+    {
+      "step_number": 2,
+      "step_title": "Short step name",
+      "description": "Simple action 2"
+    },
+    {
+      "step_number": 3,
+      "step_title": "Short step name",
+      "description": "Simple action 3"
+    }
   ]
 }
 """
 
 @app.post("/api/breakdown-task")
 async def breakdown_task(request: TaskRequest):
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Groq API key is not configured.")
+
     groq_url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",

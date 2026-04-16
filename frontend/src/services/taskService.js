@@ -117,6 +117,7 @@ export async function createTask(payload) {
     const newTask = {
       task_id: `mock-${Date.now()}`,
       ...taskPayload,
+      steps: [],
     };
 
     mockTasks.push(newTask);
@@ -154,13 +155,23 @@ export async function createTaskStep(payload) {
   };
 
   if (!supabase) {
-    return {
-      data: {
-        step_id: `mock-step-${Date.now()}`,
-        ...stepPayload,
-      },
-      error: null,
+    const task =
+      mockTasks.find((item) => String(item.task_id) === String(payload.task_id)) ||
+      null;
+    const newStep = {
+      step_id: `mock-step-${Date.now()}-${payload.step_order}`,
+      ...stepPayload,
     };
+
+    if (task) {
+      task.steps = Array.isArray(task.steps) ? task.steps : [];
+      task.steps.push(newStep);
+      task.steps.sort((a, b) => Number(a.step_order) - Number(b.step_order));
+      task.total_steps = task.steps.length;
+      task.updated_at = new Date().toISOString();
+    }
+
+    return { data: newStep, error: null };
   }
 
   const { data, error } = await supabase

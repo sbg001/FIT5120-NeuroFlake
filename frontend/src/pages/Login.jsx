@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getUsers, loginWithPin } from "../services";
 
 function Login() {
@@ -7,6 +7,7 @@ function Login() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [pinCode, setPinCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,14 +23,16 @@ function Login() {
     setErrorMessage("");
 
     if (!selectedUserId || !pinCode) {
-      setErrorMessage("Please select a user and enter a PIN.");
+      setErrorMessage("Choose a profile and enter the PIN.");
       return;
     }
 
+    setIsLoading(true);
     const result = await loginWithPin(selectedUserId, pinCode);
+    setIsLoading(false);
 
     if (result.error) {
-      setErrorMessage(result.error);
+      setErrorMessage("That PIN did not work. Please try again.");
       return;
     }
 
@@ -46,180 +49,104 @@ function Login() {
     }
   };
 
+  const selectedUser =
+    users.find((user) => String(user.user_id) === String(selectedUserId)) ||
+    null;
+
   return (
-    <section
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 20px",
-        background:
-          "linear-gradient(180deg, #f8faff 0%, #eef3ff 100%)",
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "520px",
-          background: "#ffffff",
-          border: "1px solid #e4e9f5",
-          borderRadius: "28px",
-          padding: "40px 32px",
-          boxShadow: "0 20px 50px rgba(39, 56, 102, 0.10)",
-          boxSizing: "border-box",
-        }}
-      >
-        <div style={{ marginBottom: "28px", textAlign: "left" }}>
-          <p
-            style={{
-              margin: "0 0 10px 0",
-              fontSize: "0.9rem",
-              fontWeight: 700,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#4f74d9",
-            }}
-          >
-            Login
-          </p>
+    <section className="login-page">
+      <div className="login-visual" aria-hidden="true">
+        <img src="/logo.png" alt="" />
+        <div className="login-visual-card">
+          <p>One routine</p>
+          <strong>One step</strong>
+          <span>One calm start</span>
+        </div>
+      </div>
 
-          <h1
-            style={{
-              margin: "0 0 12px 0",
-              fontSize: "3rem",
-              lineHeight: 1.05,
-              fontWeight: 800,
-              color: "#1f2940",
-            }}
-          >
-            Select your profile
-          </h1>
-
-          <p
-            style={{
-              margin: 0,
-              fontSize: "1.15rem",
-              lineHeight: 1.5,
-              color: "#5e687c",
-            }}
-          >
-            Enter your PIN to continue.
-          </p>
+      <div className="login-card">
+        <div className="login-header">
+          <p className="eyebrow">Login</p>
+          <h1>Choose your profile</h1>
+          <p>Use your private PIN to continue.</p>
         </div>
 
-        <div style={{ display: "grid", gap: "20px" }}>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontSize: "1rem",
-                fontWeight: 700,
-                color: "#495466",
-              }}
-            >
-              User
-            </label>
+        <div className="login-profile-grid">
+          {users.map((user) => {
+            const isSelected = String(user.user_id) === String(selectedUserId);
+            const roleLabel =
+              String(user.role).toLowerCase() === "parent"
+                ? "Parent"
+                : "Child";
 
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              style={{
-                width: "100%",
-                height: "58px",
-                padding: "0 18px",
-                borderRadius: "18px",
-                border: "1.5px solid #d9dfec",
-                backgroundColor: "#f8faff",
-                color: "#2f3554",
-                fontSize: "1.05rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="">Select a user</option>
-              {users.map((user) => (
-                <option key={user.user_id} value={user.user_id}>
-                  {user.name} ({user.role}) - PIN: {user.pin_code}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-                fontSize: "1rem",
-                fontWeight: 700,
-                color: "#495466",
-              }}
-            >
-              PIN
-            </label>
-
-            <input
-              type="password"
-              value={pinCode}
-              onChange={(e) => setPinCode(e.target.value)}
-              placeholder="Enter PIN"
-              inputMode="numeric"
-              maxLength={6}
-              style={{
-                width: "100%",
-                height: "58px",
-                padding: "0 18px",
-                borderRadius: "18px",
-                border: "1.5px solid #d9dfec",
-                backgroundColor: "#f8faff",
-                color: "#2f3554",
-                fontSize: "1.05rem",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-
-          {errorMessage && (
-            <div
-              style={{
-                padding: "14px 16px",
-                borderRadius: "16px",
-                background: "#fff4f4",
-                border: "1px solid #ffd1d1",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "0.96rem",
-                  fontWeight: 600,
-                  color: "#c62828",
+            return (
+              <button
+                key={user.user_id}
+                type="button"
+                className={
+                  isSelected
+                    ? "login-profile-button is-selected"
+                    : "login-profile-button"
+                }
+                onClick={() => {
+                  setSelectedUserId(user.user_id);
+                  setErrorMessage("");
                 }}
               >
-                {errorMessage}
-              </p>
+                <span>{roleLabel.slice(0, 1)}</span>
+                <strong>{roleLabel} Profile</strong>
+                <small>{user.name}</small>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="login-form">
+          <label htmlFor="pin-code">
+            PIN
+            {selectedUser && <span>{selectedUser.role} profile selected</span>}
+          </label>
+
+          <input
+            id="pin-code"
+            type="password"
+            value={pinCode}
+            onChange={(e) => {
+              setPinCode(e.target.value);
+              setErrorMessage("");
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleLogin();
+              }
+            }}
+            placeholder="Enter PIN"
+            inputMode="numeric"
+            autoComplete="current-password"
+            maxLength={6}
+          />
+
+          {errorMessage && (
+            <div className="login-error" role="alert">
+              <p>{errorMessage}</p>
             </div>
           )}
 
           <button
             onClick={handleLogin}
             className="primary-button"
-            style={{
-              width: "100%",
-              minHeight: "58px",
-              borderRadius: "18px",
-              fontSize: "1.05rem",
-              fontWeight: 700,
-              justifyContent: "center",
-              marginTop: "4px",
-            }}
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? "Checking..." : "Continue"}
           </button>
+
+          <Link to="/" className="secondary-button login-home-button">
+            Back to Home
+          </Link>
+
+          <p className="login-note">
+            PINs stay hidden on this page. Ask a parent or caregiver if you need help.
+          </p>
         </div>
       </div>
     </section>

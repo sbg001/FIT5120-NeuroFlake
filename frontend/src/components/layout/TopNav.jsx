@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
-function TopNav({ onOpenAssistant }) {
+function TopNav() {
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
@@ -73,22 +73,6 @@ function TopNav({ onOpenAssistant }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          {isLoggedIn && currentRole !== "parent" && (
-            <button
-              onClick={onOpenAssistant}
-              className="primary-button"
-              style={{
-                padding: "0.5rem 1rem",
-                borderRadius: "20px",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.9rem",
-              }}
-            >
-              Task Help
-            </button>
-          )}
 
           {!isLoggedIn && (
             <button

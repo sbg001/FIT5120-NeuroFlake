@@ -700,6 +700,24 @@ p {
   color: #ffffff;
 }
 
+.login-demo-pin-box {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid #f4d58d;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #65460c;
+}
+
+.login-demo-pin-box strong {
+  color: #4c3608;
+}
+
+.login-demo-pin-box p {
+  font-weight: 750;
+}
+
 .login-form {
   display: grid;
   gap: 16px;

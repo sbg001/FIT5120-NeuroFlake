@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import tasks from "../../data/tasks";
 
 function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
-  const [taskInput, setTaskInput] = useState("");
   const [steps, setSteps] = useState([]);
   const [companionMessage, setCompanionMessage] = useState("Hi there! I'm Nova. What are we working on today?");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +37,7 @@ function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
         setErrorMessage("Oops! I got my wires crossed.");
         setCompanionMessage("Uh oh, something went wrong.");
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Hmm, my connection to the cloud is down.");
       setCompanionMessage("I can't connect right now.");
     } finally {

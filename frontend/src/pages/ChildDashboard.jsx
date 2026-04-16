@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import InfoCard from "../components/ui/InfoCard";
-import TaskAssistantModal from "../components/ui/TaskAssistantModal";
 import { useEffect, useState } from "react";
 import {
   getTasks,
@@ -19,7 +18,6 @@ function ChildDashboard() {
   const [characterStyle, setCharacterStyle] = useState("star");
   const [rewardInterest, setRewardInterest] = useState("games");
   const [preferenceMessage, setPreferenceMessage] = useState("");
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -290,22 +288,6 @@ function ChildDashboard() {
             A calm, simple space to help you move through tasks one step at a time.
           </p>
         </div>
-        
-        {/* Assistant Launch Button */}
-        <button 
-          onClick={() => setIsAssistantOpen(true)}
-          className="primary-button"
-          style={{ 
-            padding: "1rem 2rem", 
-            fontSize: "1.1rem", 
-            borderRadius: "16px",
-            boxShadow: "0 4px 6px rgba(56, 189, 248, 0.2)",
-            flexShrink: 0
-          }}
-        >
-          <span role="img" aria-label="robot" style={{ marginRight: "0.5rem" }}>🤖</span>
-          Nova Help
-        </button>
       </div>
 
       <div className="card-grid" style={{ alignItems: "stretch" }}>
@@ -363,10 +345,6 @@ function ChildDashboard() {
           </article>
         ))}
       </div>
-      <TaskAssistantModal 
-        isOpen={isAssistantOpen} 
-        onClose={() => setIsAssistantOpen(false)} 
-      />
     </section>
   );
 }

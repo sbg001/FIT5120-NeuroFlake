@@ -4,15 +4,12 @@ import {
   getParentProfile,
   getChildProfile,
   getTasks,
-  getTaskSteps,
   getPointsBalance,
   createTask,
   createTaskStep,
   updateTaskStepCount,
   updateTask,
-  updateTaskStep,
   deleteTask,
-  deleteTaskStep,
   resetTaskStatus,
   generateTaskSteps,
   getAllRewardsForParent,
@@ -35,14 +32,6 @@ function ParentDashboard() {
   const [createMessage, setCreateMessage] = useState("");
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
-  const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [stepOrder, setStepOrder] = useState("");
-  const [stepTitle, setStepTitle] = useState("");
-  const [stepDescription, setStepDescription] = useState("");
-  const [visualHint, setVisualHint] = useState("");
-  const [exampleText, setExampleText] = useState("");
-  const [stepMessage, setStepMessage] = useState("");
-
   const [editTaskId, setEditTaskId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -50,23 +39,8 @@ function ParentDashboard() {
   const [editPriorityRank, setEditPriorityRank] = useState("");
   const [editMessage, setEditMessage] = useState("");
 
-  const [editStepTaskId, setEditStepTaskId] = useState("");
-  const [editableSteps, setEditableSteps] = useState([]);
-  const [editStepId, setEditStepId] = useState("");
-  const [editStepOrder, setEditStepOrder] = useState("");
-  const [editStepTitle, setEditStepTitle] = useState("");
-  const [editStepDescription, setEditStepDescription] = useState("");
-  const [editVisualHint, setEditVisualHint] = useState("");
-  const [editExampleText, setEditExampleText] = useState("");
-  const [editStepMessage, setEditStepMessage] = useState("");
-
   const [deleteTaskId, setDeleteTaskId] = useState("");
   const [deleteTaskMessage, setDeleteTaskMessage] = useState("");
-
-  const [deleteStepTaskId, setDeleteStepTaskId] = useState("");
-  const [deletableSteps, setDeletableSteps] = useState([]);
-  const [deleteStepId, setDeleteStepId] = useState("");
-  const [deleteStepMessage, setDeleteStepMessage] = useState("");
 
   const [resetTaskId, setResetTaskId] = useState("");
   const [resetTaskMessage, setResetTaskMessage] = useState("");
@@ -292,168 +266,6 @@ function ParentDashboard() {
     setResetTaskMessage("Task reset successfully.");
   };
 
-  const handleCreateStep = async () => {
-    setStepMessage("");
-
-    if (!selectedTaskId || !stepOrder || !stepTitle) {
-      setStepMessage("Please complete the required step fields.");
-      return;
-    }
-
-    const existingStepsResult = await getTaskSteps(selectedTaskId);
-    const existingSteps = existingStepsResult.data || [];
-
-    if (existingSteps.length >= 5) {
-      setStepMessage("This task can only have 2 to 5 simple steps.");
-      return;
-    }
-
-    if (stepTitle.trim().length > 40) {
-      setStepMessage("Step title should be short and simple.");
-      return;
-    }
-
-    if (stepDescription && stepDescription.trim().length > 120) {
-      setStepMessage("Step description should be simple and easy to read.");
-      return;
-    }
-
-    const result = await createTaskStep({
-      task_id: selectedTaskId,
-      step_order: Number(stepOrder),
-      step_title: stepTitle.trim(),
-      step_description: stepDescription.trim(),
-      visual_hint: visualHint.trim(),
-      example_text: exampleText.trim(),
-      is_completed: false,
-      completed_at: null,
-    });
-
-    if (result.error) {
-      setStepMessage("Failed to create step.");
-      return;
-    }
-
-    await updateTaskStepCount(selectedTaskId);
-    await refreshTasks();
-
-    setSelectedTaskId("");
-    setStepOrder("");
-    setStepTitle("");
-    setStepDescription("");
-    setVisualHint("");
-    setExampleText("");
-    setStepMessage("Step created successfully.");
-  };
-
-  const handleSelectEditStepTask = async (taskId) => {
-    setEditStepTaskId(taskId);
-    setEditStepId("");
-    setEditStepOrder("");
-    setEditStepTitle("");
-    setEditStepDescription("");
-    setEditVisualHint("");
-    setEditExampleText("");
-    setEditStepMessage("");
-
-    if (!taskId) {
-      setEditableSteps([]);
-      return;
-    }
-
-    const result = await getTaskSteps(taskId);
-    setEditableSteps(result.data || []);
-  };
-
-  const handleSelectEditStep = (stepId) => {
-    setEditStepId(stepId);
-
-    const selectedStep = editableSteps.find((step) => step.step_id === stepId);
-    if (!selectedStep) return;
-
-    setEditStepOrder(selectedStep.step_order || "");
-    setEditStepTitle(selectedStep.step_title || "");
-    setEditStepDescription(selectedStep.step_description || "");
-    setEditVisualHint(selectedStep.visual_hint || "");
-    setEditExampleText(selectedStep.example_text || "");
-    setEditStepMessage("");
-  };
-
-  const handleUpdateStep = async () => {
-    setEditStepMessage("");
-
-    if (!editStepId || !editStepOrder || !editStepTitle) {
-      setEditStepMessage("Please complete the required edit step fields.");
-      return;
-    }
-
-    if (editStepTitle.trim().length > 40) {
-      setEditStepMessage("Step title should be short and simple.");
-      return;
-    }
-
-    if (editStepDescription && editStepDescription.trim().length > 120) {
-      setEditStepMessage("Step description should be simple and easy to read.");
-      return;
-    }
-
-    const result = await updateTaskStep(editStepId, {
-      step_order: Number(editStepOrder),
-      step_title: editStepTitle.trim(),
-      step_description: editStepDescription.trim(),
-      visual_hint: editVisualHint.trim(),
-      example_text: editExampleText.trim(),
-    });
-
-    if (result.error) {
-      setEditStepMessage("Failed to update step.");
-      return;
-    }
-
-    const refreshedSteps = await getTaskSteps(editStepTaskId);
-    setEditableSteps(refreshedSteps.data || []);
-    setEditStepMessage("Step updated successfully.");
-  };
-
-  const handleSelectDeleteStepTask = async (taskId) => {
-    setDeleteStepTaskId(taskId);
-    setDeleteStepId("");
-    setDeleteStepMessage("");
-
-    if (!taskId) {
-      setDeletableSteps([]);
-      return;
-    }
-
-    const result = await getTaskSteps(taskId);
-    setDeletableSteps(result.data || []);
-  };
-
-  const handleDeleteStep = async () => {
-    setDeleteStepMessage("");
-
-    if (!deleteStepId || !deleteStepTaskId) {
-      setDeleteStepMessage("Please select a step to delete.");
-      return;
-    }
-
-    const result = await deleteTaskStep(deleteStepId);
-
-    if (result.error) {
-      setDeleteStepMessage("Failed to delete step.");
-      return;
-    }
-
-    await updateTaskStepCount(deleteStepTaskId);
-
-    const refreshedSteps = await getTaskSteps(deleteStepTaskId);
-    setDeletableSteps(refreshedSteps.data || []);
-    await refreshTasks();
-
-    setDeleteStepId("");
-    setDeleteStepMessage("Step deleted successfully.");
-  };
-
   const handleCreateReward = async () => {
     setRewardMessage("");
 
@@ -590,7 +402,6 @@ function ParentDashboard() {
       >
         {[
           { id: "tasks", label: "Tasks" },
-          { id: "steps", label: "Steps" },
           { id: "rewards", label: "Rewards" },
         ].map((section) => (
           <button
@@ -801,215 +612,6 @@ function ParentDashboard() {
         </>
       )}
 
-      {activeSection === "steps" && (
-        <>
-      <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "start" }}>
-        <div className="content-card">
-          <h3>Add Step</h3>
-          <p className="page-text" style={{ marginTop: 0 }}>
-            Add 2 to 5 short, simple steps for each task.
-          </p>
-
-          <div style={sectionStyle}>
-            <select
-              value={selectedTaskId}
-              onChange={(e) => setSelectedTaskId(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Select task</option>
-              {tasks.map((task) => (
-                <option key={task.task_id} value={task.task_id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              placeholder="Step order"
-              value={stepOrder}
-              onChange={(e) => setStepOrder(e.target.value)}
-              style={inputStyle}
-            />
-
-            <input
-              type="text"
-              placeholder="Step title"
-              value={stepTitle}
-              onChange={(e) => setStepTitle(e.target.value)}
-              style={inputStyle}
-            />
-
-            <textarea
-              placeholder="Step description"
-              value={stepDescription}
-              onChange={(e) => setStepDescription(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
-
-            <input
-              type="text"
-              placeholder="Visual hint (example: 🎒)"
-              value={visualHint}
-              onChange={(e) => setVisualHint(e.target.value)}
-              style={inputStyle}
-            />
-
-            <textarea
-              placeholder="Example text"
-              value={exampleText}
-              onChange={(e) => setExampleText(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
-
-            {stepMessage && (
-              <p className="page-text" style={{ margin: 0 }}>
-                {stepMessage}
-              </p>
-            )}
-
-            <div>
-              <button className="primary-button" onClick={handleCreateStep}>
-                Add Step
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="content-card">
-          <h3>Edit Step</h3>
-
-          <div style={sectionStyle}>
-            <select
-              value={editStepTaskId}
-              onChange={(e) => handleSelectEditStepTask(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Select task for step editing</option>
-              {tasks.map((task) => (
-                <option key={task.task_id} value={task.task_id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={editStepId}
-              onChange={(e) => handleSelectEditStep(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Select step to edit</option>
-              {editableSteps.map((step) => (
-                <option key={step.step_id} value={step.step_id}>
-                  {step.step_title}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              placeholder="Edit step order"
-              value={editStepOrder}
-              onChange={(e) => setEditStepOrder(e.target.value)}
-              style={inputStyle}
-            />
-
-            <input
-              type="text"
-              placeholder="Edit step title"
-              value={editStepTitle}
-              onChange={(e) => setEditStepTitle(e.target.value)}
-              style={inputStyle}
-            />
-
-            <textarea
-              placeholder="Edit step description"
-              value={editStepDescription}
-              onChange={(e) => setEditStepDescription(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
-
-            <input
-              type="text"
-              placeholder="Edit visual hint"
-              value={editVisualHint}
-              onChange={(e) => setEditVisualHint(e.target.value)}
-              style={inputStyle}
-            />
-
-            <textarea
-              placeholder="Edit example text"
-              value={editExampleText}
-              onChange={(e) => setEditExampleText(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical" }}
-            />
-
-            {editStepMessage && (
-              <p className="page-text" style={{ margin: 0 }}>
-                {editStepMessage}
-              </p>
-            )}
-
-            <div>
-              <button className="primary-button" onClick={handleUpdateStep}>
-                Update Step
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "start" }}>
-        <div className="content-card">
-          <h3>Delete Step</h3>
-
-          <div style={sectionStyle}>
-            <select
-              value={deleteStepTaskId}
-              onChange={(e) => handleSelectDeleteStepTask(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Select task for step deletion</option>
-              {tasks.map((task) => (
-                <option key={task.task_id} value={task.task_id}>
-                  {task.title}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={deleteStepId}
-              onChange={(e) => setDeleteStepId(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Select step to delete</option>
-              {deletableSteps.map((step) => (
-                <option key={step.step_id} value={step.step_id}>
-                  {step.step_title}
-                </option>
-              ))}
-            </select>
-
-            {deleteStepMessage && (
-              <p className="page-text" style={{ margin: 0 }}>
-                {deleteStepMessage}
-              </p>
-            )}
-
-            <div>
-              <button className="secondary-button" onClick={handleDeleteStep}>
-                Delete Step
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-        </>
-      )}
 
       {activeSection === "rewards" && (
         <>

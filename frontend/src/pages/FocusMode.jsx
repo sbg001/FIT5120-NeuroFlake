@@ -7,6 +7,12 @@ import {
   completeTask,
 } from "../services";
 
+const soundMap = {
+  rain: "/rain.mp3",
+  "white-noise": "/white-noise.mp3",
+  forest: "/forest.mp3",
+};
+
 function FocusMode() {
   const [availableTasks, setAvailableTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState("");
@@ -20,6 +26,7 @@ function FocusMode() {
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isFocusActive, setIsFocusActive] = useState(false);
+  const [currentStepDone, setCurrentStepDone] = useState(false);
   const [focusMessage, setFocusMessage] = useState("");
 
   const [selectedSound, setSelectedSound] = useState("rain");
@@ -27,12 +34,6 @@ function FocusMode() {
   const [supportMode, setSupportMode] = useState("calm");
 
   const audioRef = useRef(null);
-
-  const soundMap = {
-    rain: "/rain.mp3",
-    "white-noise": "/white-noise.mp3",
-    forest: "/forest.mp3",
-  };
 
   useEffect(() => {
     async function loadFocusData() {
@@ -127,6 +128,7 @@ function FocusMode() {
     setFocusMessage("");
     setIsRunning(false);
     setIsFocusActive(false);
+    setCurrentStepDone(false);
     setSupportMode("calm");
 
     if (!taskId) return;
@@ -144,31 +146,27 @@ function FocusMode() {
 
     setCurrentStepIndex(nextIndex);
     setCurrentStep(steps[nextIndex] || null);
-  };
-
-  const refreshSteps = async (taskId) => {
-    const stepsResult = await getTaskSteps(taskId);
-    const steps = stepsResult.data || [];
-    setTaskSteps(steps);
-
-    const firstIncompleteIndex = steps.findIndex((step) => !step.is_completed);
-
-    if (firstIncompleteIndex === -1) {
-      setCurrentStep(null);
-      setFocusMessage("Task completed in focus mode.");
-      return;
-    }
-
-    setCurrentStepIndex(firstIncompleteIndex);
-    setCurrentStep(steps[firstIncompleteIndex]);
-    setFocusMessage("");
+    setCurrentStepDone(Boolean(steps[nextIndex]?.is_completed));
   };
 
   const handleMarkStepComplete = async () => {
     if (!selectedTaskId || !currentStep) return;
 
     await completeStep(selectedTaskId, currentStep.step_id);
-    await refreshSteps(selectedTaskId);
+    setTaskSteps((prevSteps) =>
+      prevSteps.map((step) =>
+        step.step_id === currentStep.step_id
+          ? { ...step, is_completed: true, completed_at: new Date().toISOString() }
+          : step
+      )
+    );
+    setCurrentStep((prevStep) =>
+      prevStep
+        ? { ...prevStep, is_completed: true, completed_at: new Date().toISOString() }
+        : prevStep
+    );
+    setCurrentStepDone(true);
+    setFocusMessage("Nice work. This step is done.");
   };
 
   const handleNextStep = () => {
@@ -179,6 +177,7 @@ function FocusMode() {
     if (nextIndex < taskSteps.length) {
       setCurrentStepIndex(nextIndex);
       setCurrentStep(taskSteps[nextIndex]);
+      setCurrentStepDone(Boolean(taskSteps[nextIndex]?.is_completed));
       setFocusMessage("");
     }
   };
@@ -191,6 +190,7 @@ function FocusMode() {
     setFocusMessage("Task completed in focus mode.");
     setIsFocusActive(false);
     setIsRunning(false);
+    setCurrentStepDone(false);
     setSupportMode("calm");
   };
 
@@ -213,6 +213,32 @@ function FocusMode() {
     setSupportMode("calm");
     setFocusMessage("");
     setIsRunning(true);
+  };
+
+  const handlePrimaryFocusAction = async () => {
+    if (!currentTask || !currentStep) return;
+
+    if (!isFocusActive) {
+      handleStartPause();
+      return;
+    }
+
+    if (supportMode === "overwhelmed") {
+      handleContinueTask();
+      return;
+    }
+
+    if (!currentStepDone) {
+      await handleMarkStepComplete();
+      return;
+    }
+
+    if (currentStepIndex >= taskSteps.length - 1) {
+      await handleCompleteTask();
+      return;
+    }
+
+    handleNextStep();
   };
 
   const handleEndFocusMode = () => {
@@ -263,6 +289,16 @@ function FocusMode() {
 
   const progressPercent =
     taskSteps.length > 0 ? ((currentStepIndex + 1) / taskSteps.length) * 100 : 0;
+
+  const primaryActionLabel = !isFocusActive
+    ? "Start Focus"
+    : supportMode === "overwhelmed"
+    ? "Continue Task"
+    : currentStepDone
+    ? currentStepIndex >= taskSteps.length - 1
+      ? "Complete Task"
+      : "Next Step"
+    : "Done With This Step";
 
   const supportCardStyle =
     supportMode === "overwhelmed"
@@ -454,7 +490,7 @@ function FocusMode() {
                   <button className="secondary-button" onClick={handleGoFaster}>
                     Go Faster
                   </button>
-                  <button className="primary-button" onClick={handleStartPause}>
+                  <button className="secondary-button" onClick={handleStartPause}>
                     {isRunning ? "Pause Timer" : "Resume Timer"}
                   </button>
                   <button className="secondary-button" onClick={handleReset}>
@@ -581,44 +617,14 @@ function FocusMode() {
               justifyContent: isFocusActive ? "center" : "flex-start",
             }}
           >
-            {isFocusActive ? (
-              supportMode === "overwhelmed" ? (
-                <>
-                  <button className="primary-button" onClick={handleContinueTask}>
-                    Continue Task
-                  </button>
-                  <button className="secondary-button" onClick={handleEndFocusMode}>
-                    End Focus Mode
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button className="primary-button" onClick={handleMarkStepComplete}>
-                    Mark Step Complete
-                  </button>
-                  <button className="secondary-button" onClick={handleNextStep}>
-                    Next Step
-                  </button>
-                  <button className="secondary-button" onClick={handleCompleteTask}>
-                    Complete Task
-                  </button>
-                  <button className="secondary-button" onClick={handleEndFocusMode}>
-                    End Focus Mode
-                  </button>
-                </>
-              )
-            ) : (
-              <>
-                <button className="secondary-button" onClick={handleNextStep}>
-                  Next Step
-                </button>
-                <button className="primary-button" onClick={handleMarkStepComplete}>
-                  Mark Step Complete
-                </button>
-                <button className="secondary-button" onClick={handleCompleteTask}>
-                  Complete Task
-                </button>
-              </>
+            <button className="primary-button" onClick={handlePrimaryFocusAction}>
+              {primaryActionLabel}
+            </button>
+
+            {isFocusActive && (
+              <button className="secondary-button" onClick={handleEndFocusMode}>
+                End Focus Mode
+              </button>
             )}
           </div>
         </div>

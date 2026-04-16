@@ -5,6 +5,19 @@ import {
 } from "../data/mockUsers";
 import { supabase } from "../lib/supabase";
 
+const mockUserPins = {
+  [mockChildProfile.user_id]: "1111",
+  [mockParentProfile.user_id]: "2222",
+};
+
+function toLoginProfile(user) {
+  return {
+    user_id: user.user_id,
+    name: user.name,
+    role: user.role,
+  };
+}
+
 export async function getChildProfile() {
   const currentUserId = localStorage.getItem("current_user_id");
 
@@ -100,19 +113,19 @@ export async function getParentChildRelation() {
 export async function getUsers() {
   if (!supabase) {
     return {
-      data: [mockChildProfile, mockParentProfile],
+      data: [toLoginProfile(mockChildProfile), toLoginProfile(mockParentProfile)],
       error: null,
     };
   }
 
   const { data, error } = await supabase
     .from("users")
-    .select("*")
+    .select("user_id, name, role, created_at")
     .order("created_at", { ascending: true });
 
   if (error || !data || data.length === 0) {
     return {
-      data: [mockChildProfile, mockParentProfile],
+      data: [toLoginProfile(mockChildProfile), toLoginProfile(mockParentProfile)],
       error: null,
     };
   }
@@ -133,7 +146,7 @@ export async function loginWithPin(userId, pinCode) {
       return { data: null, error: "User not found." };
     }
 
-    if (String(matchedUser.pin_code) !== normalizedPinCode) {
+    if (String(mockUserPins[matchedUser.user_id]) !== normalizedPinCode) {
       return { data: null, error: "Invalid PIN." };
     }
 

@@ -1,5 +1,6 @@
 export * from "./userService";
 export * from "./taskService";
+export * from "./taskBreakdownService";
 export * from "./rewardService";
 export * from "./progressService";
 export * from "./emotionServices";

@@ -1,18 +1,29 @@
 import { NavLink, useNavigate } from "react-router-dom";
 
-// Accept the onOpenAssistant prop passed down from AppLayout
 function TopNav({ onOpenAssistant }) {
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("current_user_id");
+  const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
 
-  const navItems = [
+  const childNavItems = [
     { to: "/home", label: "Home" },
-    { to: "/child", label: "Child" },
-    { to: "/tasks/a1111111-1111-1111-1111-111111111111", label: "Tasks" },
+    { to: "/child", label: "Tasks" },
     { to: "/focus", label: "Focus" },
     { to: "/rewards", label: "Rewards" },
-    { to: "/parent", label: "Parent" },
   ];
+
+  const parentNavItems = [
+    { to: "/home", label: "Home" },
+    { to: "/parent", label: "Parent Dashboard" },
+  ];
+
+  const guestNavItems = [{ to: "/", label: "Home" }];
+
+  const navItems = !isLoggedIn
+    ? guestNavItems
+    : currentRole === "parent"
+    ? parentNavItems
+    : childNavItems;
 
   const handleLogout = () => {
     localStorage.removeItem("current_user_id");
@@ -28,7 +39,9 @@ function TopNav({ onOpenAssistant }) {
   return (
     <header className="top-nav">
       <div className="brand-block">
-        <div className="brand-mark">N</div>
+        <div className="brand-mark">
+          <img src="/logo.png" alt="NeuroFlake logo" />
+        </div>
         <div>
           <h1 className="brand-title">NeuroFlake</h1>
           <p className="brand-subtitle">Building Connections that Last</p>
@@ -60,20 +73,22 @@ function TopNav({ onOpenAssistant }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <button
-            onClick={onOpenAssistant}
-            className="primary-button"
-            style={{
-              padding: "0.5rem 1rem",
-              borderRadius: "20px",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.9rem",
-            }}
-          >
-            Task Help
-          </button>
+          {isLoggedIn && currentRole !== "parent" && (
+            <button
+              onClick={onOpenAssistant}
+              className="primary-button"
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "20px",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.9rem",
+              }}
+            >
+              Task Help
+            </button>
+          )}
 
           {!isLoggedIn && (
             <button

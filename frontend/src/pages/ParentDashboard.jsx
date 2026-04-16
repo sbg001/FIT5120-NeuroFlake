@@ -14,6 +14,7 @@ import {
   deleteTask,
   deleteTaskStep,
   resetTaskStatus,
+  generateTaskSteps,
   getAllRewardsForParent,
   createParentReward,
   updateParentReward,
@@ -21,6 +22,7 @@ import {
 } from "../services";
 
 function ParentDashboard() {
+  const [activeSection, setActiveSection] = useState("tasks");
   const [parentProfile, setParentProfile] = useState(null);
   const [childProfile, setChildProfile] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -31,6 +33,7 @@ function ParentDashboard() {
   const [priorityType, setPriorityType] = useState("");
   const [priorityRank, setPriorityRank] = useState("");
   const [createMessage, setCreateMessage] = useState("");
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [stepOrder, setStepOrder] = useState("");
@@ -128,6 +131,15 @@ function ParentDashboard() {
     gap: "1rem",
   };
 
+  const sectionButtonStyle = {
+    border: "1px solid #d8dbe8",
+    borderRadius: "14px",
+    padding: "0.85rem 1rem",
+    fontSize: "1rem",
+    fontWeight: 700,
+    cursor: "pointer",
+  };
+
   const handleCreateTask = async () => {
     setCreateMessage("");
 
@@ -135,6 +147,8 @@ function ParentDashboard() {
       setCreateMessage("Please complete all task fields.");
       return;
     }
+
+    setIsCreatingTask(true);
 
     const result = await createTask({
       child_id: childProfile.user_id,
@@ -150,16 +164,56 @@ function ParentDashboard() {
 
     if (result.error) {
       setCreateMessage("Failed to create task.");
+      setIsCreatingTask(false);
       return;
     }
 
+    const createdTask = result.data;
+    const generatedStepsResult = await generateTaskSteps(title, description);
+    const generatedSteps = generatedStepsResult.data || [];
+
+    if (generatedSteps.length < 2 || generatedSteps.length > 5) {
+      setCreateMessage("Task created, but steps could not be generated.");
+      setIsCreatingTask(false);
+      await refreshTasks();
+      return;
+    }
+
+    const stepResults = await Promise.all(
+      generatedSteps.map((step, index) =>
+        createTaskStep({
+          task_id: createdTask.task_id,
+          step_order: index + 1,
+          step_title: step.step_title,
+          step_description: step.step_description,
+          visual_hint: step.visual_hint || "",
+          example_text: step.example_text || "",
+          is_completed: false,
+          completed_at: null,
+        })
+      )
+    );
+
+    if (stepResults.some((stepResult) => stepResult.error)) {
+      setCreateMessage("Task created, but some steps could not be saved.");
+      setIsCreatingTask(false);
+      await refreshTasks();
+      return;
+    }
+
+    await updateTaskStepCount(createdTask.task_id);
     await refreshTasks();
 
     setTitle("");
     setDescription("");
     setPriorityType("");
     setPriorityRank("");
-    setCreateMessage("Task created successfully.");
+    setCreateMessage(
+      generatedStepsResult.usedFallback
+        ? "Task created with simple local steps. The AI helper was not available."
+        : "Task created with smaller steps."
+    );
+    setIsCreatingTask(false);
   };
 
   const handleSelectEditTask = (taskId) => {
@@ -525,11 +579,43 @@ function ParentDashboard() {
         </InfoCard>
       </div>
 
+      <div
+        className="content-card"
+        style={{
+          marginTop: "1.5rem",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        {[
+          { id: "tasks", label: "Tasks" },
+          { id: "steps", label: "Steps" },
+          { id: "rewards", label: "Rewards" },
+        ].map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => setActiveSection(section.id)}
+            style={{
+              ...sectionButtonStyle,
+              background: activeSection === section.id ? "#5b8def" : "#f8faff",
+              color: activeSection === section.id ? "#ffffff" : "#4476d9",
+            }}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
+
+      {activeSection === "tasks" && (
+        <>
       <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "start" }}>
         <div className="content-card">
           <h3>Create Task</h3>
           <p className="page-text" style={{ marginTop: 0 }}>
-            Create the main task first, then add 2 to 5 short and simple steps below.
+            Create the main task and NeuroFlake will make 2 to 5 smaller steps.
+            You can still edit the steps after.
           </p>
 
           <div style={sectionStyle}>
@@ -574,8 +660,12 @@ function ParentDashboard() {
             {createMessage && <p className="page-text" style={{ margin: 0 }}>{createMessage}</p>}
 
             <div>
-              <button className="primary-button" onClick={handleCreateTask}>
-                Create Task
+              <button
+                className="primary-button"
+                onClick={handleCreateTask}
+                disabled={isCreatingTask}
+              >
+                {isCreatingTask ? "Creating Steps..." : "Create Task With Steps"}
               </button>
             </div>
           </div>
@@ -708,7 +798,11 @@ function ParentDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
+      {activeSection === "steps" && (
+        <>
       <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "start" }}>
         <div className="content-card">
           <h3>Add Step</h3>
@@ -914,7 +1008,11 @@ function ParentDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
+      {activeSection === "rewards" && (
+        <>
       <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "start" }}>
         <div className="content-card">
           <h3>Create Reward</h3>
@@ -1080,6 +1178,8 @@ function ParentDashboard() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </section>
   );
 }

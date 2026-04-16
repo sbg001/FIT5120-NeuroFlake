@@ -15,6 +15,7 @@ function TaskFlow() {
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [taskReady, setTaskReady] = useState(true);
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -26,8 +27,13 @@ function TaskFlow() {
       const { data: taskData } = await getTaskById(taskId);
       const { data: stepsData } = await getTaskSteps(taskId);
 
+      const orderedSteps = stepsData || [];
+      const validStepCount =
+        orderedSteps.length >= 2 && orderedSteps.length <= 5;
+
       setTask(taskData);
-      setSteps(stepsData || []);
+      setSteps(orderedSteps);
+      setTaskReady(validStepCount);
       setCurrentStepIndex(0);
       setLoading(false);
     }
@@ -38,7 +44,8 @@ function TaskFlow() {
   }, [taskId]);
 
   const currentStep = steps[currentStepIndex];
-  console.log("currentStep data:", currentStep);
+  const progressPercent =
+    steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0;
 
   const handleNext = async () => {
     if (!currentStep) return;
@@ -46,18 +53,17 @@ function TaskFlow() {
     await completeStep(taskId, currentStep.step_id);
 
     if (currentStepIndex < steps.length - 1) {
-      setSteps((prevSteps) =>
-        prevSteps.map((step, index) =>
-          index === currentStepIndex
-            ? {
-                ...step,
-                is_completed: true,
-                completed_at: new Date().toISOString(),
-              }
-            : step
-        )
+      const updatedSteps = steps.map((step, index) =>
+        index === currentStepIndex
+          ? {
+              ...step,
+              is_completed: true,
+              completed_at: new Date().toISOString(),
+            }
+          : step
       );
 
+      setSteps(updatedSteps);
       setCurrentStepIndex((prev) => prev + 1);
     } else {
       await completeTask(taskId);
@@ -98,7 +104,7 @@ function TaskFlow() {
           : prevTask
       );
 
-      navigate("/rewards");
+      navigate("/rewards", { state: { showCelebration: true } });
     }
   };
 
@@ -114,6 +120,20 @@ function TaskFlow() {
     return <p className="page-text">No task available</p>;
   }
 
+  if (!taskReady) {
+    return (
+      <section className="page-section">
+        <div className="content-card">
+          <p className="eyebrow">Task Flow</p>
+          <h2 className="page-title">{task.title}</h2>
+          <p className="page-text">
+            This task needs 2 to 5 simple steps before it can start.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="page-section">
       <div className="content-card">
@@ -124,10 +144,47 @@ function TaskFlow() {
         <p className="page-text">
           Step {currentStepIndex + 1} of {steps.length}
         </p>
+
+        <div
+          style={{
+            width: "100%",
+            height: "10px",
+            backgroundColor: "#e9edf7",
+            borderRadius: "999px",
+            overflow: "hidden",
+            marginTop: "0.75rem",
+          }}
+        >
+          <div
+            style={{
+              width: `${progressPercent}%`,
+              height: "100%",
+              backgroundColor: "#6c8ff0",
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="content-card">
+        <p className="eyebrow">Step Plan</p>
+        {steps.map((step, index) => (
+          <p
+            key={step.step_id}
+            style={{
+              margin: "0.45rem 0",
+              fontWeight: index === currentStepIndex ? 700 : 400,
+              opacity: step.is_completed ? 0.7 : 1,
+            }}
+          >
+            {step.is_completed ? "✅" : index === currentStepIndex ? "👉" : "•"}{" "}
+            {index + 1}. {step.step_title}
+          </p>
+        ))}
       </div>
 
       {currentStep && (
         <div className="hero-card">
+          <p className="eyebrow">Current Step</p>
           <h3>{currentStep.step_title}</h3>
           <p>{currentStep.step_description}</p>
 
@@ -136,8 +193,24 @@ function TaskFlow() {
           )}
 
           {currentStep.example_text && (
-            <p className="page-text">Example: {currentStep.example_text}</p>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                borderRadius: "16px",
+                backgroundColor: "#f8faff",
+                border: "1px solid #d8dbe8",
+              }}
+            >
+              <p className="page-text" style={{ margin: 0 }}>
+                Try this: {currentStep.example_text}
+              </p>
+            </div>
           )}
+
+          <p className="page-text" style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+            Start with this step, then move forward one step at a time.
+          </p>
 
           <div className="button-row">
             <button
@@ -145,11 +218,13 @@ function TaskFlow() {
               onClick={handleNext}
               disabled={!currentStep}
             >
-              {currentStepIndex === steps.length - 1
+              {currentStepIndex === 0
+                ? "Start Task"
+                : currentStepIndex === steps.length - 1
                 ? task.status === "completed"
                   ? "Task Completed"
                   : "Finish Task"
-                : "Next Step"}
+                : "Mark Step Complete"}
             </button>
           </div>
         </div>

@@ -5,3 +5,4 @@ export * from "./progressService";
 export * from "./emotionServices";
 export * from "./routineService";
 export * from "./focusService";
+export * from "./userService";

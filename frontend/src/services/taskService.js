@@ -357,6 +357,61 @@ export async function updateTaskStepCount(taskId) {
 }
 
 // =======================
+// RESET TASK STATUS
+// =======================
+export async function resetTaskStatus(taskId) {
+  const normalizedTaskId = String(taskId);
+  const now = new Date().toISOString();
+
+  if (!supabase) {
+    const task =
+      mockTasks.find((item) => String(item.task_id) === normalizedTaskId) || null;
+
+    if (!task) {
+      return { data: null, error: "Task not found." };
+    }
+
+    task.status = "pending";
+    task.completed_steps = 0;
+
+    if (task.steps && Array.isArray(task.steps)) {
+      task.steps.forEach((step) => {
+        step.is_completed = false;
+        step.completed_at = null;
+      });
+    }
+
+    return { data: task, error: null };
+  }
+
+  await supabase
+    .from("task_steps")
+    .update({
+      is_completed: false,
+      completed_at: null,
+    })
+    .eq("task_id", normalizedTaskId);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({
+      status: "pending",
+      completed_steps: 0,
+      updated_at: now,
+    })
+    .eq("task_id", normalizedTaskId)
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
 // COMPLETE STEP
 // =======================
 export async function completeStep(taskId, stepId) {
@@ -406,6 +461,33 @@ export async function completeStep(taskId, stepId) {
     return { data: null, error };
   }
 
+  const { count } = await supabase
+    .from("task_steps")
+    .select("*", { count: "exact", head: true })
+    .eq("task_id", normalizedTaskId)
+    .eq("is_completed", true);
+
+  const completedSteps = count || 0;
+
+  const { data: taskData } = await supabase
+    .from("tasks")
+    .select("total_steps")
+    .eq("task_id", normalizedTaskId)
+    .limit(1)
+    .maybeSingle();
+
+  const shouldBeCompleted =
+    completedSteps > 0 && completedSteps === (taskData?.total_steps || 0);
+
+  await supabase
+    .from("tasks")
+    .update({
+      completed_steps: completedSteps,
+      status: shouldBeCompleted ? "completed" : "in_progress",
+      updated_at: now,
+    })
+    .eq("task_id", normalizedTaskId);
+
   return { data, error: null };
 }
 
@@ -435,10 +517,26 @@ export async function completeTask(taskId) {
     return { data: task, error: null };
   }
 
+  const { data: taskData } = await supabase
+    .from("tasks")
+    .select("total_steps")
+    .eq("task_id", normalizedTaskId)
+    .limit(1)
+    .maybeSingle();
+
+  await supabase
+    .from("task_steps")
+    .update({
+      is_completed: true,
+      completed_at: now,
+    })
+    .eq("task_id", normalizedTaskId);
+
   const { error } = await supabase
     .from("tasks")
     .update({
       status: "completed",
+      completed_steps: taskData?.total_steps || 0,
       updated_at: now,
     })
     .eq("task_id", normalizedTaskId);
@@ -448,7 +546,11 @@ export async function completeTask(taskId) {
   }
 
   return {
-    data: { task_id: normalizedTaskId, status: "completed" },
+    data: {
+      task_id: normalizedTaskId,
+      status: "completed",
+      completed_steps: taskData?.total_steps || 0,
+    },
     error: null,
   };
 }

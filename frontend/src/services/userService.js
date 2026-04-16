@@ -6,14 +6,32 @@ import {
 import { supabase } from "../lib/supabase";
 
 export async function getChildProfile() {
+  const currentUserId = localStorage.getItem("current_user_id");
+
   if (!supabase) {
     return { data: mockChildProfile, error: null };
+  }
+
+  if (currentUserId) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("user_id", currentUserId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      const normalizedRole = String(data.role || "").toLowerCase();
+      if (normalizedRole === "child") {
+        return { data, error: null };
+      }
+    }
   }
 
   const { data, error } = await supabase
     .from("users")
     .select("*")
-    .eq("role", "child")
+    .ilike("role", "child")
     .limit(1)
     .maybeSingle();
 
@@ -25,14 +43,32 @@ export async function getChildProfile() {
 }
 
 export async function getParentProfile() {
+  const currentUserId = localStorage.getItem("current_user_id");
+
   if (!supabase) {
     return { data: mockParentProfile, error: null };
+  }
+
+  if (currentUserId) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("user_id", currentUserId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!error && data) {
+      const normalizedRole = String(data.role || "").toLowerCase();
+      if (normalizedRole === "parent") {
+        return { data, error: null };
+      }
+    }
   }
 
   const { data, error } = await supabase
     .from("users")
     .select("*")
-    .eq("role", "parent")
+    .ilike("role", "parent")
     .limit(1)
     .maybeSingle();
 
@@ -118,6 +154,71 @@ export async function loginWithPin(userId, pinCode) {
 
   if (!data) {
     return { data: null, error: "Invalid PIN." };
+  }
+
+  return { data, error: null };
+}
+// =======================
+// GET CHILD PREFERENCES
+// =======================
+export async function getChildPreferences() {
+  const childProfileResult = await getChildProfile();
+  const childProfile = childProfileResult.data;
+
+  const fallbackPreferences = {
+    child_id: childProfile?.user_id || null,
+    theme: "fun",
+    character_style: "star",
+    reward_interest: "games",
+  };
+
+  if (!supabase || !childProfile?.user_id) {
+    return { data: fallbackPreferences, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("child_preferences")
+    .select("*")
+    .eq("child_id", childProfile.user_id)
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { data: fallbackPreferences, error: null };
+  }
+
+  return { data, error: null };
+}
+
+// =======================
+// UPSERT CHILD PREFERENCES
+// =======================
+export async function upsertChildPreferences(payload) {
+  const childProfileResult = await getChildProfile();
+  const childProfile = childProfileResult.data;
+  const childId = payload.child_id || childProfile?.user_id;
+
+  const preferencePayload = {
+    child_id: childId,
+    theme: payload.theme || "fun",
+    character_style: payload.character_style || "star",
+    reward_interest: payload.reward_interest || "games",
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!supabase || !childId) {
+    return { data: preferencePayload, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from("child_preferences")
+    .upsert(preferencePayload, { onConflict: "child_id" })
+    .select()
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { data: preferencePayload, error: null };
   }
 
   return { data, error: null };

@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { getTasks, getTaskSteps, getChildProfile, completeStep, completeTask } from "../services";
+import {
+  getTasks,
+  getTaskSteps,
+  getChildProfile,
+  completeStep,
+  completeTask,
+} from "../services";
 
 function FocusMode() {
   const [availableTasks, setAvailableTasks] = useState([]);
@@ -9,14 +15,15 @@ function FocusMode() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [currentStep, setCurrentStep] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [isFocusActive, setIsFocusActive] = useState(false);
   const [focusMessage, setFocusMessage] = useState("");
 
   const [selectedSound, setSelectedSound] = useState("rain");
   const [isSoundPlaying, setIsSoundPlaying] = useState(false);
-
   const [supportMode, setSupportMode] = useState("calm");
 
   const audioRef = useRef(null);
@@ -105,7 +112,9 @@ function FocusMode() {
 
     if (supportMode === "overwhelmed") {
       setIsRunning(false);
-      setFocusMessage("It is okay to pause. Take a breath, listen to a calming sound, and return when ready.");
+      setFocusMessage(
+        "It is okay to pause. Take a breath, listen to a calming sound, and return when ready."
+      );
     }
   }, [supportMode]);
 
@@ -117,6 +126,8 @@ function FocusMode() {
     setCurrentStepIndex(0);
     setFocusMessage("");
     setIsRunning(false);
+    setIsFocusActive(false);
+    setSupportMode("calm");
 
     if (!taskId) return;
 
@@ -178,12 +189,41 @@ function FocusMode() {
     await completeTask(selectedTaskId);
     setCurrentStep(null);
     setFocusMessage("Task completed in focus mode.");
+    setIsFocusActive(false);
+    setIsRunning(false);
+    setSupportMode("calm");
   };
 
-  const formatTime = (totalSeconds) => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  const handleStartPause = () => {
+    if (!currentTask || !currentStep) return;
+
+    if (!isFocusActive) {
+      setIsFocusActive(true);
+      if (supportMode !== "overwhelmed") {
+        setIsRunning(true);
+      }
+      return;
+    }
+
+    if (supportMode === "overwhelmed") return;
+    setIsRunning((prev) => !prev);
+  };
+
+  const handleContinueTask = () => {
+    setSupportMode("calm");
+    setFocusMessage("");
+    setIsRunning(true);
+  };
+
+  const handleEndFocusMode = () => {
+    setIsFocusActive(false);
+    setIsRunning(false);
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    setSecondsLeft(durationMinutes * 60);
+    setIsFocusActive(false);
   };
 
   const handleGoSlower = () => {
@@ -194,16 +234,6 @@ function FocusMode() {
   const handleGoFaster = () => {
     setDurationMinutes((prev) => Math.max(5, prev - 5));
     setIsRunning(false);
-  };
-
-  const handleStartPause = () => {
-    if (supportMode === "overwhelmed") return;
-    setIsRunning((prev) => !prev);
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
-    setSecondsLeft(durationMinutes * 60);
   };
 
   const handleToggleSound = async () => {
@@ -225,20 +255,20 @@ function FocusMode() {
     }
   };
 
+  const formatTime = (totalSeconds) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
   const progressPercent =
     taskSteps.length > 0 ? ((currentStepIndex + 1) / taskSteps.length) * 100 : 0;
 
   const supportCardStyle =
     supportMode === "overwhelmed"
-      ? {
-          backgroundColor: "#fff4f4",
-          border: "1px solid #ffd6d6",
-        }
+      ? { backgroundColor: "#fff4f4", border: "1px solid #ffd6d6" }
       : supportMode === "support"
-      ? {
-          backgroundColor: "#f8faff",
-          border: "1px solid #d8e4ff",
-        }
+      ? { backgroundColor: "#f8faff", border: "1px solid #d8e4ff" }
       : {};
 
   if (loading) {
@@ -251,257 +281,356 @@ function FocusMode() {
 
   return (
     <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Focus Mode</p>
-        <h2 className="page-title">A calm space to focus on one step at a time</h2>
-        <p className="page-text">
-          This screen is designed to reduce distractions and help the child stay
-          calm, clear, and supported while completing the current step.
-        </p>
-      </div>
-
-      <div className="content-card">
-        <h3 style={{ marginBottom: "1rem" }}>Choose a task to focus on</h3>
-
-        <select
-          value={selectedTaskId}
-          onChange={(e) => handleTaskChange(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "0.9rem 1rem",
-            borderRadius: "16px",
-            border: "1px solid #d8dbe8",
-            fontSize: "1rem",
-          }}
-        >
-          <option value="">Select a task</option>
-          {availableTasks.map((task) => (
-            <option key={task.task_id} value={task.task_id}>
-              {task.title}
-              {task.priority_type
-                ? ` - ${task.priority_type} (${task.priority_rank})`
-                : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="content-card">
-        <h3 style={{ marginBottom: "1rem" }}>Support Mode</h3>
-        <p className="page-text">
-          Choose how you are feeling, and the focus space will adjust to support you.
-        </p>
-
-        <div className="button-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
-          <button
-            className={supportMode === "calm" ? "primary-button" : "secondary-button"}
-            onClick={() => setSupportMode("calm")}
-          >
-            Feeling Calm
-          </button>
-          <button
-            className={supportMode === "support" ? "primary-button" : "secondary-button"}
-            onClick={() => setSupportMode("support")}
-          >
-            Need More Support
-          </button>
-          <button
-            className={supportMode === "overwhelmed" ? "primary-button" : "secondary-button"}
-            onClick={() => setSupportMode("overwhelmed")}
-          >
-            Feeling Overwhelmed
-          </button>
+      {!isFocusActive && (
+        <div className="section-header">
+          <p className="eyebrow">Focus Mode</p>
+          <h2 className="page-title">A calm space to focus on one step at a time</h2>
+          <p className="page-text">
+            Set your task and timer, then begin your focus session.
+          </p>
         </div>
+      )}
 
-        {focusMessage && (
-          <div
-            style={{
-              marginTop: "1rem",
-              padding: "1rem",
-              borderRadius: "16px",
-              ...supportCardStyle,
-            }}
-          >
-            <p className="page-text" style={{ margin: 0 }}>
-              {focusMessage}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="content-card" style={{ textAlign: "center" }}>
-        <h3 style={{ marginBottom: "0.5rem" }}>Focus Timer</h3>
-        <p
-          style={{
-            fontSize: "3rem",
-            fontWeight: 700,
-            margin: "0.5rem 0 1rem 0",
-          }}
-        >
-          {formatTime(secondsLeft)}
-        </p>
-        <p className="page-text">Current pacing: {durationMinutes} minutes</p>
-
-        <div
-          className="button-row"
-          style={{ justifyContent: "center", flexWrap: "wrap", gap: "0.75rem" }}
-        >
-          <button className="secondary-button" onClick={handleGoSlower}>
-            Go Slower
-          </button>
-          <button className="secondary-button" onClick={handleGoFaster}>
-            Go Faster
-          </button>
-          <button className="primary-button" onClick={handleStartPause}>
-            {isRunning ? "Pause" : "Start"}
-          </button>
-          <button className="secondary-button" onClick={handleReset}>
-            Reset
-          </button>
-        </div>
-      </div>
-
-      <div className="content-card">
-        <h3 style={{ marginBottom: "1rem" }}>Calming Audio</h3>
-        <p className="page-text">
-          Choose a calming sound to make the focus session feel more comfortable.
-        </p>
-
-        <div className="button-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
-          <button
-            className={selectedSound === "rain" ? "primary-button" : "secondary-button"}
-            onClick={() => setSelectedSound("rain")}
-          >
-            Rain
-          </button>
-          <button
-            className={selectedSound === "white-noise" ? "primary-button" : "secondary-button"}
-            onClick={() => setSelectedSound("white-noise")}
-          >
-            White Noise
-          </button>
-          <button
-            className={selectedSound === "forest" ? "primary-button" : "secondary-button"}
-            onClick={() => setSelectedSound("forest")}
-          >
-            Forest
-          </button>
-          <button className="secondary-button" onClick={handleToggleSound}>
-            {isSoundPlaying ? "Stop Sound" : "Play Sound"}
-          </button>
-        </div>
-
-        <p className="page-text" style={{ marginTop: "1rem" }}>
-          Current sound: {selectedSound} {isSoundPlaying ? "(playing)" : "(stopped)"}
-        </p>
-
-        <audio ref={audioRef} hidden />
-      </div>
-
-      <div className="hero-card" style={supportCardStyle}>
-        {currentTask && currentStep ? (
-          <>
-            <p className="eyebrow">Current Focus Step</p>
-            <h3 style={{ fontSize: supportMode === "overwhelmed" ? "2.4rem" : "2rem", marginBottom: "0.75rem" }}>
-              {currentStep.step_title}
-            </h3>
-
-            <p className="page-text" style={{ marginBottom: "0.75rem" }}>
-              Task: {currentTask.title}
-            </p>
-
-            <p className="page-text" style={{ marginBottom: "0.5rem" }}>
-              Step {currentStepIndex + 1} of {taskSteps.length}
-            </p>
-
-            <div
+      {!isFocusActive && (
+        <>
+          <div className="content-card">
+            <h3 style={{ marginBottom: "1rem" }}>Choose a task to focus on</h3>
+            <select
+              value={selectedTaskId}
+              onChange={(e) => handleTaskChange(e.target.value)}
               style={{
                 width: "100%",
-                height: "10px",
-                backgroundColor: "#e9edf7",
-                borderRadius: "999px",
-                overflow: "hidden",
-                marginBottom: "1rem",
+                padding: "0.9rem 1rem",
+                borderRadius: "16px",
+                border: "1px solid #d8dbe8",
+                fontSize: "1rem",
               }}
             >
-              <div
-                style={{
-                  width: `${progressPercent}%`,
-                  height: "100%",
-                  backgroundColor: "#6c8ff0",
-                }}
-              />
-            </div>
+              <option value="">Select a task</option>
+              {availableTasks.map((task) => (
+                <option key={task.task_id} value={task.task_id}>
+                  {task.title}
+                  {task.priority_type
+                    ? ` - ${task.priority_type} (${task.priority_rank})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {currentStep.visual_hint && (
-              <p style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>
-                {currentStep.visual_hint}
-              </p>
-            )}
-
-            {currentStep.step_description && (
-              <p className="page-text" style={{ fontSize: supportMode === "overwhelmed" ? "1.25rem" : "1.15rem" }}>
-                {currentStep.step_description}
-              </p>
-            )}
-
-            {currentStep.example_text && (
-              <div
-                style={{
-                  marginTop: "1rem",
-                  padding: "1rem",
-                  borderRadius: "16px",
-                  backgroundColor: "#f8faff",
-                  border: "1px solid #d8dbe8",
-                }}
-              >
-                <p className="page-text" style={{ margin: 0 }}>
-                  Example: {currentStep.example_text}
-                </p>
-              </div>
-            )}
-
-            {supportMode === "overwhelmed" && (
-              <div
-                style={{
-                  marginTop: "1rem",
-                  padding: "1rem",
-                  borderRadius: "16px",
-                  backgroundColor: "#fffdf4",
-                  border: "1px solid #f5e6a8",
-                }}
-              >
-                <p className="page-text" style={{ margin: 0 }}>
-                  Try this: breathe in for 4 seconds, hold for 4 seconds, and breathe out for 4 seconds.
-                </p>
-              </div>
-            )}
+          <div className="content-card" style={{ textAlign: "center" }}>
+            <h3 style={{ marginBottom: "0.5rem" }}>Focus Timer</h3>
+            <p
+              style={{
+                fontSize: "3rem",
+                fontWeight: 700,
+                margin: "0.5rem 0 1rem 0",
+              }}
+            >
+              {formatTime(secondsLeft)}
+            </p>
+            <p className="page-text">Current pacing: {durationMinutes} minutes</p>
 
             <div
               className="button-row"
-              style={{ marginTop: "1.25rem", flexWrap: "wrap", gap: "0.75rem" }}
+              style={{ justifyContent: "center", flexWrap: "wrap", gap: "0.75rem" }}
             >
-              <button className="secondary-button" onClick={handleNextStep}>
-                Next Step
+              <button className="secondary-button" onClick={handleGoSlower}>
+                Go Slower
               </button>
-              <button className="primary-button" onClick={handleMarkStepComplete}>
-                Mark Step Complete
+              <button className="secondary-button" onClick={handleGoFaster}>
+                Go Faster
               </button>
-              <button className="secondary-button" onClick={handleCompleteTask}>
-                Complete Task
+              <button className="primary-button" onClick={handleStartPause}>
+                Start Focus
+              </button>
+              <button className="secondary-button" onClick={handleReset}>
+                Reset
               </button>
             </div>
-          </>
-        ) : (
-          <>
-            <p className="eyebrow">No Task Selected</p>
-            <h3>Select a task to begin focus mode</h3>
-            <p className="page-text">
-              Choose one task from the list above to load its current step.
+          </div>
+        </>
+      )}
+
+      {currentTask && currentStep ? (
+        <div
+          className="hero-card"
+          style={{
+            ...supportCardStyle,
+            ...(isFocusActive ? { padding: "2rem" } : {}),
+          }}
+        >
+          <p className="eyebrow">{isFocusActive ? "Focus Session" : "Current Focus Step"}</p>
+
+          <h3
+            style={{
+              fontSize: isFocusActive
+                ? "2.5rem"
+                : supportMode === "overwhelmed"
+                ? "2.4rem"
+                : "2rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            {currentStep.step_title}
+          </h3>
+
+          <p
+            className="page-text"
+            style={{
+              marginBottom: "0.75rem",
+              fontWeight: isFocusActive ? 700 : 400,
+            }}
+          >
+            Task: {currentTask.title}
+          </p>
+
+          <p className="page-text" style={{ marginBottom: "0.5rem" }}>
+            Step {currentStepIndex + 1} of {taskSteps.length}
+          </p>
+
+          <div
+            style={{
+              width: "100%",
+              height: "10px",
+              backgroundColor: "#e9edf7",
+              borderRadius: "999px",
+              overflow: "hidden",
+              marginBottom: "1rem",
+            }}
+          >
+            <div
+              style={{
+                width: `${progressPercent}%`,
+                height: "100%",
+                backgroundColor: "#6c8ff0",
+              }}
+            />
+          </div>
+
+          {currentStep.visual_hint && (
+            <p style={{ fontSize: isFocusActive ? "2.4rem" : "2rem", marginBottom: "0.75rem" }}>
+              {currentStep.visual_hint}
             </p>
-          </>
-        )}
-      </div>
+          )}
+
+          {currentStep.step_description && (
+            <p
+              className="page-text"
+              style={{
+                fontSize: isFocusActive
+                  ? "1.3rem"
+                  : supportMode === "overwhelmed"
+                  ? "1.25rem"
+                  : "1.15rem",
+              }}
+            >
+              {currentStep.step_description}
+            </p>
+          )}
+
+          {isFocusActive && (
+            <>
+              <div className="content-card" style={{ marginTop: "1.25rem", textAlign: "center" }}>
+                <h3 style={{ marginBottom: "0.5rem" }}>Focus Timer</h3>
+                <p
+                  style={{
+                    fontSize: "3rem",
+                    fontWeight: 700,
+                    margin: "0.5rem 0 1rem 0",
+                  }}
+                >
+                  {formatTime(secondsLeft)}
+                </p>
+                <p className="page-text">Current pacing: {durationMinutes} minutes</p>
+
+                <div
+                  className="button-row"
+                  style={{ justifyContent: "center", flexWrap: "wrap", gap: "0.75rem" }}
+                >
+                  <button className="secondary-button" onClick={handleGoSlower}>
+                    Go Slower
+                  </button>
+                  <button className="secondary-button" onClick={handleGoFaster}>
+                    Go Faster
+                  </button>
+                  <button className="primary-button" onClick={handleStartPause}>
+                    {isRunning ? "Pause Timer" : "Resume Timer"}
+                  </button>
+                  <button className="secondary-button" onClick={handleReset}>
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <div className="content-card" style={{ marginTop: "1.25rem", ...supportCardStyle }}>
+                <h3 style={{ marginBottom: "1rem" }}>Support Mode</h3>
+
+                <div className="button-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
+                  <button
+                    className={supportMode === "calm" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSupportMode("calm")}
+                  >
+                    Feeling Calm
+                  </button>
+                  <button
+                    className={supportMode === "support" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSupportMode("support")}
+                  >
+                    Need More Support
+                  </button>
+                  <button
+                    className={supportMode === "overwhelmed" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSupportMode("overwhelmed")}
+                  >
+                    Feeling Overwhelmed
+                  </button>
+                </div>
+
+                {focusMessage && (
+                  <div
+                    style={{
+                      marginTop: "1rem",
+                      padding: "1rem",
+                      borderRadius: "16px",
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #d8dbe8",
+                    }}
+                  >
+                    <p className="page-text" style={{ margin: 0 }}>
+                      {focusMessage}
+                    </p>
+                  </div>
+                )}
+
+                {supportMode === "overwhelmed" && (
+                  <div
+                    style={{
+                      marginTop: "1rem",
+                      padding: "1rem",
+                      borderRadius: "16px",
+                      backgroundColor: "#fffdf4",
+                      border: "1px solid #f5e6a8",
+                    }}
+                  >
+                    <p className="page-text" style={{ margin: 0 }}>
+                      Try this: take one slow breath, listen to a calming sound, and start again when ready.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="content-card" style={{ marginTop: "1.25rem" }}>
+                <h3 style={{ marginBottom: "1rem" }}>Calming Audio</h3>
+
+                <div className="button-row" style={{ flexWrap: "wrap", gap: "0.75rem" }}>
+                  <button
+                    className={selectedSound === "rain" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSelectedSound("rain")}
+                  >
+                    Rain
+                  </button>
+                  <button
+                    className={selectedSound === "white-noise" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSelectedSound("white-noise")}
+                  >
+                    White Noise
+                  </button>
+                  <button
+                    className={selectedSound === "forest" ? "primary-button" : "secondary-button"}
+                    onClick={() => setSelectedSound("forest")}
+                  >
+                    Forest
+                  </button>
+                  <button className="secondary-button" onClick={handleToggleSound}>
+                    {isSoundPlaying ? "Stop Sound" : "Play Sound"}
+                  </button>
+                </div>
+
+                <p className="page-text" style={{ marginTop: "1rem" }}>
+                  Current sound: {selectedSound} {isSoundPlaying ? "(playing)" : "(stopped)"}
+                </p>
+
+                <audio ref={audioRef} hidden />
+              </div>
+            </>
+          )}
+
+          {!isFocusActive && currentStep.example_text && (
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "1rem",
+                borderRadius: "16px",
+                backgroundColor: "#f8faff",
+                border: "1px solid #d8dbe8",
+              }}
+            >
+              <p className="page-text" style={{ margin: 0 }}>
+                Example: {currentStep.example_text}
+              </p>
+            </div>
+          )}
+
+          <div
+            className="button-row"
+            style={{
+              marginTop: "1.25rem",
+              flexWrap: "wrap",
+              gap: "0.75rem",
+              justifyContent: isFocusActive ? "center" : "flex-start",
+            }}
+          >
+            {isFocusActive ? (
+              supportMode === "overwhelmed" ? (
+                <>
+                  <button className="primary-button" onClick={handleContinueTask}>
+                    Continue Task
+                  </button>
+                  <button className="secondary-button" onClick={handleEndFocusMode}>
+                    End Focus Mode
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="primary-button" onClick={handleMarkStepComplete}>
+                    Mark Step Complete
+                  </button>
+                  <button className="secondary-button" onClick={handleNextStep}>
+                    Next Step
+                  </button>
+                  <button className="secondary-button" onClick={handleCompleteTask}>
+                    Complete Task
+                  </button>
+                  <button className="secondary-button" onClick={handleEndFocusMode}>
+                    End Focus Mode
+                  </button>
+                </>
+              )
+            ) : (
+              <>
+                <button className="secondary-button" onClick={handleNextStep}>
+                  Next Step
+                </button>
+                <button className="primary-button" onClick={handleMarkStepComplete}>
+                  Mark Step Complete
+                </button>
+                <button className="secondary-button" onClick={handleCompleteTask}>
+                  Complete Task
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="hero-card">
+          <p className="eyebrow">No Task Selected</p>
+          <h3>Select a task to begin focus mode</h3>
+          <p className="page-text">
+            Choose one task from the list above to load its current step.
+          </p>
+        </div>
+      )}
     </section>
   );
 }

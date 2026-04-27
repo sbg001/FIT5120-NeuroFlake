@@ -56,6 +56,8 @@ function ChildDashboard() {
     }
 
     setPreferenceMessage("Preferences saved successfully.");
+
+    window.dispatchEvent(new Event("preferencesUpdated"));
   };
 
   if (!child) {

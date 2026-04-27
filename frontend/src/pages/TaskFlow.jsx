@@ -8,7 +8,8 @@ import {
   createRewardTransaction,
   updatePointsBalance,
   createTaskStep,
-  updateTaskStepCount
+  updateTaskStepCount,
+  getChildPreferences
 } from "../services";
 import { useNavigate, useParams } from "react-router-dom";
 import TaskAssistantModal from "../components/ui/TaskAssistantModal";
@@ -20,6 +21,8 @@ function TaskFlow() {
   const [loading, setLoading] = useState(true);
   const [taskReady, setTaskReady] = useState(true);
   const [isNovaOpen, setIsNovaOpen] = useState(false);
+  const [emotion, setEmotion] = useState(null); // Fixed string "null" to actual null
+  const [petPreference, setPetPreference] = useState("🐶");
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -34,15 +37,18 @@ function TaskFlow() {
       const orderedSteps = stepsData || [];
       const validStepCount = orderedSteps.length >= 2 && orderedSteps.length <= 5;
 
+      const { data: prefData } = await getChildPreferences();
+      const characterMap = { star: "⭐", rocket: "🚀", bear: "🧸", cat: "🐱", dog: "🐶", fox: "🦊" };
+      
+      const chosenPet = characterMap[prefData?.character_style] || "🧸";
+      setPetPreference(chosenPet);
+
       setTask(taskData);
       setSteps(orderedSteps);
       setTaskReady(validStepCount);
 
-      // Find the index of the first step that is NOT completed yet
       const firstIncompleteIndex = orderedSteps.findIndex(step => step.is_completed === false);
       
-      // If all steps are done (returns -1), stay on the last step. 
-      // Otherwise, jump directly to the unfinished step!
       if (firstIncompleteIndex === -1 && orderedSteps.length > 0) {
         setCurrentStepIndex(orderedSteps.length - 1);
       } else {
@@ -51,7 +57,6 @@ function TaskFlow() {
 
       setLoading(false);
 
-      // We check if Nova should open AFTER the data is loaded!
       if (orderedSteps.length < 1) {
         setIsNovaOpen(true);
       }
@@ -69,6 +74,9 @@ function TaskFlow() {
     if (!currentStep) return;
 
     await completeStep(taskId, currentStep.step_id);
+
+    // --- AC 7.1.2: TRIGGER CELEBRATION EMOTION! ---
+    window.dispatchEvent(new CustomEvent("companionEmotion", { detail: "success" }));
 
     if (currentStepIndex < steps.length - 1) {
       const updatedSteps = steps.map((step, index) =>
@@ -111,24 +119,17 @@ function TaskFlow() {
     }
   };
 
-  // Create the handler to catch steps from Nova
   const handleStepsSaved = async (generatedSteps) => {
     try {
-      // Loop through every step Nova created and push it to Supabase
       for (const step of generatedSteps) {
-        
-        // FIX: We now pass the data as a single payload object!
         await createTaskStep({
           task_id: taskId,
-          step_title: step.description, // Nova's 'description' maps to your 'step_title'
+          step_title: step.description, 
           step_order: step.step_number
         });
-    }
+      }
       
-      // Update the main task record so it knows how many steps it now has
       await updateTaskStepCount(taskId);
-
-      // Once ALL steps are safely in the database, reload the page to show them!
       window.location.reload();
       
     } catch (error) {
@@ -140,7 +141,6 @@ function TaskFlow() {
   if (loading) return <p className="page-text">Loading task...</p>;
   if (!task) return <p className="page-text">No task available</p>;
 
-  // Ensure Nova can render even if the task isn't ready
   if (!taskReady) {
     return (
       <div>
@@ -152,25 +152,27 @@ function TaskFlow() {
               This task needs 2 to 5 simple steps before it can start.
             </p>
             
-            {/* NEW: The manual backup button! */}
             <div style={{ marginTop: "1.5rem" }}>
               <button 
                 onClick={() => setIsNovaOpen(true)}
                 className="primary-button"
                 style={{ padding: "0.75rem 1.5rem", fontSize: "1.1rem", borderRadius: "12px", display: "flex", alignItems: "center", gap: "0.5rem" }}
               >
-                <span role="img" aria-label="robot">🤖</span> Call Nova for Help
+                <span role="img" aria-label="companion">{petPreference}</span> I need help with this
               </button>
             </div>
           </div>
         </section>
 
-        {/* NOVA LIVES HERE */}
         <TaskAssistantModal 
           isOpen={isNovaOpen} 
-          onClose={() => setIsNovaOpen(false)} 
+          onClose={() => {
+            setIsNovaOpen(false);
+            if (steps.length === 0) navigate(-1);
+          }} 
           task={task} 
           onSaveSteps={handleStepsSaved} 
+          petPreference={petPreference}
         />
       </div>
     );
@@ -189,70 +191,66 @@ function TaskFlow() {
         </div>
       </div>
 
-      <div className="content-card">
-        <p className="eyebrow">Step Plan</p>
+      <div className="content-card" style={{ marginTop: "1.5rem" }}>
         
-        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginTop: "1rem" }}>
+        {!emotion ? (
+          <div style={{ textAlign: "center", padding: "2rem 0", animation: "fadeIn 0.5s ease-in" }}>
+            <div style={{ fontSize: "5rem", animation: "bounce 2s infinite" }}>{petPreference}</div>
+            <h3 style={{ marginTop: "1rem", fontSize: "1.4rem", color: "#1E293B" }}>Hi friend! How are you feeling right now?</h3>
+            
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "center", marginTop: "1.5rem", flexWrap: "wrap" }}>
+              {/* Trigger Success for Happy (Optional, but nice UX) */}
+              <button onClick={() => {
+                setEmotion("happy");
+                window.dispatchEvent(new CustomEvent("companionEmotion", { detail: "success" }));
+              }} className="secondary-button" style={{ fontSize: "1.1rem", padding: "1rem 2rem", borderRadius: "16px", backgroundColor: "#D1FAE5", color: "#065F46", border: "none" }}>🟢 Good / Happy</button>
+              
+              <button onClick={() => setEmotion("tired")} className="secondary-button" style={{ fontSize: "1.1rem", padding: "1rem 2rem", borderRadius: "16px", backgroundColor: "#FEF3C7", color: "#92400E", border: "none" }}>🟡 Tired</button>
+              
+              {/* --- AC 7.1.2: TRIGGER EMPATHETIC STRUGGLE EMOTION! --- */}
+              <button onClick={() => {
+                setEmotion("overwhelmed");
+                window.dispatchEvent(new CustomEvent("companionEmotion", { detail: "struggle" }));
+              }} className="secondary-button" style={{ fontSize: "1.1rem", padding: "1rem 2rem", borderRadius: "16px", backgroundColor: "#FEE2E2", color: "#991B1B", border: "none" }}>🔴 Overwhelmed</button>
+            </div>
+          </div>
+        ) : (
           
-          {/* Nova Avatar Image */}
-          <div style={{ flexShrink: 0, marginTop: "0.5rem" }}>
-            <img 
-              src="/nova-robot.png" 
-              alt="Nova the Robot" 
-              style={{ 
-                width: "80px", 
-                height: "80px", 
-                objectFit: "cover",
-                borderRadius: "50%", 
-                border: "2px solid #E2E8F0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.05)" 
-              }} 
-            />
-          </div>
+          <div style={{ animation: "fadeIn 0.5s ease-in" }}>
+            <p className="eyebrow">My Step Plan</p>
+            
+            <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginTop: "1rem" }}>
+              <div style={{ flexShrink: 0, marginTop: "0.5rem", fontSize: "4rem" }}>
+                {petPreference}
+              </div>
 
-          {/* Steps as Speech Bubbles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", flex: 1 }}>
-            {steps.map((step, index) => {
-              const isActive = index === currentStepIndex;
-              const isCompleted = step.is_completed;
-
-              return (
-                <div 
-                  key={step.step_id} 
-                  style={{ 
-                    padding: "1rem 1.25rem", 
-                    // This creates the "speech bubble" look, pointing left towards Nova
-                    borderRadius: "0 20px 20px 20px", 
-                    // Dynamic colors based on step status
-                    backgroundColor: isActive ? "#EEF2FF" : isCompleted ? "#F8FAFC" : "#FFFFFF",
-                    border: isActive ? "2px solid #6366F1" : "1px solid #E2E8F0",
-                    opacity: isCompleted ? 0.6 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    transition: "all 0.3s ease"
-                  }}
-                >
-                  {/* Visual Status Indicator */}
-                  <div style={{ fontSize: "1.2rem", flexShrink: 0 }}>
-                    {isCompleted ? "✅" : isActive ? "👉" : "⏳"}
-                  </div>
-
-                  {/* Step Text */}
-                  <span style={{ 
-                    fontSize: "1.05rem", 
-                    color: isActive ? "#312E81" : "#475569", 
-                    fontWeight: isActive ? "600" : "500",
-                    textDecoration: isCompleted ? "line-through" : "none"
-                  }}>
-                    {step.step_title}
-                  </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", flex: 1 }}>
+                
+                <div style={{ padding: "1rem", borderRadius: "0 20px 20px 20px", backgroundColor: "#F8FAFC", border: "2px solid #E2E8F0", marginBottom: "1rem" }}>
+                  <p style={{ margin: 0, fontSize: "1.05rem", color: "#334155", fontStyle: "italic" }}>
+                    {emotion === "happy" && "I love that energy! Let's tackle these steps together."}
+                    {emotion === "tired" && "I'm sleepy too. Let's just go slow and take our time."}
+                    {emotion === "overwhelmed" && "It is okay to feel big things. Let's take a deep breath before we look at the first step."}
+                  </p>
                 </div>
-              );
-            })}
-          </div>
 
-        </div>
+                {steps.map((step, index) => {
+                  const isActive = index === currentStepIndex;
+                  const isCompleted = step.is_completed;
+
+                  return (
+                    <div key={step.step_id} style={{ padding: "1rem", borderRadius: "0 20px 20px 20px", backgroundColor: isActive ? "#EEF2FF" : isCompleted ? "#F8FAFC" : "#FFFFFF", border: isActive ? "2px solid #6366F1" : "1px solid #E2E8F0", opacity: isCompleted ? 0.6 : 1, display: "flex", alignItems: "center", gap: "0.75rem", transition: "all 0.3s ease" }}>
+                      <div style={{ fontSize: "1.2rem", flexShrink: 0 }}>{isCompleted ? "✅" : isActive ? "👉" : "⏳"}</div>
+                      <span style={{ fontSize: "1.05rem", color: isActive ? "#312E81" : "#475569", fontWeight: isActive ? "600" : "500", textDecoration: isCompleted ? "line-through" : "none" }}>
+                        {step.step_title}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {currentStep && (
@@ -280,12 +278,12 @@ function TaskFlow() {
         </div>
       )}
 
-      {/* NOVA LIVES HERE TOO (Just in case they manually open her later via a button) */}
       <TaskAssistantModal 
         isOpen={isNovaOpen} 
         onClose={() => setIsNovaOpen(false)} 
         task={task} 
-        onSaveSteps={handleStepsSaved} 
+        onSaveSteps={handleStepsSaved}
+        petPreference={petPreference} 
       />
     </section>
   );

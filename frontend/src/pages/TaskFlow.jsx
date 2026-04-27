@@ -1,4 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
+import ProgressBar from "../components/ui/ProgressBar";
+import TaskAssistantModal from "../components/ui/TaskAssistantModal";
 import {
   getTaskById,
   getTaskSteps,
@@ -8,11 +14,8 @@ import {
   createRewardTransaction,
   updatePointsBalance,
   createTaskStep,
-  updateTaskStepCount
+  updateTaskStepCount,
 } from "../services";
-import { useNavigate, useParams } from "react-router-dom";
-import TaskAssistantModal from "../components/ui/TaskAssistantModal";
-import ProgressBar from "../components/ui/ProgressBar";
 
 function TaskFlow() {
   const [task, setTask] = useState(null);
@@ -21,6 +24,9 @@ function TaskFlow() {
   const [loading, setLoading] = useState(true);
   const [taskReady, setTaskReady] = useState(true);
   const [isNovaOpen, setIsNovaOpen] = useState(false);
+  const [currentStepDone, setCurrentStepDone] = useState(false);
+  const [showSupportPanel, setShowSupportPanel] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -39,20 +45,22 @@ function TaskFlow() {
       setSteps(orderedSteps);
       setTaskReady(validStepCount);
 
-      // Find the index of the first step that is NOT completed yet
-      const firstIncompleteIndex = orderedSteps.findIndex(step => step.is_completed === false);
-      
-      // If all steps are done (returns -1), stay on the last step. 
-      // Otherwise, jump directly to the unfinished step!
-      if (firstIncompleteIndex === -1 && orderedSteps.length > 0) {
-        setCurrentStepIndex(orderedSteps.length - 1);
-      } else {
-        setCurrentStepIndex(firstIncompleteIndex !== -1 ? firstIncompleteIndex : 0);
-      }
+      const firstIncompleteIndex = orderedSteps.findIndex(
+        (step) => step.is_completed === false
+      );
+      const nextIndex =
+        firstIncompleteIndex === -1 && orderedSteps.length > 0
+          ? orderedSteps.length - 1
+          : firstIncompleteIndex !== -1
+          ? firstIncompleteIndex
+          : 0;
 
+      setCurrentStepIndex(nextIndex);
+      setCurrentStepDone(Boolean(orderedSteps[nextIndex]?.is_completed));
+      setShowSupportPanel(false);
+      setSupportMessage("");
       setLoading(false);
 
-      // We check if Nova should open AFTER the data is loaded!
       if (orderedSteps.length < 1) {
         setIsNovaOpen(true);
       }
@@ -64,61 +72,81 @@ function TaskFlow() {
   }, [taskId]);
 
   const currentStep = steps[currentStepIndex];
-  const progressPercent = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0;
+  const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
+  const isLastStep = currentStepIndex === steps.length - 1;
 
-  const handleNext = async () => {
+  const goToNextStep = () => {
+    if (isLastStep) return;
+
+    const nextIndex = currentStepIndex + 1;
+    setCurrentStepIndex(nextIndex);
+    setCurrentStepDone(Boolean(steps[nextIndex]?.is_completed));
+    setShowSupportPanel(false);
+    setSupportMessage("");
+  };
+
+  const handleFinishTask = async () => {
+    await completeTask(taskId);
+
+    const pointsResult = await getPointsBalance(task.child_id);
+    const currentPoints = pointsResult.data?.points_balance ?? 0;
+    const earnedPoints = 10;
+    const updatedPoints = currentPoints + earnedPoints;
+
+    await createRewardTransaction({
+      child_id: task.child_id,
+      task_id: task.task_id,
+      points_earned: earnedPoints,
+      steps_completed: steps.length,
+      transaction_type: "earn",
+    });
+
+    await updatePointsBalance(task.child_id, updatedPoints);
+
+    setTask((prevTask) =>
+      prevTask ? { ...prevTask, status: "completed" } : prevTask
+    );
+
+    navigate("/rewards", { state: { showCelebration: true } });
+  };
+
+  const handleDone = async () => {
     if (!currentStep) return;
+
+    if (currentStepDone) {
+      if (isLastStep) {
+        await handleFinishTask();
+      } else {
+        goToNextStep();
+      }
+      return;
+    }
 
     await completeStep(taskId, currentStep.step_id);
 
-    if (currentStepIndex < steps.length - 1) {
-      const updatedSteps = steps.map((step, index) =>
+    setSteps((prevSteps) =>
+      prevSteps.map((step, index) =>
         index === currentStepIndex
-          ? { ...step, is_completed: true, completed_at: new Date().toISOString() }
+          ? {
+              ...step,
+              is_completed: true,
+              completed_at: new Date().toISOString(),
+            }
           : step
-      );
+      )
+    );
 
-      setSteps(updatedSteps);
-      setCurrentStepIndex((prev) => prev + 1);
-    } else {
-      await completeTask(taskId);
-
-      const pointsResult = await getPointsBalance(task.child_id);
-      const currentPoints = pointsResult.data?.points_balance ?? 0;
-      const earnedPoints = 10;
-      const updatedPoints = currentPoints + earnedPoints;
-
-      await createRewardTransaction({
-        child_id: task.child_id,
-        task_id: task.task_id,
-        points_earned: earnedPoints,
-        steps_completed: steps.length,
-        transaction_type: "earn",
-      });
-
-      await updatePointsBalance(task.child_id, updatedPoints);
-
-      setSteps((prevSteps) =>
-        prevSteps.map((step, index) =>
-          index === currentStepIndex
-            ? { ...step, is_completed: true, completed_at: new Date().toISOString() }
-            : step
-        )
-      );
-
-      setTask((prevTask) => (prevTask ? { ...prevTask, status: "completed" } : prevTask));
-
-      navigate("/rewards", { state: { showCelebration: true } });
-    }
+    setCurrentStepDone(true);
+    setSupportMessage(
+      isLastStep
+        ? "You finished the last step. One more tap will wrap up the mission."
+        : "Nice work. This step is done."
+    );
   };
 
-  // Create the handler to catch steps from Nova
   const handleStepsSaved = async (generatedSteps) => {
     try {
-      // Loop through every step Nova created and push it to Supabase
       for (const step of generatedSteps) {
-        
-        // FIX: We now pass the data as a single payload object!
         await createTaskStep({
           task_id: taskId,
           step_title: step.step_title || `Step ${step.step_number}`,
@@ -127,14 +155,10 @@ function TaskFlow() {
           visual_hint: step.visual_hint || "",
           example_text: step.example_text || "",
         });
-    }
-      
-      // Update the main task record so it knows how many steps it now has
-      await updateTaskStepCount(taskId);
+      }
 
-      // Once ALL steps are safely in the database, reload the page to show them!
+      await updateTaskStepCount(taskId);
       window.location.reload();
-      
     } catch (error) {
       console.error("Failed to save Nova's steps:", error);
     }
@@ -144,150 +168,148 @@ function TaskFlow() {
   if (loading) return <p className="page-text">Loading task...</p>;
   if (!task) return <p className="page-text">No task available</p>;
 
-  // Ensure Nova can render even if the task isn't ready
   if (!taskReady) {
     return (
       <div>
         <section className="page-section">
-          <div className="content-card">
-            <p className="eyebrow">Task Flow</p>
-            <h2 className="page-title">{task.title}</h2>
-            <p className="page-text">
-              This task needs 2 to 5 simple steps before it can start.
-            </p>
-            
-            {/* NEW: The manual backup button! */}
+          <Card className="content-card" variant="soft">
+            <PageHeader
+              eyebrow="Mission Setup"
+              title={task.title}
+              description="This mission needs 2 to 5 simple steps before it can begin."
+            />
+
             <div style={{ marginTop: "1.5rem" }}>
-              <button 
-                onClick={() => setIsNovaOpen(true)}
-                className="primary-button"
-                style={{ padding: "0.75rem 1.5rem", fontSize: "1.1rem", borderRadius: "12px", display: "flex", alignItems: "center", gap: "0.5rem" }}
-              >
-                <span role="img" aria-label="robot">🤖</span> Call Nova for Help
-              </button>
+              <Button onClick={() => setIsNovaOpen(true)}>Call Nova for Help</Button>
             </div>
-          </div>
+          </Card>
         </section>
 
-        {/* NOVA LIVES HERE */}
-        <TaskAssistantModal 
-          isOpen={isNovaOpen} 
-          onClose={() => setIsNovaOpen(false)} 
-          task={task} 
-          onSaveSteps={handleStepsSaved} 
+        <TaskAssistantModal
+          isOpen={isNovaOpen}
+          onClose={() => setIsNovaOpen(false)}
+          task={task}
+          onSaveSteps={handleStepsSaved}
         />
       </div>
     );
   }
 
   return (
-    <section className="page-section">
-      <div className="content-card">
-        <p className="eyebrow">Task Flow</p>
-        <h2 className="page-title">{task.title}</h2>
-        <p className="page-text">{task.description}</p>
-        <p className="page-text">Step {currentStepIndex + 1} of {steps.length}</p>
-
-        <ProgressBar value={progressPercent} max={100} label="Task step progress" className="task-progress" />
-      </div>
-
-      <div className="content-card">
-        <p className="eyebrow">Step Plan</p>
-        
-        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", marginTop: "1rem" }}>
-          
-          {/* Nova Avatar Image */}
-          <div style={{ flexShrink: 0, marginTop: "0.5rem" }}>
-            <img 
-              src="/nova-robot.png" 
-              alt="Nova the Robot" 
-              style={{ 
-                width: "80px", 
-                height: "80px", 
-                objectFit: "cover",
-                borderRadius: "50%", 
-                border: "2px solid #E2E8F0",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.05)" 
-              }} 
-            />
-          </div>
-
-          {/* Steps as Speech Bubbles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", flex: 1 }}>
-            {steps.map((step, index) => {
-              const isActive = index === currentStepIndex;
-              const isCompleted = step.is_completed;
-
-              return (
-                <div 
-                  key={step.step_id} 
-                  style={{ 
-                    padding: "1rem 1.25rem", 
-                    // This creates the "speech bubble" look, pointing left towards Nova
-                    borderRadius: "0 20px 20px 20px", 
-                    // Dynamic colors based on step status
-                    backgroundColor: isActive ? "#EEF2FF" : isCompleted ? "#F8FAFC" : "#FFFFFF",
-                    border: isActive ? "2px solid #6366F1" : "1px solid #E2E8F0",
-                    opacity: isCompleted ? 0.6 : 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    transition: "all 0.3s ease"
-                  }}
-                >
-                  {/* Visual Status Indicator */}
-                  <div style={{ fontSize: "1.2rem", flexShrink: 0 }}>
-                    {isCompleted ? "✅" : isActive ? "👉" : "⏳"}
-                  </div>
-
-                  {/* Step Text */}
-                  <span style={{ 
-                    fontSize: "1.05rem", 
-                    color: isActive ? "#312E81" : "#475569", 
-                    fontWeight: isActive ? "600" : "500",
-                    textDecoration: isCompleted ? "line-through" : "none"
-                  }}>
-                    {step.step_title}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </div>
+    <section className="page-section focus-experience">
+      <Card className="content-card focus-experience__top-card" variant="soft">
+        <PageHeader
+          eyebrow="Mission Flow"
+          title={task.title}
+          description={`Step ${Math.min(currentStepIndex + 1, steps.length)} of ${steps.length}`}
+        />
+        <ProgressBar
+          value={progressValue}
+          max={steps.length}
+          label="Mission progress"
+          className="task-progress"
+        />
+      </Card>
 
       {currentStep && (
-        <div className="hero-card">
-          <p className="eyebrow">Current Step</p>
-          <h3>{currentStep.step_title}</h3>
-          <p>{currentStep.step_description}</p>
+        <Card className="hero-card focus-step-card" variant="glow">
+          <div className="focus-step-card__meta">
+            <span className="focus-step-card__eyebrow">One Step At A Time</span>
+            {currentStepDone ? (
+              <span className="focus-step-card__status">Step done</span>
+            ) : null}
+          </div>
 
-          {currentStep.visual_hint && <p className="page-text">Visual hint: {currentStep.visual_hint}</p>}
-          {currentStep.example_text && (
-            <div style={{ marginTop: "1rem", padding: "1rem", borderRadius: "16px", backgroundColor: "#f8faff", border: "1px solid #d8dbe8" }}>
-              <p className="page-text" style={{ margin: 0 }}>Try this: {currentStep.example_text}</p>
+          <div className="focus-step-card__body">
+            {currentStep.visual_hint ? (
+              <div className="focus-step-card__visual" aria-hidden="true">
+                {currentStep.visual_hint}
+              </div>
+            ) : null}
+
+            <h3 className="focus-step-card__title">
+              {currentStep.step_description || currentStep.step_title}
+            </h3>
+
+            {currentStep.step_description &&
+            currentStep.step_description !== currentStep.step_title ? (
+              <p className="focus-step-card__support-text">{currentStep.step_title}</p>
+            ) : null}
+
+            {currentStep.example_text ? (
+              <div className="focus-step-card__example">
+                Try this: {currentStep.example_text}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="focus-step-card__actions">
+            <Button variant="secondary" onClick={() => setShowSupportPanel((prev) => !prev)}>
+              I need a break
+            </Button>
+            {!isLastStep && (
+              <Button
+                variant="secondary"
+                onClick={goToNextStep}
+                disabled={!currentStepDone}
+              >
+                Next Step
+              </Button>
+            )}
+            <Button onClick={handleDone}>
+              {currentStepDone
+                ? isLastStep
+                  ? "Finish Mission"
+                  : "Next Step"
+                : "Done"}
+            </Button>
+          </div>
+
+          {showSupportPanel && (
+            <div className="focus-support-panel">
+              <p className="focus-support-panel__title">Let’s make this feel smaller.</p>
+              <div className="focus-support-panel__actions">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setSupportMessage("Take one slow breath in... and one slow breath out.")
+                  }
+                >
+                  Take a breath
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setSupportMessage("Take a small break, then come back when your body feels ready.")
+                  }
+                >
+                  Small break
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setSupportMessage("That is okay. We can try the same step again, nice and gently.")
+                  }
+                >
+                  Try again
+                </Button>
+              </div>
+              {supportMessage ? (
+                <p className="focus-support-panel__message">{supportMessage}</p>
+              ) : null}
             </div>
           )}
-
-          <p className="page-text" style={{ marginTop: "1rem", marginBottom: "1rem" }}>
-            Start with this step, then move forward one step at a time.
-          </p>
-
-          <div className="button-row">
-            <button className="primary-button" onClick={handleNext} disabled={!currentStep}>
-              {currentStepIndex === 0 ? "Start Task" : currentStepIndex === steps.length - 1 ? task.status === "completed" ? "Task Completed" : "Finish Task" : "Mark Step Complete"}
-            </button>
-          </div>
-        </div>
+        </Card>
       )}
 
-      {/* NOVA LIVES HERE TOO (Just in case they manually open her later via a button) */}
-      <TaskAssistantModal 
-        isOpen={isNovaOpen} 
-        onClose={() => setIsNovaOpen(false)} 
-        task={task} 
-        onSaveSteps={handleStepsSaved} 
+      <TaskAssistantModal
+        isOpen={isNovaOpen}
+        onClose={() => setIsNovaOpen(false)}
+        task={task}
+        onSaveSteps={handleStepsSaved}
       />
     </section>
   );

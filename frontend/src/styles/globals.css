@@ -1238,6 +1238,172 @@ a:focus-visible {
   min-height: 24px;
 }
 
+.focus-experience {
+  gap: 22px;
+}
+
+.focus-experience__top-card {
+  padding: 24px 26px;
+}
+
+.focus-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  margin-top: 1rem;
+}
+
+.focus-setup-grid__field {
+  display: grid;
+  gap: 8px;
+}
+
+.focus-setup-grid__label,
+.focus-timer-panel__label {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.focus-timer-pill {
+  display: grid;
+  gap: 4px;
+  min-width: 150px;
+  padding: 14px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  text-align: center;
+}
+
+.focus-timer-pill__label {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.focus-timer-pill strong,
+.focus-timer-panel__time {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  line-height: 1;
+}
+
+.focus-pace-row,
+.focus-setup-actions,
+.focus-step-card__actions,
+.focus-support-panel__actions,
+.focus-support-panel__audio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.focus-pace-row {
+  margin-top: 1rem;
+}
+
+.focus-pace-row__note {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.focus-setup-actions {
+  margin-top: 1rem;
+}
+
+.focus-step-card {
+  display: grid;
+  gap: 18px;
+  padding: 30px;
+}
+
+.focus-step-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.focus-step-card__eyebrow {
+  color: var(--primary-strong);
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.focus-step-card__status {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.focus-step-card__body {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+.focus-step-card__visual {
+  display: grid;
+  place-items: center;
+  min-width: 84px;
+  min-height: 84px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 26px rgba(74, 108, 161, 0.1);
+  font-size: 2rem;
+  animation: breatheFloat 3.8s ease-in-out infinite;
+}
+
+.focus-step-card__title {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2rem, 4.4vw, 3.25rem);
+  line-height: 1.08;
+}
+
+.focus-step-card__support-text {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 1.05rem;
+}
+
+.focus-step-card__example {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.focus-timer-panel,
+.focus-support-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(99, 135, 189, 0.16);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.focus-support-panel__title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.focus-support-panel__message {
+  margin: 0;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
 .nf-enter-card {
   animation: childDashboardCardIn 500ms ease both;
 }
@@ -1294,6 +1460,16 @@ a:focus-visible {
   }
 }
 
+@keyframes breatheFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 @media (max-width: 900px) {
   .home-hero,
   .home-support-grid,
@@ -1304,6 +1480,10 @@ a:focus-visible {
   .child-dashboard__hero-grid,
   .child-dashboard__main-grid,
   .child-dashboard__bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .focus-setup-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1407,6 +1587,14 @@ a:focus-visible {
 
   .child-dashboard__stat-list {
     grid-template-columns: 1fr;
+  }
+
+  .focus-step-card {
+    padding: 22px;
+  }
+
+  .focus-step-card__title {
+    max-width: none;
   }
 
   .primary-button,

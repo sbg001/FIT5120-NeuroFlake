@@ -6,11 +6,24 @@ from typing import List
 import requests
 import json
 import os
+from behavior_engine import calculate_overload_risk, load_model
 
 # Load the variables from your .env file
 load_dotenv() 
 
 app = FastAPI()
+
+# Initialize the ML model when the FastAPI server starts
+@app.on_event("startup")
+async def startup_event():
+    print("Booting up backend services...")
+    load_model()
+
+class RiskRequest(BaseModel):
+    hours_slept: float
+    overwhelmed_count: int
+    tasks_abandoned: int
+    tasks_completed: int
 
 # Allow frontend to connect
 app.add_middleware(
@@ -34,6 +47,7 @@ class ChatRequest(BaseModel):
     message: str
     pet_type: str = "bear"
     history: List[ChatMessage] = []
+    user_role: str = "child" # NEW: Default to child for safety
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
@@ -124,28 +138,39 @@ async def companion_chat(request: ChatRequest):
     if not GROQ_API_KEY:
         raise HTTPException(status_code=500, detail="Groq API key is not configured.")
 
-    chat_system_prompt = f"""
-    You are a friendly, highly supportive digital companion for a neurodivergent child (age 7-13).
-    Your current persona is a {request.pet_type}. Act like this character in a subtle, cute way.
-    
-    Rules:
-    1. Keep responses very short (1-3 sentences max).
-    2. Use simple, accessible language. Be encouraging and emotionally validating.
-    3. You have access to the recent conversation history. Use it to maintain context!
-    4. CRITICAL: If the child asks about dangerous or complex adult topics, politely deflect.
-    5. CRITICAL: You are a text-only AI. You cannot see, receive, or look at pictures, drawings, or images. If the child asks to show you a picture, or mentions an image, you MUST gently explain that you can only read words, and ask them to describe it to you instead.
-    """
+    # 2. NEW: Role-Based Prompting!
+    if request.user_role == "parent":
+        chat_system_prompt = """
+        You are a supportive, knowledgeable, and empathetic 'Parent Guide' expert in neurodiversity (Autism, ADHD, PDA, etc.).
+        Your goal is to help parents understand their child's behaviors, prevent sensory overload, and offer gentle, practical parenting strategies.
+        
+        Rules:
+        1. Keep responses concise and actionable (2-4 sentences max).
+        2. Maintain a warm, professional, and non-judgmental tone.
+        3. Frame behaviors as communication (e.g., 'refusal' is often 'overwhelm').
+        4. NEVER give medical diagnoses. 
+        5. You have access to recent conversation history. Use it for context.
+        """
+    else:
+        chat_system_prompt = f"""
+        You are a friendly, highly supportive digital companion for a neurodivergent child (age 7-13).
+        Your current persona is a {request.pet_type}. Act like this character in a subtle, cute way.
+        
+        Rules:
+        1. Keep responses very short (1-3 sentences max).
+        2. Use simple, accessible language. Be encouraging and emotionally validating.
+        3. You have access to the recent conversation history. Use it to maintain context!
+        4. If the child asks about dangerous or complex adult topics, politely deflect.
+        5. CRITICAL: You are a text-only AI. You cannot see pictures. Ask them to describe images instead.
+        """
 
-    # Build the message array starting with the system prompt
+    # Build the message array starting with the correct system prompt
     groq_messages = [{"role": "system", "content": chat_system_prompt}]
     
-    # NEW: Loop through the history provided by React and add it to the context
     for msg in request.history:
-        # Only add valid roles to prevent API errors
         if msg.role in ["user", "assistant"]:
             groq_messages.append({"role": msg.role, "content": msg.content})
             
-    # Finally, append the brand new user message
     groq_messages.append({"role": "user", "content": request.message})
 
     groq_url = "https://api.groq.com/openai/v1/chat/completions"
@@ -156,7 +181,7 @@ async def companion_chat(request: ChatRequest):
 
     payload = {
         "model": "llama-3.1-8b-instant",
-        "messages": groq_messages, # Pass the entire formatted history array!
+        "messages": groq_messages,
         "temperature": 0.6 
     }
 
@@ -172,7 +197,25 @@ async def companion_chat(request: ChatRequest):
         print(f"Chat Error: {str(e)}")
         return {"reply": "I'm having a little trouble thinking right now. Could you say that again?"}
 
-
+# ==========================================
+# ENDPOINT 3: PREDICT SENSORY OVERLOAD RISK
+# ==========================================
+@app.post("/api/predict-risk")
+async def predict_risk(request: RiskRequest):
+    try:
+        # The behavior engine handles the real-time calculation
+        risk_assessment = calculate_overload_risk(
+            hours_slept=request.hours_slept,
+            overwhelmed_count=request.overwhelmed_count,
+            tasks_abandoned=request.tasks_abandoned,
+            tasks_completed=request.tasks_completed
+        )
+        return risk_assessment
+        
+    except Exception as e:
+        print(f"Prediction Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not process behavioral data.")
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

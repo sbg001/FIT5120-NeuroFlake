@@ -11,6 +11,8 @@ function FloatingCompanion() {
   // NEW: Track the current emotion of the pet
   const [emotionState, setEmotionState] = useState("idle"); // 'idle', 'success', 'struggle'
   const messagesEndRef = useRef(null);
+  const userRole = localStorage.getItem("current_user_role") || "child";
+  const isParent = userRole === "parent";
 
   // --- THE EMOJI MAP ---
   // This maps the pet type and the emotional state to the correct emoji!
@@ -18,7 +20,8 @@ function FloatingCompanion() {
     cat: { idle: "🐱", success: "😻", struggle: "😿" },
     dog: { idle: "🐶", success: "🐕🎉", struggle: "🥺" },
     bear: { idle: "🧸", success: "🧸✨", struggle: "🧸💙" },
-    star: { idle: "⭐", success: "🌟", struggle: "💫" }
+    star: { idle: "⭐", success: "🌟", struggle: "💫" },
+    guide: { idle: "🧭", success: "🧭", struggle: "🧭" }
   };
 
   useEffect(() => {
@@ -26,6 +29,17 @@ function FloatingCompanion() {
   }, [messages]);
 
   const loadPet = async () => {
+    // IF PARENT: Set up the professional guide interface
+    if (isParent) {;
+      setPetData({ type: "guide", emoji: petExpressions.guide.idle });
+      setMessages([{ 
+        id: 1, 
+        sender: "bot", 
+        text: `Hello! I'm your NeuroFlake Parent Guide. Do you have any questions about supporting your child today?` 
+      }]);
+      return; // Exit early, we don't need to fetch child preferences!
+    }
+    // IF CHILD: Do the normal pet fetch
     const { data } = await getChildPreferences();
     const rawStyle = String(data?.character_style || "bear").toLowerCase();
     
@@ -68,15 +82,11 @@ function FloatingCompanion() {
     const userText = inputValue;
     const newMsg = { id: Date.now(), sender: "user", text: userText };
     
-    // Create a snapshot of what the messages array will look like AFTER this message
     const updatedMessages = [...messages, newMsg];
     setMessages(updatedMessages);
     setInputValue("");
 
     try {
-      // NEW: Format the history for the AI. 
-      // Groq uses "assistant" for the bot and "user" for the human.
-      // We also slice the last 6 messages so the payload doesn't get too massive over time.
       const formattedHistory = messages.slice(-6).map(msg => ({
         role: msg.sender === "bot" ? "assistant" : "user",
         content: msg.text
@@ -88,7 +98,8 @@ function FloatingCompanion() {
         body: JSON.stringify({ 
           message: userText, 
           pet_type: petData.type,
-          history: formattedHistory // Send the memory to the brain!
+          history: formattedHistory,
+          user_role: userRole // <--- NEW: Send the role to Python!
         }),
       });
 
@@ -115,6 +126,9 @@ function FloatingCompanion() {
     if (emotionState === "success") return "anim-success";
     if (emotionState === "struggle") return "anim-struggle";
     
+    // Parents don't get playful idle animations
+    if (isParent) return "";
+
     // If idle, return their signature animation
     switch (petData.type) {
       case "dog": return "anim-dog";

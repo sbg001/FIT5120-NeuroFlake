@@ -1025,6 +1025,231 @@ a:focus-visible {
   font-size: 0.95rem;
 }
 
+.child-dashboard {
+  gap: 26px;
+}
+
+.child-dashboard__hero-grid,
+.child-dashboard__main-grid,
+.child-dashboard__bottom-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.child-dashboard__hero-grid {
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+}
+
+.child-dashboard__main-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+}
+
+.child-dashboard__bottom-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+}
+
+.child-dashboard__side-column {
+  display: grid;
+  gap: 20px;
+}
+
+.child-dashboard__welcome,
+.child-dashboard__points-card,
+.child-dashboard__mission-card,
+.child-dashboard__progress-card,
+.child-dashboard__achievements-card,
+.child-dashboard__missions-list,
+.child-dashboard__style-card {
+  padding: 26px;
+}
+
+.child-dashboard__welcome-top,
+.child-dashboard__hero-pills,
+.child-dashboard__mission-header,
+.child-dashboard__section-row,
+.child-dashboard__mission-progress-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.child-dashboard__welcome-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.child-dashboard__mascot-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.child-dashboard__mascot,
+.child-dashboard__style-identity {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(236,245,255,0.9));
+  box-shadow: 0 16px 28px rgba(74, 108, 161, 0.12);
+  font-size: 2rem;
+}
+
+.child-dashboard__hero-title,
+.child-dashboard__mission-title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+}
+
+.child-dashboard__hero-pills span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.child-dashboard__points-card {
+  text-align: center;
+  align-content: center;
+}
+
+.child-dashboard__points-value {
+  margin: 0.35rem 0 0.6rem;
+  font-size: clamp(2.4rem, 6vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary-strong);
+}
+
+.child-dashboard__points-stars {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1rem;
+  font-size: 1.3rem;
+}
+
+.child-dashboard__mission-card,
+.child-dashboard__progress-card,
+.child-dashboard__missions-list,
+.child-dashboard__style-card,
+.child-dashboard__achievements-card {
+  display: grid;
+  gap: 16px;
+}
+
+.child-dashboard__mission-copy {
+  font-size: 1.05rem;
+}
+
+.child-dashboard__mission-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.child-dashboard__mission-progress-label span,
+.child-dashboard__mini-mission p,
+.child-dashboard__achievement-tile p {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+}
+
+.child-dashboard__mission-actions {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+
+.child-dashboard__stat-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.child-dashboard__stat-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.child-dashboard__stat-item strong {
+  font-size: 1.45rem;
+}
+
+.child-dashboard__stat-item span {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.child-dashboard__achievements-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.child-dashboard__achievement-tile {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.child-dashboard__achievement-emoji {
+  font-size: 1.5rem;
+}
+
+.child-dashboard__mini-missions {
+  display: grid;
+  gap: 12px;
+}
+
+.child-dashboard__mini-mission {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.child-dashboard__mini-mission h4 {
+  margin-bottom: 0.35rem;
+}
+
+.child-dashboard__style-form {
+  display: grid;
+  gap: 14px;
+}
+
+.child-dashboard__style-message {
+  min-height: 24px;
+}
+
+.nf-enter-card {
+  animation: childDashboardCardIn 500ms ease both;
+}
+
+.nf-enter-card--1 { animation-delay: 40ms; }
+.nf-enter-card--2 { animation-delay: 100ms; }
+.nf-enter-card--3 { animation-delay: 160ms; }
+.nf-enter-card--4 { animation-delay: 220ms; }
+.nf-enter-card--5 { animation-delay: 280ms; }
+.nf-enter-card--6 { animation-delay: 340ms; }
+.nf-enter-card--7 { animation-delay: 400ms; }
+
 @keyframes drift {
   0%,
   100% {
@@ -1058,10 +1283,27 @@ a:focus-visible {
   }
 }
 
+@keyframes childDashboardCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (max-width: 900px) {
   .home-hero,
   .home-support-grid,
   .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .child-dashboard__hero-grid,
+  .child-dashboard__main-grid,
+  .child-dashboard__bottom-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1144,6 +1386,26 @@ a:focus-visible {
   }
 
   .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .child-dashboard__welcome,
+  .child-dashboard__points-card,
+  .child-dashboard__mission-card,
+  .child-dashboard__progress-card,
+  .child-dashboard__achievements-card,
+  .child-dashboard__missions-list,
+  .child-dashboard__style-card {
+    padding: 20px;
+  }
+
+  .child-dashboard__mascot-row,
+  .child-dashboard__mini-mission {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .child-dashboard__stat-list {
     grid-template-columns: 1fr;
   }
 

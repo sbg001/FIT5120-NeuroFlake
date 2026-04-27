@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import Button from "./Button";
+import Card from "./Card";
+import { requestTaskBreakdown } from "../../services";
 
 function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
   const [steps, setSteps] = useState([]);
@@ -22,13 +25,7 @@ function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
     setCompanionMessage("Scanning my data banks for the best mission plan...");
 
     try {
-      const response = await fetch("http://localhost:8000/api/breakdown-task", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // Automatically send the task title, no typing required!
-        body: JSON.stringify({ task_name: task.title }), 
-      });
-      const data = await response.json();
+      const data = await requestTaskBreakdown(task.title);
       
       if (data && Array.isArray(data.steps)) {
         setSteps(data.steps);
@@ -55,7 +52,7 @@ function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
   return (
     <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }}>
       
-      <div className="content-card" style={{ width: "90%", maxWidth: "700px", maxHeight: "90vh", overflowY: "auto", position: "relative", padding: "2rem", backgroundColor: "#F8FAFC", borderRadius: "24px" }}>
+      <Card className="content-card" variant="glow" style={{ width: "90%", maxWidth: "700px", maxHeight: "90vh", overflowY: "auto", position: "relative", padding: "2rem", backgroundColor: "#F8FAFC", borderRadius: "24px" }}>
         
         {/* We can optionally hide the close button so they have to interact with Nova, but keeping it for safety is good UX */}
         <button onClick={onClose} style={{ position: "absolute", top: "1.5rem", right: "1.5rem", background: "#E2E8F0", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "#64748B", width: "36px", height: "36px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -76,14 +73,13 @@ function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
         {/*DYNAMIC ACTION AREA*/}
         {!steps.length > 0 && (
           <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
-            <button 
+            <Button
               onClick={handleGenerateSteps} 
               disabled={isLoading} 
-              className="primary-button"
               style={{ padding: "1rem 3rem", fontSize: "1.2rem", borderRadius: "16px", backgroundColor: "#6366F1", boxShadow: "0 4px 6px rgba(99, 102, 241, 0.3)" }}
             >
               {isLoading ? "Thinking..." : "Yes, please help me!"}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -107,16 +103,16 @@ function TaskAssistantModal({ isOpen, onClose, task, onSaveSteps }) {
             </div>
 
             <div style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}>
-              <button 
+              <Button
                 onClick={handleSaveAndClose} 
                 style={{ padding: "1rem 2rem", fontSize: "1.1rem", borderRadius: "12px", backgroundColor: "#10B981", color: "white", border: "none", fontWeight: "bold", cursor: "pointer", boxShadow: "0 4px 6px rgba(16, 185, 129, 0.2)" }}
               >
                 Accept Mission!
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
 import { getUsers, loginWithPin } from "../services";
 
 function Login() {
@@ -64,11 +67,13 @@ function Login() {
         </div>
       </div>
 
-      <div className="login-card">
+      <Card className="login-card" variant="glow">
         <div className="login-header">
-          <p className="eyebrow">Login</p>
-          <h1>Choose your profile</h1>
-          <p>Use your private PIN to continue.</p>
+          <PageHeader
+            eyebrow="Login"
+            title="Choose your profile"
+            description="Use your private PIN to step into your calm routine space."
+          />
         </div>
 
         <div className="login-profile-grid">
@@ -103,8 +108,8 @@ function Login() {
 
         <div className="login-demo-pin-box">
           <strong>Iteration demo access</strong>
-          <p>Parent PIN: 1111</p>
-          <p>Child PIN: 2222</p>
+          <p>Parent PIN: 2222</p>
+          <p>Child PIN: 1111</p>
         </div>
 
         <div className="login-form">
@@ -138,23 +143,22 @@ function Login() {
             </div>
           )}
 
-          <button
+          <Button
             onClick={handleLogin}
-            className="primary-button"
             disabled={isLoading}
           >
             {isLoading ? "Checking..." : "Continue"}
-          </button>
+          </Button>
 
-          <Link to="/" className="secondary-button login-home-button">
+          <Button as={Link} to="/" variant="secondary" className="login-home-button">
             Back to Home
-          </Link>
+          </Button>
 
           <p className="login-note">
             PINs stay hidden on this page. Ask a parent or caregiver if you need help.
           </p>
         </div>
-      </div>
+      </Card>
     </section>
   );
 }

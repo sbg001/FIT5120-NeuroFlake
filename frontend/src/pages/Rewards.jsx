@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
 import {
   getPointsBalance,
   getLatestRewardSummary,
@@ -29,15 +32,15 @@ function Rewards() {
 
   useEffect(() => {
     async function loadRewardsData() {
-      const pointsResult = await getPointsBalance();
-      const latestSummaryResult = await getLatestRewardSummary();
-      const transactionsResult = await getRewardTransactions();
-      const parentRewardsResult = await getParentApprovedRewards();
       const childResult = await getChildProfile();
+      const childData = childResult.data;
+      const pointsResult = await getPointsBalance(childData?.user_id);
+      const latestSummaryResult = await getLatestRewardSummary(childData?.user_id);
+      const transactionsResult = await getRewardTransactions(childData?.user_id);
+      const parentRewardsResult = await getParentApprovedRewards();
       const preferencesResult = await getChildPreferences();
       const tasksResult = await getTasks();
 
-      const childData = childResult.data;
       const allTasks = tasksResult.data || [];
       const latestTaskId = latestSummaryResult.data?.task_id;
 
@@ -135,7 +138,10 @@ function Rewards() {
 
     const rewardText = `${reward.title || ""} ${reward.theme || ""}`.toLowerCase();
 
-    if (rewardInterest === "food" && /food|dessert|pizza|snack|treat|ice cream|cake/.test(rewardText)) {
+    if (
+      rewardInterest === "food" &&
+      /food|dessert|pizza|snack|treat|ice cream|cake/.test(rewardText)
+    ) {
       score += 2;
     }
 
@@ -143,11 +149,17 @@ function Rewards() {
       score += 2;
     }
 
-    if (rewardInterest === "toys" && /toy|sticker|surprise|plush|small toy/.test(rewardText)) {
+    if (
+      rewardInterest === "toys" &&
+      /toy|sticker|surprise|plush|small toy/.test(rewardText)
+    ) {
       score += 2;
     }
 
-    if (rewardInterest === "screen-time" && /screen|ipad|tablet|movie|video/.test(rewardText)) {
+    if (
+      rewardInterest === "screen-time" &&
+      /screen|ipad|tablet|movie|video/.test(rewardText)
+    ) {
       score += 2;
     }
 
@@ -164,21 +176,20 @@ function Rewards() {
 
   return (
     <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Rewards</p>
-        <h2 className="page-title">
-          {showCelebration ? "You did it!" : "My Rewards"}
-        </h2>
-        <p className="page-text">
-          {showCelebration
+      <PageHeader
+        eyebrow="Rewards"
+        title={showCelebration ? "You did it!" : "My Rewards"}
+        description={
+          showCelebration
             ? "Every completed task is a step forward. Let’s celebrate your progress."
-            : "See your points, rewards, and encouraging progress all in one place."}
-        </p>
-      </div>
+            : "See your points, rewards, and encouraging progress all in one place."
+        }
+      />
 
       {showCelebration && (
-        <div
+        <Card
           className="hero-card"
+          variant="glow"
           style={{
             textAlign: "center",
             padding: "2rem",
@@ -218,38 +229,22 @@ function Rewards() {
             className="button-row"
             style={{ justifyContent: "center", flexWrap: "wrap", gap: "0.75rem" }}
           >
-            <button className="primary-button" onClick={handleGoToMyTasks}>
-              Go to My Tasks
-            </button>
-            <button className="secondary-button" onClick={handleStartAnotherTask}>
+            <Button onClick={handleGoToMyTasks}>Go to My Tasks</Button>
+            <Button variant="secondary" onClick={handleStartAnotherTask}>
               Start Another Task
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div
-        className="card-grid"
-        style={{
-          marginTop: "1.5rem",
-          alignItems: "stretch",
-        }}
-      >
-        <div className="content-card" style={{ textAlign: "center" }}>
+      <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "stretch" }}>
+        <Card className="content-card" variant="soft" style={{ textAlign: "center" }}>
           <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>⭐</p>
           <h3 style={{ marginBottom: "0.5rem" }}>My Points</h3>
-          <p
-            style={{
-              fontSize: "2rem",
-              fontWeight: 700,
-              margin: 0,
-            }}
-          >
-            {pointsBalance}
-          </p>
-        </div>
+          <p style={{ fontSize: "2rem", fontWeight: 700, margin: 0 }}>{pointsBalance}</p>
+        </Card>
 
-        <div className="content-card" style={{ textAlign: "center" }}>
+        <Card className="content-card" variant="soft" style={{ textAlign: "center" }}>
           <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>
             {currentCharacter}
           </p>
@@ -260,18 +255,18 @@ function Rewards() {
           <p className="page-text" style={{ margin: "0.35rem 0 0 0" }}>
             Reward style: {currentRewardInterestLabel}
           </p>
-        </div>
+        </Card>
 
-        <div className="content-card" style={{ textAlign: "center" }}>
+        <Card className="content-card" variant="soft" style={{ textAlign: "center" }}>
           <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>🏅</p>
           <h3 style={{ marginBottom: "0.5rem" }}>Milestone</h3>
           <p className="page-text" style={{ margin: 0 }}>
             {milestoneMessage}
           </p>
-        </div>
+        </Card>
       </div>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
+      <Card className="content-card" variant="default" style={{ marginTop: "1.5rem" }}>
         <h3 style={{ marginBottom: "0.75rem" }}>Recent reward activity</h3>
         {recentTransactions.length > 0 ? (
           recentTransactions.map((transaction) => (
@@ -299,23 +294,20 @@ function Rewards() {
         ) : (
           <p>No reward activity yet.</p>
         )}
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ marginBottom: "0.75rem" }}>
-          Reward ideas picked for your style
-        </h3>
+      <Card className="content-card" variant="default" style={{ marginTop: "1.5rem" }}>
+        <h3 style={{ marginBottom: "0.75rem" }}>Reward ideas picked for your style</h3>
         <div className="card-grid" style={{ alignItems: "stretch" }}>
           {personalizedSuggestedRewards.map((reward) => {
             const isBestMatch = getRewardMatchScore(reward) > 0;
 
             return (
-              <div
+              <Card
                 key={reward.id}
                 className="feature-card"
-                style={{
-                  textAlign: "center",
-                }}
+                variant="soft"
+                style={{ textAlign: "center" }}
               >
                 {isBestMatch && (
                   <p
@@ -335,25 +327,24 @@ function Rewards() {
                 <h4 style={{ marginBottom: "0.5rem" }}>{reward.title}</h4>
                 <p style={{ margin: "0.25rem 0" }}>Cost: {reward.cost} points</p>
                 <p style={{ margin: "0.25rem 0" }}>Theme: {reward.theme}</p>
-              </div>
+              </Card>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
+      <Card className="content-card" variant="default" style={{ marginTop: "1.5rem" }}>
         <h3 style={{ marginBottom: "0.75rem" }}>Parent-picked rewards</h3>
         <div className="card-grid" style={{ alignItems: "stretch" }}>
           {personalizedParentRewards.map((reward) => {
             const isBestMatch = getRewardMatchScore(reward) > 0;
 
             return (
-              <div
+              <Card
                 key={reward.id}
                 className="feature-card"
-                style={{
-                  textAlign: "center",
-                }}
+                variant="soft"
+                style={{ textAlign: "center" }}
               >
                 {isBestMatch && (
                   <p
@@ -373,18 +364,18 @@ function Rewards() {
                 <h4 style={{ marginBottom: "0.5rem" }}>{reward.title}</h4>
                 <p style={{ margin: "0.25rem 0" }}>Cost: {reward.cost} points</p>
                 <p style={{ margin: "0.25rem 0" }}>Theme: {reward.theme}</p>
-              </div>
+              </Card>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
+      <Card className="content-card" variant="soft" style={{ marginTop: "1.5rem" }}>
         <h3 style={{ marginBottom: "0.75rem" }}>Encouragement</h3>
         <p className="page-text" style={{ margin: 0 }}>
           {encouragingMessage}
         </p>
-      </div>
+      </Card>
     </section>
   );
 }

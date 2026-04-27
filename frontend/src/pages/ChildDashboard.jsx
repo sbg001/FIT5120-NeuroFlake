@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import InfoCard from "../components/ui/InfoCard";
 import { useEffect, useState } from "react";
+import PageHeader from "../components/ui/PageHeader";
 import {
   getTasks,
   getPointsBalance,
@@ -23,7 +24,7 @@ function ChildDashboard() {
     async function loadData() {
       const { data: childData } = await getChildProfile();
       const { data: tasksData } = await getTasks();
-      const { data: pointsData } = await getPointsBalance();
+      const { data: pointsData } = await getPointsBalance(childData?.user_id);
       const { data: preferenceData } = await getChildPreferences();
 
       setChild(childData);
@@ -124,15 +125,11 @@ function ChildDashboard() {
 
   return (
     <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Child Dashboard</p>
-        <h2 className="page-title">
-          Hi {displayName}, what would you like to do today?
-        </h2>
-        <p className="page-text">
-          A calm, simple space to help you move through tasks one step at a time.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Child Dashboard"
+        title={`Hi ${displayName}, what would you like to do today?`}
+        description="A calm, simple space to help you move through tasks one step at a time."
+      />
 
       <div className="card-grid" style={{ alignItems: "stretch" }}>
         <InfoCard title="My Profile">
@@ -186,7 +183,7 @@ function ChildDashboard() {
           <div style={{ display: "grid", gap: "0.9rem" }}>
             <p style={summaryTextStyle}>
               {readyTasks.length > 0
-                ? "You have tasks ready — let’s do one small step at a time."
+                ? "You have tasks ready - let’s do one small step at a time."
                 : "Amazing work! You finished your current tasks."}
             </p>
             <p style={{ ...summaryTextStyle, fontWeight: 700 }}>

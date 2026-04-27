@@ -12,6 +12,7 @@ import {
 } from "../services";
 import { useNavigate, useParams } from "react-router-dom";
 import TaskAssistantModal from "../components/ui/TaskAssistantModal";
+import ProgressBar from "../components/ui/ProgressBar";
 
 function TaskFlow() {
   const [task, setTask] = useState(null);
@@ -82,7 +83,7 @@ function TaskFlow() {
     } else {
       await completeTask(taskId);
 
-      const pointsResult = await getPointsBalance();
+      const pointsResult = await getPointsBalance(task.child_id);
       const currentPoints = pointsResult.data?.points_balance ?? 0;
       const earnedPoints = 10;
       const updatedPoints = currentPoints + earnedPoints;
@@ -120,8 +121,11 @@ function TaskFlow() {
         // FIX: We now pass the data as a single payload object!
         await createTaskStep({
           task_id: taskId,
-          step_title: step.description, // Nova's 'description' maps to your 'step_title'
-          step_order: step.step_number
+          step_title: step.step_title || `Step ${step.step_number}`,
+          step_description: step.description || step.step_title || "",
+          step_order: step.step_number,
+          visual_hint: step.visual_hint || "",
+          example_text: step.example_text || "",
         });
     }
       
@@ -184,9 +188,7 @@ function TaskFlow() {
         <p className="page-text">{task.description}</p>
         <p className="page-text">Step {currentStepIndex + 1} of {steps.length}</p>
 
-        <div style={{ width: "100%", height: "10px", backgroundColor: "#e9edf7", borderRadius: "999px", overflow: "hidden", marginTop: "0.75rem" }}>
-          <div style={{ width: `${progressPercent}%`, height: "100%", backgroundColor: "#6c8ff0" }} />
-        </div>
+        <ProgressBar value={progressPercent} max={100} label="Task step progress" className="task-progress" />
       </div>
 
       <div className="content-card">

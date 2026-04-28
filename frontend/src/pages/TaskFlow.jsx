@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
@@ -18,6 +19,12 @@ import {
 } from "../services";
 
 function TaskFlow() {
+  const celebrationMessages = [
+    "Great effort!",
+    "You completed a step!",
+    "Your focus is growing!",
+  ];
+
   const [task, setTask] = useState(null);
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -27,6 +34,7 @@ function TaskFlow() {
   const [currentStepDone, setCurrentStepDone] = useState(false);
   const [showSupportPanel, setShowSupportPanel] = useState(false);
   const [supportMessage, setSupportMessage] = useState("");
+  const [stepCelebration, setStepCelebration] = useState(null);
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -59,6 +67,7 @@ function TaskFlow() {
       setCurrentStepDone(Boolean(orderedSteps[nextIndex]?.is_completed));
       setShowSupportPanel(false);
       setSupportMessage("");
+      setStepCelebration(null);
       setLoading(false);
 
       if (orderedSteps.length < 1) {
@@ -83,6 +92,7 @@ function TaskFlow() {
     setCurrentStepDone(Boolean(steps[nextIndex]?.is_completed));
     setShowSupportPanel(false);
     setSupportMessage("");
+    setStepCelebration(null);
   };
 
   const handleFinishTask = async () => {
@@ -137,6 +147,13 @@ function TaskFlow() {
     );
 
     setCurrentStepDone(true);
+    setStepCelebration({
+      title:
+        celebrationMessages[currentStepIndex % celebrationMessages.length],
+      detail: isLastStep
+        ? "That was the final step. When you are ready, finish the mission to see your reward."
+        : "Nice and steady. You can pause here or move on when it feels right.",
+    });
     setSupportMessage(
       isLastStep
         ? "You finished the last step. One more tap will wrap up the mission."
@@ -215,9 +232,12 @@ function TaskFlow() {
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
             <span className="focus-step-card__eyebrow">One Step At A Time</span>
-            {currentStepDone ? (
-              <span className="focus-step-card__status">Step done</span>
-            ) : null}
+            <div className="focus-step-card__status-row">
+              {stepCelebration ? <Badge tone="warm">Gentle celebration</Badge> : null}
+              {currentStepDone ? (
+                <span className="focus-step-card__status">Step done</span>
+              ) : null}
+            </div>
           </div>
 
           <div className="focus-step-card__body">
@@ -239,6 +259,20 @@ function TaskFlow() {
             {currentStep.example_text ? (
               <div className="focus-step-card__example">
                 Try this: {currentStep.example_text}
+              </div>
+            ) : null}
+
+            {stepCelebration ? (
+              <div className="focus-step-card__celebration" role="status" aria-live="polite">
+                <div className="focus-step-card__celebration-stars" aria-hidden="true">
+                  <span>⭐</span>
+                  <span>✨</span>
+                  <span>⭐</span>
+                </div>
+                <div className="focus-step-card__celebration-copy">
+                  <strong>{stepCelebration.title}</strong>
+                  <p>{stepCelebration.detail}</p>
+                </div>
               </div>
             ) : null}
           </div>

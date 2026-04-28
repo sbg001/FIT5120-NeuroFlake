@@ -1343,6 +1343,14 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.focus-step-card__status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .focus-step-card__body {
   display: grid;
   gap: 14px;
@@ -1383,6 +1391,40 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.focus-step-card__celebration {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid rgba(240, 198, 110, 0.3);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 176, 0.34), transparent 32%),
+    rgba(255, 251, 240, 0.92);
+}
+
+.focus-step-card__celebration-stars {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  font-size: 1.15rem;
+  animation: softTwinkle 5s ease-in-out infinite;
+}
+
+.focus-step-card__celebration-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.focus-step-card__celebration-copy strong {
+  font-size: 1rem;
+}
+
+.focus-step-card__celebration-copy p {
+  color: var(--text-soft);
+}
+
 .focus-timer-panel,
 .focus-support-panel {
   display: grid;
@@ -1403,6 +1445,343 @@ a:focus-visible {
   color: var(--text-soft);
   font-weight: 700;
 }
+
+.rewards-experience {
+  gap: 22px;
+}
+
+.reward-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(220px, 0.7fr));
+  gap: 20px;
+}
+
+.reward-points-card,
+.reward-style-card,
+.reward-milestone-card,
+.reward-badges-card,
+.reward-activity-card,
+.reward-shelf-card,
+.reward-encouragement-card,
+.reward-celebration-banner {
+  padding: 26px;
+}
+
+.reward-celebration-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 176, 0.42), transparent 28%),
+    radial-gradient(circle at right center, rgba(123, 217, 188, 0.2), transparent 24%),
+    rgba(255, 255, 255, 0.95);
+}
+
+.reward-celebration-banner__stars {
+  display: flex;
+  gap: 8px;
+  font-size: 1.4rem;
+  animation: softTwinkle 5s ease-in-out infinite;
+}
+
+.reward-celebration-banner__copy {
+  display: grid;
+  gap: 10px;
+}
+
+.reward-celebration-banner__copy h3 {
+  margin-bottom: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.reward-celebration-banner__score {
+  display: grid;
+  gap: 4px;
+  min-width: 140px;
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  text-align: center;
+}
+
+.reward-celebration-banner__score strong {
+  font-size: 2rem;
+  line-height: 1;
+  color: #9a6b00;
+}
+
+.reward-celebration-banner__score span,
+.reward-points-card__footer span,
+.reward-item-card__meta span,
+.reward-celebration-modal__stats span,
+.reward-badge-tile p,
+.reward-activity-item p {
+  color: var(--text-soft);
+}
+
+.reward-points-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  background:
+    radial-gradient(circle at top left, rgba(255, 235, 192, 0.48), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 251, 255, 0.92));
+}
+
+.reward-points-card__content {
+  display: grid;
+  gap: 12px;
+}
+
+.reward-points-card__count {
+  font-size: clamp(2.8rem, 6vw, 4.6rem);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--primary-strong);
+}
+
+.reward-points-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.reward-points-card__sparkles {
+  display: grid;
+  gap: 10px;
+  padding: 8px;
+  font-size: 1.6rem;
+  animation: floatCluster 8s ease-in-out infinite;
+}
+
+.reward-style-card,
+.reward-milestone-card {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.reward-style-card__icon,
+.reward-milestone-card__icon,
+.reward-badge-tile__icon,
+.reward-item-card__emoji {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 24px rgba(74, 108, 161, 0.1);
+  font-size: 1.8rem;
+}
+
+.reward-style-card__copy,
+.reward-milestone-card__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.reward-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reward-badges-card,
+.reward-activity-card,
+.reward-shelf-card,
+.reward-encouragement-card {
+  display: grid;
+  gap: 16px;
+}
+
+.reward-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.reward-badge-tile {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(126, 158, 202, 0.18);
+}
+
+.reward-activity-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(248, 250, 255, 0.9);
+  border: 1px solid rgba(126, 158, 202, 0.16);
+}
+
+.reward-activity-item__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.reward-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.reward-item-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.reward-item-card__match {
+  color: #7e5a00;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.reward-item-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reward-item-card__meta span,
+.reward-celebration-modal__messages span,
+.reward-encouragement-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.92);
+  border: 1px solid rgba(126, 158, 202, 0.16);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.reward-encouragement-list,
+.reward-celebration-modal__messages,
+.reward-celebration-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reward-encouragement-pill {
+  background: rgba(255, 249, 235, 0.92);
+}
+
+.reward-celebration-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.reward-celebration-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 39, 60, 0.36);
+  backdrop-filter: blur(8px);
+}
+
+.reward-celebration-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(720px, 100%);
+  overflow: hidden;
+}
+
+.reward-celebration-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(237, 244, 251, 0.96);
+  color: var(--text-soft);
+}
+
+.reward-celebration-modal__content {
+  position: relative;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  padding: 32px;
+  text-align: center;
+}
+
+.reward-celebration-modal__hero {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 16px 30px rgba(74, 108, 161, 0.14);
+  font-size: 2.4rem;
+}
+
+.reward-celebration-modal__task {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.reward-celebration-modal__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.reward-celebration-modal__stats div {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.reward-celebration-modal__stats strong {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.reward-celebration-modal__confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.reward-celebration-modal__spark {
+  position: absolute;
+  font-size: 1.2rem;
+  animation: driftSpark 7s ease-in-out infinite;
+}
+
+.reward-celebration-modal__spark--1 { top: 16%; left: 12%; }
+.reward-celebration-modal__spark--2 { top: 20%; right: 14%; animation-delay: -1.4s; }
+.reward-celebration-modal__spark--3 { top: 58%; left: 10%; animation-delay: -2.4s; }
+.reward-celebration-modal__spark--4 { top: 64%; right: 12%; animation-delay: -3.4s; }
+.reward-celebration-modal__spark--5 { top: 10%; left: 50%; animation-delay: -4.2s; }
 
 .nf-enter-card {
   animation: childDashboardCardIn 500ms ease both;
@@ -1470,6 +1849,40 @@ a:focus-visible {
   }
 }
 
+@keyframes softTwinkle {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.92;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@keyframes floatCluster {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes driftSpark {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) scale(1.06);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 900px) {
   .home-hero,
   .home-support-grid,
@@ -1479,7 +1892,8 @@ a:focus-visible {
 
   .child-dashboard__hero-grid,
   .child-dashboard__main-grid,
-  .child-dashboard__bottom-grid {
+  .child-dashboard__bottom-grid,
+  .reward-overview-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1591,6 +2005,15 @@ a:focus-visible {
 
   .focus-step-card {
     padding: 22px;
+  }
+
+  .reward-celebration-banner,
+  .reward-celebration-modal__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .reward-celebration-banner__score {
+    justify-self: start;
   }
 
   .focus-step-card__title {

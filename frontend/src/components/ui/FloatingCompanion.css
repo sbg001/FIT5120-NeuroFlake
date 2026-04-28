@@ -1,0 +1,136 @@
+/* FloatingCompanion.css */
+
+.companion-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.companion-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 3px solid #E2E8F0;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.companion-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.15);
+}
+
+/* --- THE SIGNATURE ANIMATIONS --- */
+
+/* 1. The Dog: Energetic Bouncing */
+.anim-dog {
+  animation: bounce-happy 1.5s infinite cubic-bezier(0.28, 0.84, 0.42, 1);
+}
+@keyframes bounce-happy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* 2. The Star: Smooth Space Floating */
+.anim-star {
+  animation: float-space 3s infinite ease-in-out;
+}
+@keyframes float-space {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(8deg); }
+}
+
+/* 3. The Bear: Deep, Calm Breathing */
+.anim-bear {
+  animation: breathe-calm 4s infinite ease-in-out;
+}
+@keyframes breathe-calm {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* 4. The Cat: Sleeping / Gentle Rocking */
+.anim-cat {
+  animation: sleep-rock 3s infinite ease-in-out;
+  position: relative;
+}
+@keyframes sleep-rock {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* Optional: Zzz particles for the cat */
+.anim-cat::after {
+  content: 'z';
+  position: absolute;
+  top: -10px;
+  right: 0;
+  font-size: 1rem;
+  color: #94A3B8;
+  animation: zzz-float 3s infinite ease-in;
+  opacity: 0;
+}
+@keyframes zzz-float {
+  0% { transform: translate(0, 0) scale(0.8); opacity: 0; }
+  20% { opacity: 1; }
+  80% { transform: translate(15px, -25px) scale(1.2); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* --- CHAT WINDOW STYLING --- */
+.companion-chat-window {
+  width: 300px;
+  height: 400px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  transform-origin: bottom right;
+  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Success / Celebration (A happy little spin-jump) */
+.anim-success {
+  animation: celebrate 1s cubic-bezier(0.28, 0.84, 0.42, 1) !important;
+}
+@keyframes celebrate {
+  0% { transform: scale(1) translateY(0) rotate(0deg); }
+  25% { transform: scale(1.1) translateY(-20px) rotate(-15deg); }
+  50% { transform: scale(1.1) translateY(-20px) rotate(15deg); }
+  75% { transform: scale(1.1) translateY(-20px) rotate(-15deg); }
+  100% { transform: scale(1) translateY(0) rotate(0deg); }
+}
+
+/* Struggle / Empathetic (A gentle, supportive side-to-side wobble) */
+.anim-struggle {
+  animation: empathetic-wobble 2s ease-in-out infinite !important;
+}
+@keyframes empathetic-wobble {
+  0%, 100% { transform: rotate(0deg) scale(0.95); opacity: 0.8; }
+  25% { transform: rotate(-5deg) scale(0.95); }
+  75% { transform: rotate(5deg) scale(0.95); }
+}
+
+/* Ensure transitions between states are smooth (AC 7.1.1) */
+.companion-avatar {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}

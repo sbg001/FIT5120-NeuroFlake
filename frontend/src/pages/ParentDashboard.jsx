@@ -20,6 +20,7 @@ import {
   createParentReward,
   updateParentReward,
   deleteParentReward,
+  getSensoryRiskPrediction,
 } from "../services";
 
 const priorityTypeOptions = [
@@ -79,6 +80,20 @@ function ParentDashboard() {
 
   const [deleteRewardId, setDeleteRewardId] = useState("");
   const [deleteRewardMessage, setDeleteRewardMessage] = useState("");
+
+  const [riskForecast, setRiskForecast] = useState(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  
+  // Mocking the weekly emotion data for the chart (In production, fetch this from Supabase!)
+  const [weeklyData] = useState([
+    { day: "Mon", happy: 4, overwhelmed: 1 },
+    { day: "Tue", happy: 3, overwhelmed: 2 },
+    { day: "Wed", happy: 5, overwhelmed: 0 },
+    { day: "Thu", happy: 2, overwhelmed: 3 },
+    { day: "Fri", happy: 4, overwhelmed: 1 },
+    { day: "Sat", happy: 6, overwhelmed: 0 },
+    { day: "Sun", happy: 5, overwhelmed: 1 },
+  ]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -348,7 +363,33 @@ function ParentDashboard() {
     setDeleteRewardId("");
     setDeleteRewardMessage("Reward deleted successfully.");
   };
+  useEffect(() => {
+    if (activeSection === "insights" && !riskForecast) {
+      loadInsights();
+    }
+  }, [activeSection]);
 
+  const loadInsights = async () => {
+    setIsLoadingInsights(true);
+    
+    // In a real scenario, you would query Supabase for today's actual numbers.
+    // We are using realistic mock data here to test the ML engine.
+    const todaysTelemetry = {
+      hoursSlept: 6.5,          // Borderline sleep
+      overwhelmedCount: 2,      // Feeling friction
+      tasksAbandoned: 1,        
+      tasksCompleted: 3         
+    };
+
+    const prediction = await getSensoryRiskPrediction(todaysTelemetry);
+    
+    if (prediction) {
+      setRiskForecast(prediction);
+    }
+    
+    setIsLoadingInsights(false);
+  };
+  
   if (!parentProfile || !childProfile || !pointsData) {
     return (
       <section className="page-section">
@@ -930,6 +971,87 @@ function ParentDashboard() {
               </div>
             </Card>
           </div>
+        </div>
+      )}
+      {activeSection === "insights" && (
+        <div style={{ animation: "fadeIn 0.3s ease-in" }}>
+          
+          {/* 1. Sensory Overload Forecast Card */}
+          <div className="content-card" style={{ padding: "2rem", backgroundColor: "#FFFFFF", borderRadius: "16px", border: "1px solid #E2E8F0" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <h3 style={{ marginTop: 0, color: "#1E293B", fontSize: "1.4rem" }}>Sensory Overload Forecast</h3>
+                <p style={{ color: "#64748B", fontSize: "1.1rem", marginTop: "0.25rem" }}>
+                  AI-powered prediction based on today's telemetry (sleep, task completion, and emotion logs).
+                </p>
+              </div>
+              
+              {/* Dynamic Risk Badge */}
+              {isLoadingInsights ? (
+                <div style={{ padding: "0.5rem 1rem", backgroundColor: "#F1F5F9", color: "#64748B", borderRadius: "999px", fontWeight: "bold" }}>Analyzing...</div>
+              ) : riskForecast ? (
+                <div style={{ 
+                  padding: "0.5rem 1.5rem", 
+                  borderRadius: "999px", 
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
+                  backgroundColor: riskForecast.risk_level === "Low" ? "#D1FAE5" : riskForecast.risk_level === "Medium" ? "#FEF3C7" : "#FEE2E2",
+                  color: riskForecast.risk_level === "Low" ? "#065F46" : riskForecast.risk_level === "Medium" ? "#92400E" : "#991B1B"
+                }}>
+                  {riskForecast.risk_level} Risk
+                </div>
+              ) : (
+                <div style={{ padding: "0.5rem 1rem", backgroundColor: "#FEE2E2", color: "#EF4444", borderRadius: "999px" }}>Engine Offline</div>
+              )}
+            </div>
+
+            {/* AI Advisory Text */}
+            {riskForecast && (
+              <div style={{ marginTop: "1.5rem", padding: "1.5rem", backgroundColor: "#F8FAFC", borderLeft: `4px solid ${riskForecast.risk_level === "Low" ? "#10B981" : riskForecast.risk_level === "Medium" ? "#F59E0B" : "#EF4444"}`, borderRadius: "0 12px 12px 0" }}>
+                <p style={{ margin: 0, fontSize: "1.15rem", color: "#334155", lineHeight: "1.6" }}>
+                  <strong>AI Advisory:</strong> {riskForecast.advisory_text}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Historical Emotion Trends (Native CSS Bar Chart) */}
+          <div className="content-card" style={{ padding: "2rem", backgroundColor: "#FFFFFF", borderRadius: "16px", border: "1px solid #E2E8F0", marginTop: "1.5rem" }}>
+            <h3 style={{ marginTop: 0, color: "#1E293B", fontSize: "1.3rem" }}>Weekly Emotional Regulation</h3>
+            <p style={{ color: "#64748B", marginBottom: "2rem" }}>Tracking reported emotions to identify patterns and triggers over time.</p>
+            
+            {/* Legend */}
+            <div style={{ display: "flex", gap: "1.5rem", marginBottom: "1.5rem", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#10B981" }}></div>
+                <span style={{ color: "#64748B", fontSize: "0.9rem" }}>Happy / Good</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "#EF4444" }}></div>
+                <span style={{ color: "#64748B", fontSize: "0.9rem" }}>Overwhelmed</span>
+              </div>
+            </div>
+
+            {/* CSS Bar Chart */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: "200px", borderBottom: "2px solid #E2E8F0", paddingBottom: "0.5rem", gap: "10px" }}>
+              {weeklyData.map((data, idx) => (
+                <div key={idx} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+                  
+                  {/* The Bars */}
+                  <div style={{ display: "flex", gap: "4px", alignItems: "flex-end", height: "180px", width: "100%", justifyContent: "center" }}>
+                    {/* Happy Bar */}
+                    <div style={{ width: "30%", maxWidth: "20px", height: `${(data.happy / 6) * 100}%`, backgroundColor: "#10B981", borderRadius: "4px 4px 0 0", transition: "height 1s ease-out" }}></div>
+                    {/* Overwhelmed Bar */}
+                    <div style={{ width: "30%", maxWidth: "20px", height: `${(data.overwhelmed / 6) * 100}%`, backgroundColor: "#EF4444", borderRadius: "4px 4px 0 0", transition: "height 1s ease-out" }}></div>
+                  </div>
+                  
+                  {/* Day Label */}
+                  <span style={{ marginTop: "0.5rem", color: "#64748B", fontSize: "0.9rem", fontWeight: "500" }}>{data.day}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
         </div>
       )}
     </section>

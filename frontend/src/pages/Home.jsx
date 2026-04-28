@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
+import ProgressBar from "../components/ui/ProgressBar";
 
 function Home() {
   const journeySteps = [
@@ -56,20 +61,24 @@ function Home() {
     <section className="home-page">
       <div className="home-hero">
         <div className="home-hero-copy">
-          <p className="eyebrow">Welcome to NeuroFlake</p>
-          <h2 className="home-title">Daily tasks, one gentle step at a time</h2>
-          <p className="home-lede">
-            NeuroFlake helps children move through routines with clear steps,
-            focus support, and kind encouragement.
-          </p>
+          <div className="home-badge-row">
+            <Badge tone="mint">Soft structure</Badge>
+            <Badge tone="sky">Calm focus</Badge>
+            <Badge tone="warm">Small wins</Badge>
+          </div>
+          <PageHeader
+            eyebrow="Welcome to NeuroFlake"
+            title="Daily tasks can feel like a cozy little adventure"
+            description="NeuroFlake helps children move through routines with clear next steps, gentle focus tools, and warm encouragement that parents can trust."
+          />
 
           <div className="home-hero-actions">
-            <Link to="/login" className="primary-button">
+            <Button as={Link} to="/login" variant="primary">
               Start
-            </Link>
-            <a href="#how-it-helps" className="secondary-button">
+            </Button>
+            <Button as="a" href="#how-it-helps" variant="secondary">
               See How It Helps
-            </a>
+            </Button>
           </div>
         </div>
 
@@ -87,6 +96,7 @@ function Home() {
           <div className="home-preview-card">
             <p className="home-preview-label">Today</p>
             <h3>Get ready for school</h3>
+            <ProgressBar value={2} max={3} label="Task progress" />
             <div className="home-step-row is-done">
               <span>1</span>
               <p>Put on shoes</p>
@@ -103,15 +113,12 @@ function Home() {
         </div>
       </div>
 
-      <div id="how-it-helps" className="home-panel">
-        <div className="section-header">
-          <p className="eyebrow">How It Helps</p>
-          <h3>Try the task journey</h3>
-          <p className="page-text">
-            Tap each stage to see how a big routine becomes easier to start,
-            follow, and finish.
-          </p>
-        </div>
+      <Card id="how-it-helps" className="home-panel" variant="glow">
+        <PageHeader
+          eyebrow="How It Helps"
+          title="Try the task journey"
+          description="Tap each stage to see how a big routine becomes easier to start, follow, and finish."
+        />
 
         <div className="home-journey-tabs">
           {journeySteps.map((step) => (
@@ -138,19 +145,19 @@ function Home() {
           </div>
           <strong>{activeJourney.note}</strong>
         </div>
-      </div>
+      </Card>
 
       <div className="home-support-grid">
-        <article className="home-support-copy">
+        <Card as="article" className="home-support-copy" variant="soft">
           <p className="eyebrow">Support That Adapts</p>
           <h3>Meet the child where they are</h3>
           <p>
             Some days need momentum. Some days need a pause. NeuroFlake keeps
             the next step calm and concrete.
           </p>
-        </article>
+        </Card>
 
-        <article className="home-support-tool">
+        <Card as="article" className="home-support-tool" variant="default">
           <div className="home-mode-buttons">
             {supportModes.map((mode) => (
               <button
@@ -168,18 +175,18 @@ function Home() {
             ))}
           </div>
           <p>{activeSupport.message}</p>
-        </article>
+        </Card>
       </div>
 
       <div className="home-values">
-        <article className="feature-card">
+        <Card as="article" className="feature-card" variant="soft">
           <h3>For Children</h3>
           <p>Simple words, visible progress, and one step at a time.</p>
-        </article>
-        <article className="feature-card">
+        </Card>
+        <Card as="article" className="feature-card" variant="soft">
           <h3>For Parents</h3>
           <p>Create routines, guide priorities, and choose meaningful rewards.</p>
-        </article>
+        </Card>
       </div>
     </section>
   );

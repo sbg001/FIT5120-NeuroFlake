@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
 import {
   getPointsBalance,
   getLatestRewardSummary,
@@ -18,6 +22,11 @@ function Rewards() {
   const location = useLocation();
 
   const showCelebration = location.state?.showCelebration === true;
+  const celebrationMessages = [
+    "Great effort!",
+    "You completed a step!",
+    "Your focus is growing!",
+  ];
 
   const [pointsData, setPointsData] = useState(null);
   const [latestRewardSummary, setLatestRewardSummary] = useState(null);
@@ -26,18 +35,19 @@ function Rewards() {
   const [parentRewards, setParentRewards] = useState([]);
   const [nextTaskId, setNextTaskId] = useState(null);
   const [childPreferences, setChildPreferences] = useState(null);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
 
   useEffect(() => {
     async function loadRewardsData() {
-      const pointsResult = await getPointsBalance();
-      const latestSummaryResult = await getLatestRewardSummary();
-      const transactionsResult = await getRewardTransactions();
-      const parentRewardsResult = await getParentApprovedRewards();
       const childResult = await getChildProfile();
+      const childData = childResult.data;
+      const pointsResult = await getPointsBalance(childData?.user_id);
+      const latestSummaryResult = await getLatestRewardSummary(childData?.user_id);
+      const transactionsResult = await getRewardTransactions(childData?.user_id);
+      const parentRewardsResult = await getParentApprovedRewards();
       const preferencesResult = await getChildPreferences();
       const tasksResult = await getTasks();
 
-      const childData = childResult.data;
       const allTasks = tasksResult.data || [];
       const latestTaskId = latestSummaryResult.data?.task_id;
 
@@ -66,6 +76,10 @@ function Rewards() {
 
     loadRewardsData();
   }, []);
+
+  useEffect(() => {
+    setIsCelebrationOpen(showCelebration);
+  }, [showCelebration]);
 
   const handleStartAnotherTask = () => {
     if (nextTaskId) {
@@ -125,6 +139,43 @@ function Rewards() {
   const currentThemeLabel = themeLabelMap[theme] || theme;
   const currentRewardInterestLabel =
     rewardInterestLabelMap[rewardInterest] || rewardInterest;
+  const latestPointsEarned = latestRewardSummary?.points_earned ?? 0;
+  const latestStepsCompleted = latestRewardSummary?.steps_completed ?? 0;
+  const updatedPointsBalance =
+    latestRewardSummary?.updated_points_balance ?? pointsBalance;
+  const nextMilestoneTarget =
+    pointsBalance >= 300 ? 400 : pointsBalance >= 200 ? 300 : pointsBalance >= 100 ? 200 : 100;
+  const pointsToNextMilestone = Math.max(nextMilestoneTarget - pointsBalance, 0);
+
+  const achievementBadges = [
+    {
+      id: "spark-points",
+      emoji: "⭐",
+      title: "Spark Points",
+      text: `${pointsBalance} points shining in your jar`,
+      tone: "warm",
+    },
+    {
+      id: "step-finisher",
+      emoji: "🏅",
+      title: "Step Finisher",
+      text:
+        latestStepsCompleted > 0
+          ? `${latestStepsCompleted} calm step${latestStepsCompleted === 1 ? "" : "s"} completed`
+          : "Each finished step adds to your progress",
+      tone: "mint",
+    },
+    {
+      id: "focus-grower",
+      emoji: currentCharacter,
+      title: "Focus Grower",
+      text:
+        pointsToNextMilestone > 0
+          ? `${pointsToNextMilestone} more points to your next milestone`
+          : "A new milestone is ready to celebrate",
+      tone: "sky",
+    },
+  ];
 
   const getRewardMatchScore = (reward) => {
     let score = 0;
@@ -135,7 +186,10 @@ function Rewards() {
 
     const rewardText = `${reward.title || ""} ${reward.theme || ""}`.toLowerCase();
 
-    if (rewardInterest === "food" && /food|dessert|pizza|snack|treat|ice cream|cake/.test(rewardText)) {
+    if (
+      rewardInterest === "food" &&
+      /food|dessert|pizza|snack|treat|ice cream|cake/.test(rewardText)
+    ) {
       score += 2;
     }
 
@@ -143,11 +197,17 @@ function Rewards() {
       score += 2;
     }
 
-    if (rewardInterest === "toys" && /toy|sticker|surprise|plush|small toy/.test(rewardText)) {
+    if (
+      rewardInterest === "toys" &&
+      /toy|sticker|surprise|plush|small toy/.test(rewardText)
+    ) {
       score += 2;
     }
 
-    if (rewardInterest === "screen-time" && /screen|ipad|tablet|movie|video/.test(rewardText)) {
+    if (
+      rewardInterest === "screen-time" &&
+      /screen|ipad|tablet|movie|video/.test(rewardText)
+    ) {
       score += 2;
     }
 
@@ -163,116 +223,113 @@ function Rewards() {
   );
 
   return (
-    <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Rewards</p>
-        <h2 className="page-title">
-          {showCelebration ? "You did it!" : "My Rewards"}
-        </h2>
-        <p className="page-text">
-          {showCelebration
-            ? "Every completed task is a step forward. Let’s celebrate your progress."
-            : "See your points, rewards, and encouraging progress all in one place."}
-        </p>
-      </div>
+    <section className="page-section rewards-experience">
+      <PageHeader
+        eyebrow="Rewards"
+        title={showCelebration ? "You did it!" : "My Rewards"}
+        description={
+          showCelebration
+            ? "Every completed task is a step forward. Let's celebrate your progress."
+            : "See your points, rewards, and encouraging progress all in one place."
+        }
+      />
 
       {showCelebration && (
-        <div
-          className="hero-card"
-          style={{
-            textAlign: "center",
-            padding: "2rem",
-            border: "2px solid #f7d98b",
-            background:
-              "linear-gradient(180deg, rgba(255,248,225,1) 0%, rgba(255,255,255,1) 100%)",
-          }}
-        >
-          <p style={{ fontSize: "3rem", margin: "0 0 0.5rem 0" }}>🎉</p>
-          <h3 style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>
-            Great job, superstar!
-          </h3>
-          <p
-            className="page-text"
-            style={{ fontSize: "1.1rem", marginBottom: "0.75rem" }}
-          >
-            {latestRewardSummary.celebration_message ||
-              "Amazing work! You completed your task."}
-          </p>
-          <p
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: 700,
-              margin: "0 0 1rem 0",
-            }}
-          >
-            🏆 +{latestRewardSummary.points_earned} points earned
-          </p>
-
-          {latestRewardSummary.task_title && (
-            <p className="page-text" style={{ marginBottom: "1rem" }}>
-              You finished <strong>{latestRewardSummary.task_title}</strong>.
-            </p>
-          )}
-
-          <div
-            className="button-row"
-            style={{ justifyContent: "center", flexWrap: "wrap", gap: "0.75rem" }}
-          >
-            <button className="primary-button" onClick={handleGoToMyTasks}>
-              Go to My Tasks
-            </button>
-            <button className="secondary-button" onClick={handleStartAnotherTask}>
-              Start Another Task
-            </button>
+        <Card className="reward-celebration-banner" variant="glow">
+          <div className="reward-celebration-banner__stars" aria-hidden="true">
+            <span>⭐</span>
+            <span>✨</span>
+            <span>⭐</span>
           </div>
-        </div>
+          <div className="reward-celebration-banner__copy">
+            <Badge tone="warm">Mission complete</Badge>
+            <h3>Great job, superstar!</h3>
+            <p className="page-text">
+              {latestRewardSummary.celebration_message ||
+                "Amazing work! You completed your task."}
+            </p>
+          </div>
+          <div className="reward-celebration-banner__score">
+            <strong>+{latestPointsEarned}</strong>
+            <span>points earned</span>
+          </div>
+        </Card>
       )}
 
-      <div
-        className="card-grid"
-        style={{
-          marginTop: "1.5rem",
-          alignItems: "stretch",
-        }}
-      >
-        <div className="content-card" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>⭐</p>
-          <h3 style={{ marginBottom: "0.5rem" }}>My Points</h3>
-          <p
-            style={{
-              fontSize: "2rem",
-              fontWeight: 700,
-              margin: 0,
-            }}
-          >
-            {pointsBalance}
-          </p>
-        </div>
+      <div className="reward-overview-grid">
+        <Card className="reward-points-card" variant="glow">
+          <div className="reward-points-card__content">
+            <div>
+              <p className="eyebrow">Reward Points</p>
+              <h3>My point jar</h3>
+            </div>
+            <div className="reward-points-card__count">{pointsBalance}</div>
+            <p className="page-text">
+              Every finished step adds something good to your day.
+            </p>
+            <div className="reward-points-card__footer">
+              <Badge tone="warm">+{latestPointsEarned} latest points</Badge>
+              <span>{pointsToNextMilestone} to next milestone</span>
+            </div>
+          </div>
+          <div className="reward-points-card__sparkles" aria-hidden="true">
+            <span>⭐</span>
+            <span>✨</span>
+            <span>🌟</span>
+          </div>
+        </Card>
 
-        <div className="content-card" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>
+        <Card className="reward-style-card" variant="soft">
+          <div className="reward-style-card__icon" aria-hidden="true">
             {currentCharacter}
-          </p>
-          <h3 style={{ marginBottom: "0.5rem" }}>My Style</h3>
-          <p className="page-text" style={{ margin: 0 }}>
-            Theme: {currentThemeLabel}
-          </p>
-          <p className="page-text" style={{ margin: "0.35rem 0 0 0" }}>
-            Reward style: {currentRewardInterestLabel}
-          </p>
-        </div>
+          </div>
+          <div className="reward-style-card__copy">
+            <p className="eyebrow">My Style</p>
+            <h3>{currentThemeLabel} world</h3>
+            <p className="page-text">Reward style: {currentRewardInterestLabel}</p>
+          </div>
+        </Card>
 
-        <div className="content-card" style={{ textAlign: "center" }}>
-          <p style={{ fontSize: "1.8rem", margin: "0 0 0.5rem 0" }}>🏅</p>
-          <h3 style={{ marginBottom: "0.5rem" }}>Milestone</h3>
-          <p className="page-text" style={{ margin: 0 }}>
-            {milestoneMessage}
-          </p>
-        </div>
+        <Card className="reward-milestone-card" variant="soft">
+          <div className="reward-milestone-card__icon" aria-hidden="true">
+            🏆
+          </div>
+          <div className="reward-milestone-card__copy">
+            <p className="eyebrow">Milestone</p>
+            <h3>Keep going</h3>
+            <p className="page-text">{milestoneMessage}</p>
+          </div>
+        </Card>
       </div>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ marginBottom: "0.75rem" }}>Recent reward activity</h3>
+      <Card className="reward-badges-card" variant="default">
+        <div className="reward-section-heading">
+          <div>
+            <p className="eyebrow">Achievement Badges</p>
+            <h3>Small wins worth noticing</h3>
+          </div>
+          <Badge tone="mint">Progress celebration</Badge>
+        </div>
+        <div className="reward-badges-grid">
+          {achievementBadges.map((badge) => (
+            <div key={badge.id} className="reward-badge-tile">
+              <Badge tone={badge.tone}>{badge.title}</Badge>
+              <div className="reward-badge-tile__icon" aria-hidden="true">
+                {badge.emoji}
+              </div>
+              <p>{badge.text}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="reward-activity-card" variant="default">
+        <div className="reward-section-heading">
+          <div>
+            <p className="eyebrow">Recent Reward Activity</p>
+            <h3>Progress you can look back on</h3>
+          </div>
+        </div>
         {recentTransactions.length > 0 ? (
           recentTransactions.map((transaction) => (
             <div
@@ -280,16 +337,13 @@ function Rewards() {
                 transaction.transaction_id ||
                 `${transaction.task_id}-${transaction.created_at}`
               }
-              style={{
-                padding: "0.9rem 1rem",
-                borderRadius: "14px",
-                background: "#f8faff",
-                border: "1px solid #d8dbe8",
-                marginBottom: "0.75rem",
-              }}
+              className="reward-activity-item"
             >
-              <p style={{ margin: 0 }}>
-                🎁 <strong>+{transaction.points_earned} points</strong>
+              <div className="reward-activity-item__icon" aria-hidden="true">
+                🎁
+              </div>
+              <p>
+                <strong>+{transaction.points_earned} points</strong>
                 {transaction.task_title
                   ? ` from ${transaction.task_title}`
                   : " from a completed task"}
@@ -299,92 +353,174 @@ function Rewards() {
         ) : (
           <p>No reward activity yet.</p>
         )}
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ marginBottom: "0.75rem" }}>
-          Reward ideas picked for your style
-        </h3>
-        <div className="card-grid" style={{ alignItems: "stretch" }}>
+      <Card className="reward-shelf-card" variant="default">
+        <div className="reward-section-heading">
+          <div>
+            <p className="eyebrow">Reward Ideas</p>
+            <h3>Picked for your style</h3>
+          </div>
+        </div>
+        <div className="reward-shelf-grid">
           {personalizedSuggestedRewards.map((reward) => {
             const isBestMatch = getRewardMatchScore(reward) > 0;
 
             return (
-              <div
-                key={reward.id}
-                className="feature-card"
-                style={{
-                  textAlign: "center",
-                }}
-              >
-                {isBestMatch && (
-                  <p
-                    style={{
-                      margin: "0 0 0.5rem 0",
-                      fontSize: "0.95rem",
-                      fontWeight: 700,
-                    }}
-                  >
+              <Card key={reward.id} className="reward-item-card" variant="soft">
+                {isBestMatch ? (
+                  <p className="reward-item-card__match">
                     {currentCharacter} Best match for you
                   </p>
-                )}
+                ) : null}
 
-                <p style={{ margin: "0 0 0.5rem 0", fontSize: "2rem" }}>
+                <div className="reward-item-card__emoji" aria-hidden="true">
                   {reward.emoji}
-                </p>
-                <h4 style={{ marginBottom: "0.5rem" }}>{reward.title}</h4>
-                <p style={{ margin: "0.25rem 0" }}>Cost: {reward.cost} points</p>
-                <p style={{ margin: "0.25rem 0" }}>Theme: {reward.theme}</p>
-              </div>
+                </div>
+                <h4>{reward.title}</h4>
+                <div className="reward-item-card__meta">
+                  <span>{reward.cost} points</span>
+                  <span>{reward.theme}</span>
+                </div>
+              </Card>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ marginBottom: "0.75rem" }}>Parent-picked rewards</h3>
-        <div className="card-grid" style={{ alignItems: "stretch" }}>
+      <Card className="reward-shelf-card" variant="default">
+        <div className="reward-section-heading">
+          <div>
+            <p className="eyebrow">Parent Picks</p>
+            <h3>Rewards chosen with care</h3>
+          </div>
+        </div>
+        <div className="reward-shelf-grid">
           {personalizedParentRewards.map((reward) => {
             const isBestMatch = getRewardMatchScore(reward) > 0;
 
             return (
-              <div
-                key={reward.id}
-                className="feature-card"
-                style={{
-                  textAlign: "center",
-                }}
-              >
-                {isBestMatch && (
-                  <p
-                    style={{
-                      margin: "0 0 0.5rem 0",
-                      fontSize: "0.95rem",
-                      fontWeight: 700,
-                    }}
-                  >
+              <Card key={reward.id} className="reward-item-card" variant="soft">
+                {isBestMatch ? (
+                  <p className="reward-item-card__match">
                     {currentCharacter} Best match for you
                   </p>
-                )}
+                ) : null}
 
-                <p style={{ margin: "0 0 0.5rem 0", fontSize: "2rem" }}>
+                <div className="reward-item-card__emoji" aria-hidden="true">
                   {reward.emoji}
-                </p>
-                <h4 style={{ marginBottom: "0.5rem" }}>{reward.title}</h4>
-                <p style={{ margin: "0.25rem 0" }}>Cost: {reward.cost} points</p>
-                <p style={{ margin: "0.25rem 0" }}>Theme: {reward.theme}</p>
-              </div>
+                </div>
+                <h4>{reward.title}</h4>
+                <div className="reward-item-card__meta">
+                  <span>{reward.cost} points</span>
+                  <span>{reward.theme}</span>
+                </div>
+              </Card>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="content-card" style={{ marginTop: "1.5rem" }}>
-        <h3 style={{ marginBottom: "0.75rem" }}>Encouragement</h3>
-        <p className="page-text" style={{ margin: 0 }}>
-          {encouragingMessage}
-        </p>
-      </div>
+      <Card className="reward-encouragement-card" variant="soft">
+        <div className="reward-section-heading">
+          <div>
+            <p className="eyebrow">Encouragement</p>
+            <h3>Kind words for your progress</h3>
+          </div>
+        </div>
+        <div className="reward-encouragement-list">
+          {celebrationMessages.map((message) => (
+            <div key={message} className="reward-encouragement-pill">
+              {message}
+            </div>
+          ))}
+        </div>
+        <p className="page-text">{encouragingMessage}</p>
+      </Card>
+
+      {isCelebrationOpen ? (
+        <div
+          className="reward-celebration-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reward-celebration-title"
+        >
+          <div
+            className="reward-celebration-modal__backdrop"
+            onClick={() => setIsCelebrationOpen(false)}
+          />
+          <Card className="reward-celebration-modal__panel" variant="glow">
+            <button
+              type="button"
+              className="reward-celebration-modal__close"
+              onClick={() => setIsCelebrationOpen(false)}
+              aria-label="Close celebration"
+            >
+              ×
+            </button>
+
+            <div className="reward-celebration-modal__confetti" aria-hidden="true">
+              <span className="reward-celebration-modal__spark reward-celebration-modal__spark--1">
+                ⭐
+              </span>
+              <span className="reward-celebration-modal__spark reward-celebration-modal__spark--2">
+                ✨
+              </span>
+              <span className="reward-celebration-modal__spark reward-celebration-modal__spark--3">
+                ⭐
+              </span>
+              <span className="reward-celebration-modal__spark reward-celebration-modal__spark--4">
+                ✨
+              </span>
+              <span className="reward-celebration-modal__spark reward-celebration-modal__spark--5">
+                🌟
+              </span>
+            </div>
+
+            <div className="reward-celebration-modal__content">
+              <Badge tone="warm">Celebration moment</Badge>
+              <div className="reward-celebration-modal__hero" aria-hidden="true">
+                🎉
+              </div>
+              <h3 id="reward-celebration-title">Great effort!</h3>
+              <p className="page-text">
+                {latestRewardSummary.celebration_message ||
+                  "Amazing work! You completed your task."}
+              </p>
+
+              {latestRewardSummary.task_title ? (
+                <p className="reward-celebration-modal__task">
+                  You finished <strong>{latestRewardSummary.task_title}</strong>.
+                </p>
+              ) : null}
+
+              <div className="reward-celebration-modal__stats">
+                <div>
+                  <strong>+{latestPointsEarned}</strong>
+                  <span>points earned</span>
+                </div>
+                <div>
+                  <strong>{updatedPointsBalance}</strong>
+                  <span>points in your jar</span>
+                </div>
+              </div>
+
+              <div className="reward-celebration-modal__messages">
+                {celebrationMessages.map((message) => (
+                  <span key={message}>{message}</span>
+                ))}
+              </div>
+
+              <div className="reward-celebration-modal__actions">
+                <Button onClick={handleGoToMyTasks}>Go to My Tasks</Button>
+                <Button variant="secondary" onClick={handleStartAnotherTask}>
+                  Start Another Task
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      ) : null}
     </section>
   );
 }

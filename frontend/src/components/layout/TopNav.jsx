@@ -1,9 +1,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
 
 function TopNav() {
   const navigate = useNavigate();
   const isLoggedIn = !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
+  const currentName = localStorage.getItem("current_user_name");
 
   const childNavItems = [
     { to: "/child", label: "Child Dashboard" },
@@ -42,21 +45,12 @@ function TopNav() {
         </div>
         <div>
           <h1 className="brand-title">NeuroFlake</h1>
-          <p className="brand-subtitle">Building Connections that Last</p>
+          <p className="brand-subtitle">Kind support for steady little wins</p>
         </div>
       </div>
 
-      <nav
-        className="nav-links"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          width: "100%",
-          gap: "1rem",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+      <nav className="nav-shell">
+        <div className="nav-links">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -70,34 +64,33 @@ function TopNav() {
           ))}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+        <div className="nav-actions">
+          {isLoggedIn && currentName ? (
+            <Badge tone={currentRole === "parent" ? "warm" : "mint"}>
+              {currentRole === "parent" ? "Parent" : "Explorer"}: {currentName}
+            </Badge>
+          ) : (
+            <Badge tone="default">Gentle task adventures</Badge>
+          )}
 
           {!isLoggedIn && (
-            <button
+            <Button
               onClick={handleLogin}
-              className="secondary-button"
-              style={{
-                padding: "0.5rem 1rem",
-                borderRadius: "20px",
-                fontSize: "0.9rem",
-              }}
+              variant="secondary"
+              size="sm"
             >
               Login
-            </button>
+            </Button>
           )}
 
           {isLoggedIn && (
-            <button
+            <Button
               onClick={handleLogout}
-              className="secondary-button"
-              style={{
-                padding: "0.5rem 1rem",
-                borderRadius: "20px",
-                fontSize: "0.9rem",
-              }}
+              variant="secondary"
+              size="sm"
             >
               Logout
-            </button>
+            </Button>
           )}
         </div>
       </nav>

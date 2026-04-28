@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import InfoCard from "../components/ui/InfoCard";
+import PageHeader from "../components/ui/PageHeader";
 import {
   getParentProfile,
   getChildProfile,
@@ -84,7 +85,7 @@ function ParentDashboard() {
       const parentResult = await getParentProfile();
       const childResult = await getChildProfile();
       const tasksResult = await getTasks();
-      const pointsResult = await getPointsBalance();
+      const pointsResult = await getPointsBalance(childResult.data?.user_id);
       const rewardsResult = await getAllRewardsForParent();
 
       setParentProfile(parentResult.data);
@@ -406,13 +407,11 @@ function ParentDashboard() {
 
   return (
     <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Parent Dashboard</p>
-        <h2 className="page-title">Welcome, {parentProfile.name}</h2>
-        <p className="page-text">
-          A simple overview to support {childProfile.name} with tasks, structure, and motivation.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Parent Dashboard"
+        title={`Welcome, ${parentProfile.name}`}
+        description={`A simple overview to support ${childProfile.name} with tasks, structure, and motivation.`}
+      />
 
       <div className="card-grid">
         <InfoCard title="Support Goals">

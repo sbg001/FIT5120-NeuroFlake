@@ -1,6 +1,10 @@
-import { Link } from "react-router-dom";
-import InfoCard from "../components/ui/InfoCard";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import PageHeader from "../components/ui/PageHeader";
+import ProgressBar from "../components/ui/ProgressBar";
 import {
   getTasks,
   getPointsBalance,
@@ -23,7 +27,7 @@ function ChildDashboard() {
     async function loadData() {
       const { data: childData } = await getChildProfile();
       const { data: tasksData } = await getTasks();
-      const { data: pointsData } = await getPointsBalance();
+      const { data: pointsData } = await getPointsBalance(childData?.user_id);
       const { data: preferenceData } = await getChildPreferences();
 
       setChild(childData);
@@ -51,13 +55,11 @@ function ChildDashboard() {
     });
 
     if (result.error) {
-      setPreferenceMessage("Failed to save preferences.");
+      setPreferenceMessage("Could not save your style picks yet.");
       return;
     }
 
-    setPreferenceMessage("Preferences saved successfully.");
-
-    window.dispatchEvent(new Event("preferencesUpdated"));
+    setPreferenceMessage("Your mission style is ready.");
   };
 
   if (!child) {
@@ -65,7 +67,6 @@ function ChildDashboard() {
   }
 
   const displayName = String(child.name || "").replace(/\s*\([^)]*\)\s*$/, "");
-
   const childTasks = tasks.filter(
     (task) => String(task.child_id) === String(child.user_id)
   );
@@ -86,17 +87,15 @@ function ChildDashboard() {
     )
     .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0));
 
-  const displayedTasks =
-    readyTasks.length > 0 ? readyTasks.slice(0, 3) : completedTasks.slice(0, 3);
-
+  const featuredTask = readyTasks[0] || completedTasks[0] || null;
+  const extraTasks = readyTasks.slice(1, 3);
+  const totalTasks = childTasks.length;
+  const completedCount = completedTasks.length;
+  const completionPercent =
+    totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+  const pointsBalance = points?.points_balance ?? 0;
   const ageDisplay =
     child.age ?? child.child_age ?? child.profile_age ?? "Not set";
-
-  const summaryTextStyle = {
-    margin: 0,
-    fontSize: "1.08rem",
-    lineHeight: 1.5,
-  };
 
   const characterMap = {
     star: "⭐",
@@ -124,109 +123,236 @@ function ChildDashboard() {
   const currentRewardInterestLabel =
     rewardInterestLabelMap[rewardInterest] || rewardInterest;
 
+  const achievementCards = [
+    {
+      id: "points",
+      emoji: "✨",
+      title: "Spark Points",
+      text: `${pointsBalance} bright points collected`,
+      tone: "sky",
+    },
+    {
+      id: "missions",
+      emoji: "🎯",
+      title: "Mission Progress",
+      text:
+        totalTasks > 0
+          ? `${completedCount} of ${totalTasks} missions finished`
+          : "Your first mission can start today",
+      tone: "mint",
+    },
+    {
+      id: "style",
+      emoji: currentCharacter,
+      title: "Adventure Style",
+      text: `${currentThemeLabel} world with ${currentRewardInterestLabel.toLowerCase()} rewards`,
+      tone: "warm",
+    },
+  ];
+
+  const missionMessage = featuredTask
+    ? featuredTask.status === "completed"
+      ? "You already finished this mission. Want to look at your great work?"
+      : "Your next mission is ready. Let’s take one gentle step at a time."
+    : "No missions waiting right now. That means you can rest or celebrate.";
+
+  const featuredProgressValue = featuredTask
+    ? Number(featuredTask.completed_steps || 0)
+    : 0;
+  const featuredProgressMax = featuredTask
+    ? Math.max(Number(featuredTask.total_steps || 0), 1)
+    : 1;
+
   return (
-    <section className="page-section">
-      <div className="section-header">
-        <p className="eyebrow">Child Dashboard</p>
-        <h2 className="page-title">
-          Hi {displayName}, what would you like to do today?
-        </h2>
-        <p className="page-text">
-          A calm, simple space to help you move through tasks one step at a time.
-        </p>
+    <section className="page-section child-dashboard">
+      <PageHeader
+        eyebrow="Mission Dashboard"
+        title={`Hi ${displayName}, ready for your next small win?`}
+        description="This is your calm mission board. You can see your next step, your progress, and the good things you have already earned."
+      />
+
+      <div className="child-dashboard__hero-grid">
+        <Card className="child-dashboard__welcome nf-enter-card nf-enter-card--1" variant="glow">
+          <div className="child-dashboard__welcome-copy">
+            <div className="child-dashboard__welcome-top">
+              <Badge tone="mint">Mission buddy online</Badge>
+              <Badge tone="sky">Age {ageDisplay}</Badge>
+            </div>
+
+            <div className="child-dashboard__mascot-row">
+              <div className="child-dashboard__mascot">{currentCharacter}</div>
+              <div>
+                <h3 className="child-dashboard__hero-title">Welcome back, {displayName}</h3>
+                <p className="page-text">
+                  {readyTasks.length > 0
+                    ? `${readyTasks.length} mission${readyTasks.length === 1 ? "" : "s"} ready for today.`
+                    : "You have a calm, clear board today."}
+                </p>
+              </div>
+            </div>
+
+            <div className="child-dashboard__hero-pills">
+              <span>Theme: {currentThemeLabel}</span>
+              <span>Reward style: {currentRewardInterestLabel}</span>
+              <span>Points: {pointsBalance}</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="child-dashboard__points-card nf-enter-card nf-enter-card--2" variant="soft">
+          <p className="eyebrow">Reward Energy</p>
+          <div className="child-dashboard__points-value">{pointsBalance}</div>
+          <p className="page-text">Every finished step helps your point jar grow.</p>
+          <div className="child-dashboard__points-stars" aria-hidden="true">
+            <span>⭐</span>
+            <span>✨</span>
+            <span>⭐</span>
+          </div>
+        </Card>
       </div>
 
-      <div className="card-grid" style={{ alignItems: "stretch" }}>
-        <InfoCard title="My Profile">
-          <div style={{ display: "grid", gap: "0.9rem" }}>
-            <p style={summaryTextStyle}>
-              <strong>Name:</strong> {displayName || "Not set"}
-            </p>
-            <p style={summaryTextStyle}>
-              <strong>Age:</strong> {ageDisplay}
-            </p>
-            <p style={{ ...summaryTextStyle, fontWeight: 700 }}>
-              ⭐ Points: {points?.points_balance ?? 0}
-            </p>
+      <div className="child-dashboard__main-grid">
+        <Card className="child-dashboard__mission-card nf-enter-card nf-enter-card--3" variant="glow">
+          <div className="child-dashboard__mission-header">
+            <div>
+              <p className="eyebrow">Today's Mission</p>
+              <h3 className="child-dashboard__mission-title">
+                {featuredTask ? featuredTask.title : "Mission time can be calm today"}
+              </h3>
+            </div>
+            {featuredTask?.priority_type ? (
+              <Badge tone="warm">
+                {featuredTask.priority_type} {featuredTask.priority_rank}
+              </Badge>
+            ) : null}
           </div>
-        </InfoCard>
 
-        <InfoCard title="Today's Tasks">
-          <div style={{ display: "grid", gap: "0.9rem" }}>
-            {readyTasks.length > 0 ? (
-              <>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "2rem",
-                    fontWeight: 700,
-                    lineHeight: 1,
-                  }}
-                >
-                  {readyTasks.length}
-                </p>
-                <p style={summaryTextStyle}>
-                  {readyTasks.length === 1
-                    ? "task ready to start"
-                    : "tasks ready to start"}
-                </p>
-              </>
-            ) : (
-              <>
-                <p style={{ ...summaryTextStyle, fontWeight: 700 }}>
-                  🎉 No tasks right now
-                </p>
-                <p style={summaryTextStyle}>
-                  You have completed your current tasks.
-                </p>
-              </>
+          <p className="page-text child-dashboard__mission-copy">
+            {featuredTask?.description || missionMessage}
+          </p>
+
+          {featuredTask ? (
+            <>
+              <div className="child-dashboard__mission-progress">
+                <div className="child-dashboard__mission-progress-label">
+                  <span>
+                    {featuredTask.completed_steps} of {featuredTask.total_steps} steps finished
+                  </span>
+                  <span>
+                    {featuredTask.status === "completed" ? "Completed" : "In progress"}
+                  </span>
+                </div>
+                <ProgressBar
+                  value={featuredProgressValue}
+                  max={featuredProgressMax}
+                  label="Featured mission progress"
+                />
+              </div>
+
+              <div className="child-dashboard__mission-actions">
+                <Button as={Link} to={`/tasks/${featuredTask.task_id}`}>
+                  {featuredTask.status === "completed" ? "See Mission" : "Start Task"}
+                </Button>
+                <p className="page-text">{missionMessage}</p>
+              </div>
+            </>
+          ) : (
+            <div className="child-dashboard__mission-actions">
+              <Button as={Link} to="/rewards" variant="secondary">
+                Visit Rewards
+              </Button>
+              <p className="page-text">You can check your points or just enjoy the quiet moment.</p>
+            </div>
+          )}
+        </Card>
+
+        <div className="child-dashboard__side-column">
+          <Card className="child-dashboard__progress-card nf-enter-card nf-enter-card--4" variant="soft">
+            <p className="eyebrow">Progress Overview</p>
+            <div className="child-dashboard__stat-list">
+              <div className="child-dashboard__stat-item">
+                <strong>{readyTasks.length}</strong>
+                <span>ready now</span>
+              </div>
+              <div className="child-dashboard__stat-item">
+                <strong>{completedCount}</strong>
+                <span>done already</span>
+              </div>
+              <div className="child-dashboard__stat-item">
+                <strong>{completionPercent}%</strong>
+                <span>mission map complete</span>
+              </div>
+            </div>
+            <ProgressBar
+              value={completionPercent}
+              max={100}
+              label="Overall mission progress"
+            />
+          </Card>
+
+          <Card className="child-dashboard__achievements-card nf-enter-card nf-enter-card--5" variant="soft">
+            <p className="eyebrow">Achievement Cards</p>
+            <div className="child-dashboard__achievements-grid">
+              {achievementCards.map((achievement) => (
+                <div key={achievement.id} className="child-dashboard__achievement-tile">
+                  <Badge tone={achievement.tone}>{achievement.title}</Badge>
+                  <div className="child-dashboard__achievement-emoji">{achievement.emoji}</div>
+                  <p>{achievement.text}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div className="child-dashboard__bottom-grid">
+        <Card className="child-dashboard__missions-list nf-enter-card nf-enter-card--6" variant="default">
+          <div className="child-dashboard__section-row">
+            <div>
+              <p className="eyebrow">More Missions</p>
+              <h3>Pick another calm mission</h3>
+            </div>
+            <Badge tone="sky">
+              {readyTasks.length > 1 ? `${readyTasks.length - 1} extra ready` : "One at a time"}
+            </Badge>
+          </div>
+
+          <div className="child-dashboard__mini-missions">
+            {(extraTasks.length > 0 ? extraTasks : completedTasks.slice(0, 2)).map((task) => (
+              <div key={task.task_id} className="child-dashboard__mini-mission">
+                <div>
+                  <h4>
+                    {currentCharacter} {task.title}
+                  </h4>
+                  <p>
+                    {task.completed_steps} / {task.total_steps} steps complete
+                  </p>
+                </div>
+                <Button as={Link} to={`/tasks/${task.task_id}`} variant="secondary" size="sm">
+                  {task.status === "completed" ? "View" : "Start"}
+                </Button>
+              </div>
+            ))}
+
+            {extraTasks.length === 0 && completedTasks.length === 0 && (
+              <p className="page-text">
+                No extra missions yet. Your board is nice and clear.
+              </p>
             )}
           </div>
-        </InfoCard>
+        </Card>
 
-        <InfoCard title="Progress">
-          <div style={{ display: "grid", gap: "0.9rem" }}>
-            <p style={summaryTextStyle}>
-              {readyTasks.length > 0
-                ? "You have tasks ready — let’s do one small step at a time."
-                : "Amazing work! You finished your current tasks."}
-            </p>
-            <p style={{ ...summaryTextStyle, fontWeight: 700 }}>
-              {readyTasks.length > 0 ? "🌈 Keep going!" : "🏆 Great job!"}
-            </p>
+        <Card className="child-dashboard__style-card nf-enter-card nf-enter-card--7" variant="soft">
+          <div className="child-dashboard__section-row">
+            <div>
+              <p className="eyebrow">Mission Style</p>
+              <h3>Make the board feel like yours</h3>
+            </div>
+            <div className="child-dashboard__style-identity">{currentCharacter}</div>
           </div>
-        </InfoCard>
-      </div>
 
-      <div className="card-grid" style={{ marginTop: "1.5rem", alignItems: "stretch" }}>
-        <InfoCard title="My Style">
-          <div style={{ display: "grid", gap: "0.9rem" }}>
-            <p style={summaryTextStyle}>
-              <strong>Character:</strong> {currentCharacter} {characterStyle}
-            </p>
-            <p style={summaryTextStyle}>
-              <strong>Theme:</strong> {currentThemeLabel}
-            </p>
-            <p style={summaryTextStyle}>
-              <strong>Reward style:</strong> {currentRewardInterestLabel}
-            </p>
-          </div>
-        </InfoCard>
-
-        <div className="content-card">
-          <h3 style={{ marginBottom: "1rem" }}>Choose My Preferences</h3>
-
-          <div style={{ display: "grid", gap: "1rem" }}>
-            <select
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              style={{
-                padding: "0.85rem 1rem",
-                borderRadius: "14px",
-                border: "1px solid #d8dbe8",
-                fontSize: "1rem",
-              }}
-            >
+          <div className="child-dashboard__style-form">
+            <select value={theme} onChange={(e) => setTheme(e.target.value)}>
               <option value="fun">Fun Theme</option>
               <option value="space">Space Theme</option>
               <option value="animals">Animals Theme</option>
@@ -236,12 +362,6 @@ function ChildDashboard() {
             <select
               value={characterStyle}
               onChange={(e) => setCharacterStyle(e.target.value)}
-              style={{
-                padding: "0.85rem 1rem",
-                borderRadius: "14px",
-                border: "1px solid #d8dbe8",
-                fontSize: "1rem",
-              }}
             >
               <option value="star">Star Character</option>
               <option value="rocket">Rocket Character</option>
@@ -252,12 +372,6 @@ function ChildDashboard() {
             <select
               value={rewardInterest}
               onChange={(e) => setRewardInterest(e.target.value)}
-              style={{
-                padding: "0.85rem 1rem",
-                borderRadius: "14px",
-                border: "1px solid #d8dbe8",
-                fontSize: "1rem",
-              }}
             >
               <option value="games">Games</option>
               <option value="food">Food</option>
@@ -266,86 +380,14 @@ function ChildDashboard() {
             </select>
 
             {preferenceMessage && (
-              <p className="page-text" style={{ margin: 0 }}>
+              <p className="page-text child-dashboard__style-message">
                 {preferenceMessage}
               </p>
             )}
 
-            <div>
-              <button className="primary-button" onClick={handleSavePreferences}>
-                Save My Preferences
-              </button>
-            </div>
+            <Button onClick={handleSavePreferences}>Save My Mission Style</Button>
           </div>
-        </div>
-      </div>
-
-      <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <p className="eyebrow">Child Dashboard</p>
-          <h2 className="page-title">
-            Hi {displayName}, what would you like to do today?
-          </h2>
-          <p className="page-text">
-            A calm, simple space to help you move through tasks one step at a time.
-          </p>
-        </div>
-      </div>
-
-      <div className="card-grid" style={{ alignItems: "stretch" }}>
-        {displayedTasks.map((task) => (
-          <article
-            key={task.task_id}
-            className="feature-card"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              minHeight: "340px",
-            }}
-          >
-            <div>
-              <h3 style={{ marginBottom: "0.9rem" }}>
-                {currentCharacter} {task.title}
-              </h3>
-
-              <p
-                style={{
-                  marginBottom: "1rem",
-                  lineHeight: 1.5,
-                }}
-              >
-                {task.description}
-              </p>
-
-              <p style={{ marginBottom: "0.45rem" }}>
-                <strong>Steps:</strong> {task.completed_steps} / {task.total_steps}
-              </p>
-
-              {task.priority_type && (
-                <p style={{ marginBottom: "0.45rem" }}>
-                  <strong>Priority:</strong> {task.priority_type} ({task.priority_rank})
-                </p>
-              )}
-
-              <p style={{ marginBottom: "0.45rem" }}>
-                <strong>Theme:</strong> {currentThemeLabel}
-              </p>
-
-              {task.status === "completed" && (
-                <p style={{ marginBottom: 0, fontWeight: 700 }}>
-                  ✅ Completed
-                </p>
-              )}
-            </div>
-
-            <div style={{ marginTop: "1.25rem" }}>
-              <Link to={`/tasks/${task.task_id}`} className="primary-button small-button">
-                Open Task
-              </Link>
-            </div>
-          </article>
-        ))}
+        </Card>
       </div>
     </section>
   );

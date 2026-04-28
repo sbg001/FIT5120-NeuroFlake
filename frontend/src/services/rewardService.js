@@ -4,7 +4,27 @@ import {
   mockLatestRewardSummary,
 } from "../data/mockRewards";
 import { mockTasks } from "../data/mockTasks";
+import { mockChildProfile, mockParentChildRelation } from "../data/mockUsers";
 import { supabase } from "../lib/supabase";
+
+function resolveActiveChildId(childId) {
+  if (childId) {
+    return String(childId);
+  }
+
+  const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
+  const currentUserId = localStorage.getItem("current_user_id");
+
+  if (currentRole === "child" && currentUserId) {
+    return String(currentUserId);
+  }
+
+  if (currentRole === "parent") {
+    return String(mockParentChildRelation.child_id);
+  }
+
+  return String(mockChildProfile.user_id);
+}
 
 function getMockTaskTitle(taskId) {
   const task = mockTasks.find((item) => String(item.task_id) === String(taskId));
@@ -47,7 +67,9 @@ async function attachTaskTitles(transactions) {
   }));
 }
 
-export async function getPointsBalance() {
+export async function getPointsBalance(childId) {
+  const resolvedChildId = resolveActiveChildId(childId);
+
   if (!supabase) {
     return { data: mockUserPoints, error: null };
   }
@@ -55,6 +77,7 @@ export async function getPointsBalance() {
   const { data, error } = await supabase
     .from("user_points")
     .select("*")
+    .eq("child_id", resolvedChildId)
     .limit(1)
     .maybeSingle();
 
@@ -65,7 +88,9 @@ export async function getPointsBalance() {
   return { data, error: null };
 }
 
-export async function getRewardTransactions() {
+export async function getRewardTransactions(childId) {
+  const resolvedChildId = resolveActiveChildId(childId);
+
   if (!supabase) {
     const enrichedMockTransactions = await attachTaskTitles(mockRewardTransactions);
     return { data: enrichedMockTransactions, error: null };
@@ -74,6 +99,7 @@ export async function getRewardTransactions() {
   const { data, error } = await supabase
     .from("reward_transactions")
     .select("*")
+    .eq("child_id", resolvedChildId)
     .order("created_at", { ascending: false });
 
   if (error || !data || data.length === 0) {
@@ -85,7 +111,9 @@ export async function getRewardTransactions() {
   return { data: enrichedTransactions, error: null };
 }
 
-export async function getLatestRewardSummary() {
+export async function getLatestRewardSummary(childId) {
+  const resolvedChildId = resolveActiveChildId(childId);
+
   if (!supabase) {
     return {
       data: {
@@ -99,6 +127,7 @@ export async function getLatestRewardSummary() {
   const { data: latestTransaction, error: latestError } = await supabase
     .from("reward_transactions")
     .select("*")
+    .eq("child_id", resolvedChildId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -119,6 +148,7 @@ export async function getLatestRewardSummary() {
   const { data: pointsData } = await supabase
     .from("user_points")
     .select("*")
+    .eq("child_id", resolvedChildId)
     .limit(1)
     .maybeSingle();
 

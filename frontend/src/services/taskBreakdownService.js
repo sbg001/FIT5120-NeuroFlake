@@ -2,6 +2,20 @@ const TASK_BREAKDOWN_API_URL =
   import.meta.env.VITE_TASK_BREAKDOWN_API_URL ||
   "http://localhost:8000/api/breakdown-task";
 
+export async function requestTaskBreakdown(taskName) {
+  const response = await fetch(TASK_BREAKDOWN_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_name: taskName }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Task helper request failed.");
+  }
+
+  return response.json();
+}
+
 function getShortStepTitle(description, index) {
   const cleanDescription = String(description || "").trim();
   if (!cleanDescription) {
@@ -71,17 +85,7 @@ export async function generateTaskSteps(taskTitle, taskDescription) {
   const taskName = [taskTitle, taskDescription].filter(Boolean).join(": ");
 
   try {
-    const response = await fetch(TASK_BREAKDOWN_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ task_name: taskName }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Task helper request failed.");
-    }
-
-    const data = await response.json();
+    const data = await requestTaskBreakdown(taskName);
     const generatedSteps = normalizeGeneratedSteps(data.steps || []);
 
     if (generatedSteps.length >= 2 && generatedSteps.length <= 5) {

@@ -60,6 +60,7 @@ function ChildDashboard() {
     }
 
     setPreferenceMessage("Your mission style is ready.");
+    window.dispatchEvent(new Event("preferencesUpdated"));
   };
 
   if (!child) {
@@ -98,10 +99,12 @@ function ChildDashboard() {
     child.age ?? child.child_age ?? child.profile_age ?? "Not set";
 
   const characterMap = {
-    star: "⭐",
-    rocket: "🚀",
-    bear: "🧸",
-    cat: "🐱",
+    star: "\u2B50",
+    rocket: "\u{1F680}",
+    bear: "\u{1F9F8}",
+    cat: "\u{1F431}",
+    dog: "\u{1F436}",
+    fox: "\u{1F98A}",
   };
 
   const themeLabelMap = {
@@ -118,7 +121,7 @@ function ChildDashboard() {
     "screen-time": "Screen Time",
   };
 
-  const currentCharacter = characterMap[characterStyle] || "⭐";
+  const currentCharacter = characterMap[characterStyle] || "\u2B50";
   const currentThemeLabel = themeLabelMap[theme] || theme;
   const currentRewardInterestLabel =
     rewardInterestLabelMap[rewardInterest] || rewardInterest;
@@ -126,14 +129,14 @@ function ChildDashboard() {
   const achievementCards = [
     {
       id: "points",
-      emoji: "✨",
+      emoji: "\u2728",
       title: "Spark Points",
       text: `${pointsBalance} bright points collected`,
       tone: "sky",
     },
     {
       id: "missions",
-      emoji: "🎯",
+      emoji: "\u{1F3AF}",
       title: "Mission Progress",
       text:
         totalTasks > 0
@@ -153,7 +156,7 @@ function ChildDashboard() {
   const missionMessage = featuredTask
     ? featuredTask.status === "completed"
       ? "You already finished this mission. Want to look at your great work?"
-      : "Your next mission is ready. Let’s take one gentle step at a time."
+      : "Your next mission is ready. Let's take one gentle step at a time."
     : "No missions waiting right now. That means you can rest or celebrate.";
 
   const featuredProgressValue = featuredTask
@@ -204,9 +207,9 @@ function ChildDashboard() {
           <div className="child-dashboard__points-value">{pointsBalance}</div>
           <p className="page-text">Every finished step helps your point jar grow.</p>
           <div className="child-dashboard__points-stars" aria-hidden="true">
-            <span>⭐</span>
-            <span>✨</span>
-            <span>⭐</span>
+            <span>{"\u2B50"}</span>
+            <span>{"\u2728"}</span>
+            <span>{"\u2B50"}</span>
           </div>
         </Card>
       </div>
@@ -334,11 +337,11 @@ function ChildDashboard() {
               </div>
             ))}
 
-            {extraTasks.length === 0 && completedTasks.length === 0 && (
+            {extraTasks.length === 0 && completedTasks.length === 0 ? (
               <p className="page-text">
                 No extra missions yet. Your board is nice and clear.
               </p>
-            )}
+            ) : null}
           </div>
         </Card>
 
@@ -367,6 +370,8 @@ function ChildDashboard() {
               <option value="rocket">Rocket Character</option>
               <option value="bear">Bear Character</option>
               <option value="cat">Cat Character</option>
+              <option value="dog">Dog Character</option>
+              <option value="fox">Fox Character</option>
             </select>
 
             <select
@@ -379,11 +384,11 @@ function ChildDashboard() {
               <option value="screen-time">Screen Time</option>
             </select>
 
-            {preferenceMessage && (
+            {preferenceMessage ? (
               <p className="page-text child-dashboard__style-message">
                 {preferenceMessage}
               </p>
-            )}
+            ) : null}
 
             <Button onClick={handleSavePreferences}>Save My Mission Style</Button>
           </div>

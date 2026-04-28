@@ -1077,6 +1077,19 @@ a:focus-visible {
   filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.08));
 }
 
+.task-assistant-modal__emoji-guide {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 120px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 176, 0.34), transparent 28%),
+    rgba(255, 255, 255, 0.84);
+  box-shadow: 0 14px 28px rgba(74, 108, 161, 0.1);
+  font-size: 3rem;
+}
+
 .task-assistant-modal__bubble {
   display: grid;
   gap: 10px;
@@ -1126,6 +1139,25 @@ a:focus-visible {
   background: #eef4ff;
   color: var(--primary-strong);
   font-weight: 800;
+}
+
+.task-assistant-modal__step-input {
+  min-height: 48px;
+}
+
+.task-assistant-modal__step-remove {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(220, 111, 125, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 246, 247, 0.96);
+  color: #9f4354;
+  font-weight: 700;
+}
+
+.task-assistant-modal__add-row {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .task-assistant-modal__error {
@@ -1585,6 +1617,102 @@ a:focus-visible {
   font-size: 1.5rem;
 }
 
+.parent-dashboard__insight-callout {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(126, 158, 202, 0.18);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.parent-dashboard__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.parent-dashboard__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.parent-dashboard__legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.parent-dashboard__legend-dot--happy {
+  background: linear-gradient(180deg, #77d8bb 0%, #4bb39a 100%);
+}
+
+.parent-dashboard__legend-dot--overwhelmed {
+  background: linear-gradient(180deg, #ffd692 0%, #efac47 100%);
+}
+
+.parent-dashboard__chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.parent-dashboard__chart-day {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+.parent-dashboard__chart-day span {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.parent-dashboard__chart-bars {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 180px;
+  padding: 18px 14px;
+  border-radius: 24px;
+  background: rgba(248, 251, 255, 0.9);
+  border: 1px solid rgba(126, 158, 202, 0.16);
+}
+
+.parent-dashboard__chart-bar {
+  width: 18px;
+  min-height: 12px;
+  border-radius: 999px 999px 12px 12px;
+}
+
+.parent-dashboard__chart-bar--happy {
+  background: linear-gradient(180deg, #96e7cf 0%, #59c2a8 100%);
+}
+
+.parent-dashboard__chart-bar--overwhelmed {
+  background: linear-gradient(180deg, #ffd692 0%, #efac47 100%);
+}
+
+.parent-dashboard__insight-notes {
+  display: grid;
+  gap: 12px;
+}
+
+.parent-dashboard__insight-notes p {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
 .focus-experience {
   gap: 22px;
 }
@@ -1704,6 +1832,37 @@ a:focus-visible {
   justify-items: start;
 }
 
+.focus-emotion-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 24px 26px;
+}
+
+.focus-emotion-card__pet {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 26px rgba(74, 108, 161, 0.1);
+  font-size: 2.2rem;
+}
+
+.focus-emotion-card__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.focus-emotion-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+
 .focus-step-card__visual {
   display: grid;
   place-items: center;
@@ -1728,6 +1887,14 @@ a:focus-visible {
   margin: 0;
   color: var(--text-soft);
   font-size: 1.05rem;
+}
+
+.focus-step-card__emotion-note {
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-soft);
+  font-weight: 700;
 }
 
 .focus-step-card__example {
@@ -2253,6 +2420,10 @@ a:focus-visible {
   }
 
   .focus-setup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .focus-emotion-card {
     grid-template-columns: 1fr;
   }
 

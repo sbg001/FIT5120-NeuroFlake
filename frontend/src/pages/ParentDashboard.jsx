@@ -5,21 +5,22 @@ import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
-  getParentProfile,
-  getChildProfile,
-  getTasks,
-  getPointsBalance,
+  createParentReward,
   createTask,
   createTaskStep,
-  updateTaskStepCount,
-  updateTask,
+  deleteParentReward,
   deleteTask,
-  resetTaskStatus,
   generateTaskSteps,
   getAllRewardsForParent,
-  createParentReward,
+  getChildProfile,
+  getParentProfile,
+  getPointsBalance,
+  getSensoryRiskPrediction,
+  getTasks,
+  resetTaskStatus,
   updateParentReward,
-  deleteParentReward,
+  updateTask,
+  updateTaskStepCount,
 } from "../services";
 
 const priorityTypeOptions = [
@@ -63,7 +64,7 @@ function ParentDashboard() {
 
   const [rewards, setRewards] = useState([]);
   const [rewardTitle, setRewardTitle] = useState("");
-  const [rewardEmoji, setRewardEmoji] = useState("🎁");
+  const [rewardEmoji, setRewardEmoji] = useState("\u{1F381}");
   const [rewardCost, setRewardCost] = useState("");
   const [rewardTheme, setRewardTheme] = useState("");
   const [rewardApproved, setRewardApproved] = useState(true);
@@ -71,7 +72,7 @@ function ParentDashboard() {
 
   const [editRewardId, setEditRewardId] = useState("");
   const [editRewardTitle, setEditRewardTitle] = useState("");
-  const [editRewardEmoji, setEditRewardEmoji] = useState("🎁");
+  const [editRewardEmoji, setEditRewardEmoji] = useState("\u{1F381}");
   const [editRewardCost, setEditRewardCost] = useState("");
   const [editRewardTheme, setEditRewardTheme] = useState("");
   const [editRewardApproved, setEditRewardApproved] = useState(true);
@@ -79,6 +80,19 @@ function ParentDashboard() {
 
   const [deleteRewardId, setDeleteRewardId] = useState("");
   const [deleteRewardMessage, setDeleteRewardMessage] = useState("");
+
+  const [riskForecast, setRiskForecast] = useState(null);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+
+  const [weeklyData] = useState([
+    { day: "Mon", happy: 4, overwhelmed: 1 },
+    { day: "Tue", happy: 3, overwhelmed: 2 },
+    { day: "Wed", happy: 5, overwhelmed: 0 },
+    { day: "Thu", happy: 2, overwhelmed: 3 },
+    { day: "Fri", happy: 4, overwhelmed: 1 },
+    { day: "Sat", happy: 6, overwhelmed: 0 },
+    { day: "Sun", happy: 5, overwhelmed: 1 },
+  ]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -107,6 +121,24 @@ function ParentDashboard() {
     const rewardsResult = await getAllRewardsForParent();
     setRewards(rewardsResult.data || []);
   };
+
+  async function loadInsights() {
+    setIsLoadingInsights(true);
+
+    const todaysTelemetry = {
+      hoursSlept: 6.5,
+      overwhelmedCount: 2,
+      tasksAbandoned: 1,
+      tasksCompleted: 3,
+    };
+
+    const prediction = await getSensoryRiskPrediction(todaysTelemetry);
+    if (prediction) {
+      setRiskForecast(prediction);
+    }
+
+    setIsLoadingInsights(false);
+  }
 
   const handleCreateTask = async () => {
     setCreateMessage("");
@@ -282,9 +314,8 @@ function ParentDashboard() {
     }
 
     await refreshRewards();
-
     setRewardTitle("");
-    setRewardEmoji("🎁");
+    setRewardEmoji("\u{1F381}");
     setRewardCost("");
     setRewardTheme("");
     setRewardApproved(true);
@@ -293,11 +324,12 @@ function ParentDashboard() {
 
   const handleSelectEditReward = (rewardId) => {
     setEditRewardId(rewardId);
+
     const reward = rewards.find((item) => String(item.id) === String(rewardId));
     if (!reward) return;
 
     setEditRewardTitle(reward.title || "");
-    setEditRewardEmoji(reward.emoji || "🎁");
+    setEditRewardEmoji(reward.emoji || "\u{1F381}");
     setEditRewardCost(String(reward.cost || ""));
     setEditRewardTheme(reward.theme || "");
     setEditRewardApproved(reward.approved ?? true);
@@ -406,12 +438,19 @@ function ParentDashboard() {
   const renderTaskOption = (task) =>
     `${task.title} (${getStatusConfig(task).label.toLowerCase()})`;
 
+  const riskTone =
+    riskForecast?.risk_level === "Low"
+      ? "mint"
+      : riskForecast?.risk_level === "Medium"
+        ? "warm"
+        : "default";
+
   return (
     <section className="page-section parent-dashboard">
       <PageHeader
         eyebrow="Parent Dashboard"
         title={`Welcome, ${parentProfile.name}`}
-        description={`A calm control center for managing ${childProfile.name}'s tasks, progress, and rewards.`}
+        description={`A calm control center for managing ${childProfile.name}'s tasks, progress, rewards, and support insights.`}
       />
 
       <div className="parent-dashboard__hero-grid">
@@ -472,7 +511,7 @@ function ParentDashboard() {
           ) : (
             <div className="parent-dashboard__empty-state parent-dashboard__empty-state--compact">
               <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                🌿
+                {"\u{1F33F}"}
               </div>
               <p>No tasks yet. Create the first one to start building structure.</p>
             </div>
@@ -503,11 +542,17 @@ function ParentDashboard() {
           {[
             { id: "tasks", label: "Tasks", note: "Create, edit, reset, and review" },
             { id: "rewards", label: "Rewards", note: "Control the reward catalog" },
+            { id: "insights", label: "Insights", note: "View support forecasts and patterns" },
           ].map((section) => (
             <button
               key={section.id}
               type="button"
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => {
+                setActiveSection(section.id);
+                if (section.id === "insights" && !riskForecast) {
+                  loadInsights();
+                }
+              }}
               className={[
                 "parent-dashboard__tab",
                 activeSection === section.id ? "is-active" : "",
@@ -570,7 +615,7 @@ function ParentDashboard() {
               ) : (
                 <div className="parent-dashboard__empty-state">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    📝
+                    {"\u{1F4DD}"}
                   </div>
                   <h4>No tasks yet</h4>
                   <p>Create a task and NeuroFlake will break it into smaller steps.</p>
@@ -637,7 +682,10 @@ function ParentDashboard() {
           </div>
 
           <div className="parent-dashboard__side-column">
-            <Card className="parent-dashboard__form-card parent-dashboard__form-card--feature" variant="glow">
+            <Card
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
+              variant="glow"
+            >
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Create Task</p>
@@ -743,7 +791,7 @@ function ParentDashboard() {
             </Card>
           </div>
         </div>
-      ) : (
+      ) : activeSection === "rewards" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
             <Card className="parent-dashboard__collection-card" variant="default">
@@ -752,7 +800,9 @@ function ParentDashboard() {
                   <p className="eyebrow">Reward Management</p>
                   <h3>Available rewards</h3>
                 </div>
-                <Badge tone="warm">{rewards.filter((reward) => reward.approved).length} approved</Badge>
+                <Badge tone="warm">
+                  {rewards.filter((reward) => reward.approved).length} approved
+                </Badge>
               </div>
 
               {rewards.length > 0 ? (
@@ -761,7 +811,7 @@ function ParentDashboard() {
                     <div key={reward.id} className="parent-dashboard__reward-item">
                       <div className="parent-dashboard__reward-top">
                         <div className="parent-dashboard__reward-icon" aria-hidden="true">
-                          {reward.emoji || "🎁"}
+                          {reward.emoji || "\u{1F381}"}
                         </div>
                         <Badge tone={reward.approved ? "mint" : "default"}>
                           {reward.approved ? "Approved" : "Hidden"}
@@ -778,7 +828,7 @@ function ParentDashboard() {
               ) : (
                 <div className="parent-dashboard__empty-state">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    🎁
+                    {"\u{1F381}"}
                   </div>
                   <h4>No rewards yet</h4>
                   <p>Add a reward so points can connect to something meaningful.</p>
@@ -825,7 +875,10 @@ function ParentDashboard() {
           </div>
 
           <div className="parent-dashboard__side-column">
-            <Card className="parent-dashboard__form-card parent-dashboard__form-card--feature" variant="glow">
+            <Card
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
+              variant="glow"
+            >
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Create Reward</p>
@@ -928,6 +981,113 @@ function ParentDashboard() {
                 ) : null}
                 <Button onClick={handleUpdateReward}>Update Reward</Button>
               </div>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <div className="parent-dashboard__workspace-grid">
+          <div className="parent-dashboard__main-column">
+            <Card className="parent-dashboard__collection-card" variant="glow">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Behavioral Insights</p>
+                  <h3>Sensory Overload Forecast</h3>
+                </div>
+                {isLoadingInsights ? (
+                  <Badge tone="default">Analyzing</Badge>
+                ) : riskForecast ? (
+                  <Badge tone={riskTone}>{riskForecast.risk_level} risk</Badge>
+                ) : (
+                  <Badge tone="default">Engine offline</Badge>
+                )}
+              </div>
+
+              <p className="page-text">
+                AI-powered support guidance based on sleep, task completion, and
+                emotion-related telemetry.
+              </p>
+
+              {riskForecast ? (
+                <div className="parent-dashboard__insight-callout">
+                  <strong>AI advisory</strong>
+                  <p>{riskForecast.advisory_text}</p>
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state parent-dashboard__empty-state--compact">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F9E0}"}
+                  </div>
+                  <p>
+                    {isLoadingInsights
+                      ? "Loading today's insight forecast."
+                      : "No insight forecast is available yet."}
+                  </p>
+                </div>
+              )}
+            </Card>
+
+            <Card className="parent-dashboard__collection-card" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Weekly Emotional Regulation</p>
+                  <h3>Pattern snapshot</h3>
+                </div>
+              </div>
+
+              <p className="page-text">
+                Tracking reported happy moments and overwhelmed moments can help
+                surface gentle patterns over time.
+              </p>
+
+              <div className="parent-dashboard__legend">
+                <span className="parent-dashboard__legend-item">
+                  <i className="parent-dashboard__legend-dot parent-dashboard__legend-dot--happy" />
+                  Happy / Good
+                </span>
+                <span className="parent-dashboard__legend-item">
+                  <i className="parent-dashboard__legend-dot parent-dashboard__legend-dot--overwhelmed" />
+                  Overwhelmed
+                </span>
+              </div>
+
+              <div className="parent-dashboard__chart">
+                {weeklyData.map((data) => (
+                  <div key={data.day} className="parent-dashboard__chart-day">
+                    <div className="parent-dashboard__chart-bars">
+                      <div
+                        className="parent-dashboard__chart-bar parent-dashboard__chart-bar--happy"
+                        style={{ height: `${(data.happy / 6) * 100}%` }}
+                        aria-label={`${data.day} happy score ${data.happy}`}
+                      />
+                      <div
+                        className="parent-dashboard__chart-bar parent-dashboard__chart-bar--overwhelmed"
+                        style={{ height: `${(data.overwhelmed / 6) * 100}%` }}
+                        aria-label={`${data.day} overwhelmed score ${data.overwhelmed}`}
+                      />
+                    </div>
+                    <span>{data.day}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          <div className="parent-dashboard__side-column">
+            <Card className="parent-dashboard__form-card" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">How To Use This</p>
+                  <h3>Support, not alarm</h3>
+                </div>
+              </div>
+              <div className="parent-dashboard__insight-notes">
+                <p>Look for repeated friction, not one hard moment.</p>
+                <p>Use forecasts to simplify the next task before stress grows.</p>
+                <p>Pair emotional patterns with routine changes and reward timing.</p>
+              </div>
+              <Button variant="secondary" onClick={loadInsights} disabled={isLoadingInsights}>
+                {isLoadingInsights ? "Refreshing..." : "Refresh Insights"}
+              </Button>
             </Card>
           </div>
         </div>

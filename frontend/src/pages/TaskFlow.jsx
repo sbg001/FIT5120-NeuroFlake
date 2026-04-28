@@ -11,6 +11,7 @@ import {
   completeTask,
   createRewardTransaction,
   createTaskStep,
+  getChildPreferences,
   getPointsBalance,
   getTaskById,
   getTaskSteps,
@@ -36,6 +37,8 @@ function TaskFlow() {
   const [supportMessage, setSupportMessage] = useState("");
   const [stepCelebration, setStepCelebration] = useState(null);
   const [saveStepsMessage, setSaveStepsMessage] = useState("");
+  const [emotion, setEmotion] = useState(null);
+  const [petPreference, setPetPreference] = useState("\u{1F9F8}");
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -46,6 +49,7 @@ function TaskFlow() {
 
       const { data: taskData } = await getTaskById(taskId);
       const { data: stepsData } = await getTaskSteps(taskId);
+      const { data: prefData } = await getChildPreferences();
 
       const orderedSteps = stepsData || [];
       const validStepCount = orderedSteps.length >= 2 && orderedSteps.length <= 5;
@@ -57,6 +61,16 @@ function TaskFlow() {
             ? firstIncompleteIndex
             : 0;
 
+      const characterMap = {
+        star: "\u2B50",
+        rocket: "\u{1F680}",
+        bear: "\u{1F9F8}",
+        cat: "\u{1F431}",
+        dog: "\u{1F436}",
+        fox: "\u{1F98A}",
+      };
+
+      setPetPreference(characterMap[prefData?.character_style] || "\u{1F9F8}");
       setTask(taskData);
       setSteps(orderedSteps);
       setTaskReady(validStepCount);
@@ -66,6 +80,7 @@ function TaskFlow() {
       setSupportMessage("");
       setStepCelebration(null);
       setSaveStepsMessage("");
+      setEmotion(null);
       setLoading(false);
 
       if (orderedSteps.length < 1) {
@@ -81,6 +96,10 @@ function TaskFlow() {
   const currentStep = steps[currentStepIndex];
   const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
   const isLastStep = currentStepIndex === steps.length - 1;
+
+  const triggerCompanionEmotion = (state) => {
+    window.dispatchEvent(new CustomEvent("companionEmotion", { detail: state }));
+  };
 
   const goToNextStep = () => {
     if (isLastStep) return;
@@ -131,6 +150,7 @@ function TaskFlow() {
     }
 
     await completeStep(taskId, currentStep.step_id);
+    triggerCompanionEmotion("success");
 
     setSteps((prevSteps) =>
       prevSteps.map((step, index) =>
@@ -163,8 +183,8 @@ function TaskFlow() {
       for (const step of generatedSteps) {
         await createTaskStep({
           task_id: taskId,
-          step_title: step.step_title || `Step ${step.step_number}`,
-          step_description: step.description || step.step_title || "",
+          step_title: step.step_title || step.description || `Step ${step.step_number}`,
+          step_description: step.step_description || step.description || step.step_title || "",
           step_order: step.step_number,
           visual_hint: step.visual_hint || "",
           example_text: step.example_text || "",
@@ -209,7 +229,9 @@ function TaskFlow() {
             {saveStepsMessage ? <p className="page-text">{saveStepsMessage}</p> : null}
 
             <div className="focus-setup-actions">
-              <Button onClick={() => setIsNovaOpen(true)}>Call Nova for Help</Button>
+              <Button onClick={() => setIsNovaOpen(true)}>
+                {petPreference} I need help with this
+              </Button>
             </div>
           </Card>
         </section>
@@ -219,6 +241,7 @@ function TaskFlow() {
           onClose={() => setIsNovaOpen(false)}
           task={task}
           onSaveSteps={handleStepsSaved}
+          petPreference={petPreference}
         />
       </div>
     );
@@ -240,6 +263,44 @@ function TaskFlow() {
         />
       </Card>
 
+      {!emotion ? (
+        <Card className="content-card focus-emotion-card" variant="glow">
+          <div className="focus-emotion-card__pet" aria-hidden="true">
+            {petPreference}
+          </div>
+          <div className="focus-emotion-card__copy">
+            <p className="eyebrow">Check In</p>
+            <h3>How are you feeling right now?</h3>
+            <p className="page-text">
+              We can change the tone of this mission before we begin.
+            </p>
+          </div>
+          <div className="focus-emotion-card__actions">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEmotion("happy");
+                triggerCompanionEmotion("success");
+              }}
+            >
+              Good / Happy
+            </Button>
+            <Button variant="secondary" onClick={() => setEmotion("tired")}>
+              Tired
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setEmotion("overwhelmed");
+                triggerCompanionEmotion("struggle");
+              }}
+            >
+              Overwhelmed
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
       {currentStep ? (
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
@@ -251,6 +312,14 @@ function TaskFlow() {
               ) : null}
             </div>
           </div>
+
+          {emotion ? (
+            <div className="focus-step-card__emotion-note">
+              {emotion === "happy" && "I love that energy. Let's tackle these steps together."}
+              {emotion === "tired" && "We can go slowly and keep this light."}
+              {emotion === "overwhelmed" && "It's okay to feel big things. We will take this gently."}
+            </div>
+          ) : null}
 
           <div className="focus-step-card__body">
             {currentStep.visual_hint ? (
@@ -277,9 +346,9 @@ function TaskFlow() {
             {stepCelebration ? (
               <div className="focus-step-card__celebration" role="status" aria-live="polite">
                 <div className="focus-step-card__celebration-stars" aria-hidden="true">
-                  <span>⭐</span>
-                  <span>✨</span>
-                  <span>⭐</span>
+                  <span>{"\u2B50"}</span>
+                  <span>{"\u2728"}</span>
+                  <span>{"\u2B50"}</span>
                 </div>
                 <div className="focus-step-card__celebration-copy">
                   <strong>{stepCelebration.title}</strong>
@@ -338,11 +407,12 @@ function TaskFlow() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() =>
+                  onClick={() => {
+                    triggerCompanionEmotion("struggle");
                     setSupportMessage(
                       "That is okay. We can try the same step again, nice and gently."
-                    )
-                  }
+                    );
+                  }}
                 >
                   Try again
                 </Button>
@@ -360,6 +430,7 @@ function TaskFlow() {
         onClose={() => setIsNovaOpen(false)}
         task={task}
         onSaveSteps={handleStepsSaved}
+        petPreference={petPreference}
       />
     </section>
   );

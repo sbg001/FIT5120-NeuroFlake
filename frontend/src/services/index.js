@@ -7,3 +7,4 @@ export * from "./emotionServices";
 export * from "./routineService";
 export * from "./focusService";
 export * from "./userService";
+export * from "./analyticsServices";

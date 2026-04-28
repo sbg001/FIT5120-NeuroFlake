@@ -3,3 +3,10 @@
 __pycache__/
 *.pyc
 .DS_Store
+venv/
+.venv/
+*/venv/
+*/.venv/
+chatbot/*.joblib
+chatbot/venv/
+chatbot/sensory_risk_model.joblib

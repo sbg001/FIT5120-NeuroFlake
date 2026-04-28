@@ -6,11 +6,35 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+vite-dev.err
 
+# Node / frontend
 node_modules
 dist
 dist-ssr
+coverage
+
+# Local env files
+.env
+*.env
+.env.local
 *.local
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+
+# Virtual environments
+venv/
+.venv/
+*/venv/
+*/.venv/
+
+# Backend generated files
+chatbot/*.joblib
 
 # Editor directories and files
 .vscode/*

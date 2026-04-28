@@ -30,7 +30,7 @@ function TaskAssistantModal({
     }
   }, [isOpen, task, isParent]);
 
-  if (!isOpen || !task) return null;
+  if (!isOpen) return null;
 
   const handleGenerateSteps = async () => {
     setIsLoading(true);

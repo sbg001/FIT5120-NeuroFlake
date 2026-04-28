@@ -108,8 +108,8 @@ function Login() {
 
         <div className="login-demo-pin-box">
           <strong>Iteration demo access</strong>
-          <p>Parent PIN: 2222</p>
-          <p>Child PIN: 1111</p>
+          <p>Parent PIN: 1111</p>
+          <p>Child PIN: 2222</p>
         </div>
 
         <div className="login-form">

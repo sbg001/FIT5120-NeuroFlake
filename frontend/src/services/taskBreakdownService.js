@@ -95,8 +95,8 @@ export async function generateTaskSteps(taskTitle, taskDescription) {
         error: null,
       };
     }
-  } catch (error) {
-    console.warn("Task helper unavailable. Using local fallback steps.", error);
+  } catch {
+    // Fall back to local steps when the helper is unavailable.
   }
 
   return {

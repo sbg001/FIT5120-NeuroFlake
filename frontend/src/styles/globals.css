@@ -321,12 +321,6 @@ img {
     rgba(255, 255, 255, 0.94);
 }
 
-.nf-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-float);
-  border-color: var(--border-strong);
-}
-
 .section-header,
 .nf-page-header {
   display: flex;
@@ -428,6 +422,15 @@ img {
 .nf-button--secondary:hover {
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.96);
+}
+
+.nf-button:disabled,
+.primary-button:disabled,
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+  transform: none;
+  box-shadow: none;
 }
 
 .nf-button--sm {
@@ -1020,6 +1023,120 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.task-assistant-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.task-assistant-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(21, 34, 47, 0.56);
+  backdrop-filter: blur(8px);
+}
+
+.task-assistant-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: min(92vh, 760px);
+  overflow-y: auto;
+  padding: 30px;
+}
+
+.task-assistant-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(237, 244, 251, 0.96);
+  color: var(--text-soft);
+  font-size: 1.25rem;
+}
+
+.task-assistant-modal__intro {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: end;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.task-assistant-modal__mascot img {
+  width: 100%;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.08));
+}
+
+.task-assistant-modal__bubble {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px 22px 22px 8px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.task-assistant-modal__message {
+  color: #334155;
+  font-size: 1.08rem;
+  font-weight: 600;
+}
+
+.task-assistant-modal__actions,
+.task-assistant-modal__save-row {
+  display: flex;
+  justify-content: center;
+}
+
+.task-assistant-modal__plan,
+.task-assistant-modal__step-list {
+  display: grid;
+  gap: 12px;
+}
+
+.task-assistant-modal__step-item {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(126, 158, 202, 0.18);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  font-weight: 600;
+  color: #334155;
+}
+
+.task-assistant-modal__step-number {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: var(--primary-strong);
+  font-weight: 800;
+}
+
+.task-assistant-modal__error {
+  padding: 14px 16px;
+  border: 1px solid rgba(220, 111, 125, 0.2);
+  border-radius: 18px;
+  background: #fff4f4;
+  color: #b44250;
+  font-weight: 700;
+}
+
 .login-note {
   color: #667085;
   font-size: 0.95rem;
@@ -1236,6 +1353,236 @@ a:focus-visible {
 
 .child-dashboard__style-message {
   min-height: 24px;
+}
+
+.parent-dashboard {
+  gap: 24px;
+}
+
+.parent-dashboard__hero-grid,
+.parent-dashboard__summary-grid,
+.parent-dashboard__workspace-grid,
+.parent-dashboard__control-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.parent-dashboard__hero-grid {
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+}
+
+.parent-dashboard__summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.parent-dashboard__workspace-grid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+  align-items: start;
+}
+
+.parent-dashboard__main-column,
+.parent-dashboard__side-column {
+  display: grid;
+  gap: 20px;
+}
+
+.parent-dashboard__hero-card,
+.parent-dashboard__snapshot-card,
+.parent-dashboard__summary-card,
+.parent-dashboard__tabs-card,
+.parent-dashboard__collection-card,
+.parent-dashboard__form-card {
+  padding: 26px;
+}
+
+.parent-dashboard__hero-card,
+.parent-dashboard__snapshot-card,
+.parent-dashboard__summary-card,
+.parent-dashboard__collection-card,
+.parent-dashboard__form-card {
+  display: grid;
+  gap: 16px;
+}
+
+.parent-dashboard__hero-top,
+.parent-dashboard__section-header,
+.parent-dashboard__snapshot-row,
+.parent-dashboard__task-item-top,
+.parent-dashboard__reward-top,
+.parent-dashboard__hero-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.parent-dashboard__hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.parent-dashboard__metric-card,
+.parent-dashboard__summary-card,
+.parent-dashboard__task-item,
+.parent-dashboard__reward-item {
+  border: 1px solid rgba(126, 158, 202, 0.16);
+  background: rgba(255, 255, 255, 0.78);
+  border-radius: 24px;
+}
+
+.parent-dashboard__metric-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+}
+
+.parent-dashboard__metric-card span,
+.parent-dashboard__summary-card span,
+.parent-dashboard__task-meta span,
+.parent-dashboard__reward-meta span,
+.parent-dashboard__snapshot-note,
+.parent-dashboard__task-item p,
+.parent-dashboard__reward-item p,
+.parent-dashboard__tab span {
+  color: var(--text-soft);
+}
+
+.parent-dashboard__metric-card strong,
+.parent-dashboard__summary-card strong {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.parent-dashboard__hero-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.parent-dashboard__snapshot-body {
+  display: grid;
+  gap: 12px;
+}
+
+.parent-dashboard__snapshot-note {
+  font-weight: 700;
+}
+
+.parent-dashboard__summary-card {
+  padding: 20px;
+  gap: 8px;
+}
+
+.parent-dashboard__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.parent-dashboard__tab {
+  display: grid;
+  gap: 4px;
+  min-width: 240px;
+  padding: 16px 18px;
+  border: 1px solid rgba(99, 135, 189, 0.18);
+  border-radius: 22px;
+  background: rgba(248, 251, 255, 0.9);
+  text-align: left;
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+}
+
+.parent-dashboard__tab:hover,
+.parent-dashboard__tab.is-active {
+  transform: translateY(-1px);
+  border-color: rgba(77, 142, 247, 0.28);
+  background: rgba(238, 245, 255, 0.96);
+  box-shadow: var(--shadow-soft);
+}
+
+.parent-dashboard__tab strong {
+  color: var(--text-main);
+  font-size: 1rem;
+}
+
+.parent-dashboard__collection-card {
+  gap: 18px;
+}
+
+.parent-dashboard__task-list,
+.parent-dashboard__reward-grid,
+.parent-dashboard__form-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.parent-dashboard__task-item,
+.parent-dashboard__reward-item {
+  padding: 18px;
+}
+
+.parent-dashboard__task-item h4,
+.parent-dashboard__reward-item h4,
+.parent-dashboard__form-card h4 {
+  margin-bottom: 0.35rem;
+}
+
+.parent-dashboard__task-meta,
+.parent-dashboard__reward-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.parent-dashboard__form-card {
+  align-content: start;
+}
+
+.parent-dashboard__form-card--feature {
+  background:
+    radial-gradient(circle at top right, rgba(255, 233, 176, 0.3), transparent 26%),
+    radial-gradient(circle at left center, rgba(123, 217, 188, 0.18), transparent 22%),
+    rgba(255, 255, 255, 0.94);
+}
+
+.parent-dashboard__message {
+  margin: 0;
+  color: #31546b;
+  font-weight: 700;
+}
+
+.parent-dashboard__empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 26px;
+  border: 1px dashed rgba(126, 158, 202, 0.28);
+  border-radius: 24px;
+  background: rgba(250, 252, 255, 0.84);
+  text-align: center;
+}
+
+.parent-dashboard__empty-state--compact {
+  justify-items: start;
+  text-align: left;
+}
+
+.parent-dashboard__empty-icon,
+.parent-dashboard__reward-icon {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 24px rgba(74, 108, 161, 0.1);
+  font-size: 1.5rem;
 }
 
 .focus-experience {
@@ -1893,11 +2240,23 @@ a:focus-visible {
   .child-dashboard__hero-grid,
   .child-dashboard__main-grid,
   .child-dashboard__bottom-grid,
-  .reward-overview-grid {
+  .reward-overview-grid,
+  .parent-dashboard__hero-grid,
+  .parent-dashboard__summary-grid,
+  .parent-dashboard__workspace-grid,
+  .parent-dashboard__control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__hero-metrics {
     grid-template-columns: 1fr;
   }
 
   .focus-setup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-assistant-modal__intro {
     grid-template-columns: 1fr;
   }
 
@@ -1946,6 +2305,10 @@ a:focus-visible {
   .feature-card {
     padding: 22px;
   }
+
+  .task-assistant-modal__panel {
+    padding: 22px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1962,6 +2325,15 @@ a:focus-visible {
   .home-preview-card {
     width: calc(100% - 32px);
     bottom: 20px;
+  }
+
+  .task-assistant-modal__step-item {
+    grid-template-columns: 1fr;
+  }
+
+  .task-assistant-modal__step-number {
+    width: 32px;
+    height: 32px;
   }
 
   .home-preview-orbit {
@@ -1989,7 +2361,13 @@ a:focus-visible {
   .child-dashboard__progress-card,
   .child-dashboard__achievements-card,
   .child-dashboard__missions-list,
-  .child-dashboard__style-card {
+  .child-dashboard__style-card,
+  .parent-dashboard__hero-card,
+  .parent-dashboard__snapshot-card,
+  .parent-dashboard__summary-card,
+  .parent-dashboard__tabs-card,
+  .parent-dashboard__collection-card,
+  .parent-dashboard__form-card {
     padding: 20px;
   }
 
@@ -2001,6 +2379,10 @@ a:focus-visible {
 
   .child-dashboard__stat-list {
     grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__tab {
+    min-width: 100%;
   }
 
   .focus-step-card {
@@ -2024,6 +2406,14 @@ a:focus-visible {
   .secondary-button,
   .nf-button {
     width: 100%;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nf-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-float);
+    border-color: var(--border-strong);
   }
 }
 

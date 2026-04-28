@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import TaskAssistantModal from "../components/ui/TaskAssistantModal";
 import {
-  getTaskById,
-  getTaskSteps,
   completeStep,
   completeTask,
-  getPointsBalance,
   createRewardTransaction,
-  updatePointsBalance,
   createTaskStep,
+  getPointsBalance,
+  getTaskById,
+  getTaskSteps,
+  updatePointsBalance,
   updateTaskStepCount,
 } from "../services";
 
@@ -35,6 +35,7 @@ function TaskFlow() {
   const [showSupportPanel, setShowSupportPanel] = useState(false);
   const [supportMessage, setSupportMessage] = useState("");
   const [stepCelebration, setStepCelebration] = useState(null);
+  const [saveStepsMessage, setSaveStepsMessage] = useState("");
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -48,26 +49,23 @@ function TaskFlow() {
 
       const orderedSteps = stepsData || [];
       const validStepCount = orderedSteps.length >= 2 && orderedSteps.length <= 5;
-
-      setTask(taskData);
-      setSteps(orderedSteps);
-      setTaskReady(validStepCount);
-
-      const firstIncompleteIndex = orderedSteps.findIndex(
-        (step) => step.is_completed === false
-      );
+      const firstIncompleteIndex = orderedSteps.findIndex((step) => step.is_completed === false);
       const nextIndex =
         firstIncompleteIndex === -1 && orderedSteps.length > 0
           ? orderedSteps.length - 1
           : firstIncompleteIndex !== -1
-          ? firstIncompleteIndex
-          : 0;
+            ? firstIncompleteIndex
+            : 0;
 
+      setTask(taskData);
+      setSteps(orderedSteps);
+      setTaskReady(validStepCount);
       setCurrentStepIndex(nextIndex);
       setCurrentStepDone(Boolean(orderedSteps[nextIndex]?.is_completed));
       setShowSupportPanel(false);
       setSupportMessage("");
       setStepCelebration(null);
+      setSaveStepsMessage("");
       setLoading(false);
 
       if (orderedSteps.length < 1) {
@@ -148,8 +146,7 @@ function TaskFlow() {
 
     setCurrentStepDone(true);
     setStepCelebration({
-      title:
-        celebrationMessages[currentStepIndex % celebrationMessages.length],
+      title: celebrationMessages[currentStepIndex % celebrationMessages.length],
       detail: isLastStep
         ? "That was the final step. When you are ready, finish the mission to see your reward."
         : "Nice and steady. You can pause here or move on when it feels right.",
@@ -175,9 +172,22 @@ function TaskFlow() {
       }
 
       await updateTaskStepCount(taskId);
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to save Nova's steps:", error);
+      setSaveStepsMessage("Nova's steps are ready. Your mission can begin now.");
+
+      const { data: taskData } = await getTaskById(taskId);
+      const { data: stepsData } = await getTaskSteps(taskId);
+      const orderedSteps = stepsData || [];
+      const firstIncompleteIndex = orderedSteps.findIndex((step) => !step.is_completed);
+      const nextIndex = firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
+
+      setTask(taskData);
+      setSteps(orderedSteps);
+      setTaskReady(orderedSteps.length >= 2 && orderedSteps.length <= 5);
+      setCurrentStepIndex(nextIndex);
+      setCurrentStepDone(Boolean(orderedSteps[nextIndex]?.is_completed));
+      setIsNovaOpen(false);
+    } catch {
+      setSaveStepsMessage("The task was saved, but the new steps could not be loaded yet.");
     }
   };
 
@@ -196,7 +206,9 @@ function TaskFlow() {
               description="This mission needs 2 to 5 simple steps before it can begin."
             />
 
-            <div style={{ marginTop: "1.5rem" }}>
+            {saveStepsMessage ? <p className="page-text">{saveStepsMessage}</p> : null}
+
+            <div className="focus-setup-actions">
               <Button onClick={() => setIsNovaOpen(true)}>Call Nova for Help</Button>
             </div>
           </Card>
@@ -228,7 +240,7 @@ function TaskFlow() {
         />
       </Card>
 
-      {currentStep && (
+      {currentStep ? (
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
             <span className="focus-step-card__eyebrow">One Step At A Time</span>
@@ -281,7 +293,7 @@ function TaskFlow() {
             <Button variant="secondary" onClick={() => setShowSupportPanel((prev) => !prev)}>
               I need a break
             </Button>
-            {!isLastStep && (
+            {!isLastStep ? (
               <Button
                 variant="secondary"
                 onClick={goToNextStep}
@@ -289,7 +301,7 @@ function TaskFlow() {
               >
                 Next Step
               </Button>
-            )}
+            ) : null}
             <Button onClick={handleDone}>
               {currentStepDone
                 ? isLastStep
@@ -299,9 +311,9 @@ function TaskFlow() {
             </Button>
           </div>
 
-          {showSupportPanel && (
+          {showSupportPanel ? (
             <div className="focus-support-panel">
-              <p className="focus-support-panel__title">Let’s make this feel smaller.</p>
+              <p className="focus-support-panel__title">Let's make this feel smaller.</p>
               <div className="focus-support-panel__actions">
                 <Button
                   variant="secondary"
@@ -316,7 +328,9 @@ function TaskFlow() {
                   variant="secondary"
                   size="sm"
                   onClick={() =>
-                    setSupportMessage("Take a small break, then come back when your body feels ready.")
+                    setSupportMessage(
+                      "Take a small break, then come back when your body feels ready."
+                    )
                   }
                 >
                   Small break
@@ -325,7 +339,9 @@ function TaskFlow() {
                   variant="secondary"
                   size="sm"
                   onClick={() =>
-                    setSupportMessage("That is okay. We can try the same step again, nice and gently.")
+                    setSupportMessage(
+                      "That is okay. We can try the same step again, nice and gently."
+                    )
                   }
                 >
                   Try again
@@ -335,9 +351,9 @@ function TaskFlow() {
                 <p className="focus-support-panel__message">{supportMessage}</p>
               ) : null}
             </div>
-          )}
+          ) : null}
         </Card>
-      )}
+      ) : null}
 
       <TaskAssistantModal
         isOpen={isNovaOpen}

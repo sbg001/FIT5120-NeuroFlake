@@ -5,22 +5,30 @@ import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
+  createChildAccount,
   createParentReward,
+  createRewardTransaction,
   createTask,
   createTaskStep,
   deleteParentReward,
   deleteTask,
-  generateTaskSteps,
+  deleteTaskStep,
   getAllRewardsForParent,
   getChildProfile,
+  getLatestRewardSummary,
+  getParentApprovedRewards,
   getParentProfile,
   getPointsBalance,
+  getRewardTransactions,
   getSensoryRiskPrediction,
+  getTaskSteps,
   getTasks,
-  resetTaskStatus,
   updateParentReward,
+  updatePointsBalance,
   updateTask,
+  updateTaskStep,
   updateTaskStepCount,
+  generateTaskSteps,
 } from "../services";
 
 const priorityTypeOptions = [
@@ -83,6 +91,11 @@ function ParentDashboard() {
 
   const [riskForecast, setRiskForecast] = useState(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  const [childAccountName, setChildAccountName] = useState("");
+  const [childAccountAge, setChildAccountAge] = useState("");
+  const [childAccountUsername, setChildAccountUsername] = useState("");
+  const [childAccountPassword, setChildAccountPassword] = useState("");
+  const [childAccountMessage, setChildAccountMessage] = useState("");
 
   const [weeklyData] = useState([
     { day: "Mon", happy: 4, overwhelmed: 1 },
@@ -94,12 +107,16 @@ function ParentDashboard() {
     { day: "Sun", happy: 5, overwhelmed: 1 },
   ]);
 
+  const hasChildAccount = Boolean(childProfile?.user_id);
+
   useEffect(() => {
     async function loadDashboardData() {
       const parentResult = await getParentProfile();
       const childResult = await getChildProfile();
       const tasksResult = await getTasks();
-      const pointsResult = await getPointsBalance(childResult.data?.user_id);
+      const pointsResult = childResult.data
+        ? await getPointsBalance(childResult.data.user_id)
+        : { data: { points_balance: 0 }, error: null };
       const rewardsResult = await getAllRewardsForParent();
 
       setParentProfile(parentResult.data);
@@ -142,6 +159,11 @@ function ParentDashboard() {
 
   const handleCreateTask = async () => {
     setCreateMessage("");
+    
+    if (!hasChildAccount) {
+      setCreateMessage("Please create a child account before creating tasks.");
+      return;
+    }
 
     if (!title || !description || !priorityType || !priorityRank) {
       setCreateMessage("Please complete all task fields.");
@@ -292,8 +314,8 @@ function ParentDashboard() {
     setResetTaskMessage("Task reset successfully.");
   };
 
-  const handleCreateReward = async () => {
-    setRewardMessage("");
+    const handleCreateReward = async () => {
+      setRewardMessage("");
 
     if (!rewardTitle || !rewardCost) {
       setRewardMessage("Please complete the required reward fields.");
@@ -321,6 +343,44 @@ function ParentDashboard() {
     setRewardApproved(true);
     setRewardMessage("Reward created successfully.");
   };
+
+const handleCreateChildAccount = async () => {
+  setChildAccountMessage("");
+
+  if (
+    !childAccountName ||
+    !childAccountAge ||
+    !childAccountUsername ||
+    !childAccountPassword
+  ) {
+    setChildAccountMessage("Please complete all child account fields.");
+    return;
+  }
+
+  const result = await createChildAccount({
+    parentId: parentProfile.user_id,
+    name: childAccountName,
+    age: childAccountAge,
+    username: childAccountUsername,
+    password: childAccountPassword,
+  });
+
+  if (result.error) {
+    setChildAccountMessage(result.error);
+    return;
+  }
+
+  setChildProfile(result.data);
+  setPointsData({ points_balance: 0 });
+  setTasks([]);
+  setChildAccountName("");
+  setChildAccountAge("");
+  setChildAccountUsername("");
+  setChildAccountPassword("");
+  setChildAccountMessage(
+    "Child account created successfully. The child can now sign in with their username and password."
+  );
+};
 
   const handleSelectEditReward = (rewardId) => {
     setEditRewardId(rewardId);
@@ -381,7 +441,7 @@ function ParentDashboard() {
     setDeleteRewardMessage("Reward deleted successfully.");
   };
 
-  if (!parentProfile || !childProfile || !pointsData) {
+  if (!parentProfile || !pointsData) {
     return (
       <section className="page-section">
         <p>Loading dashboard...</p>
@@ -389,9 +449,9 @@ function ParentDashboard() {
     );
   }
 
-  const childTasks = tasks.filter(
-    (task) => String(task.child_id) === String(childProfile.user_id)
-  );
+  const childTasks = hasChildAccount
+    ? tasks.filter((task) => String(task.child_id) === String(childProfile.user_id))
+    : [];
   const activeTasks = childTasks.filter((task) => String(task.status) !== "completed");
   const completedTasks = childTasks.filter((task) => String(task.status) === "completed");
   const totalTasks = childTasks.length;
@@ -450,15 +510,32 @@ function ParentDashboard() {
       <PageHeader
         eyebrow="Parent Dashboard"
         title={`Welcome, ${parentProfile.name}`}
-        description={`A calm control center for managing ${childProfile.name}'s tasks, progress, rewards, and support insights.`}
+        description={
+          hasChildAccount
+            ? `A calm control center for managing ${childProfile.name}'s tasks, progress, rewards, and support insights.`
+            : "Create a child account first to start managing tasks, rewards, and support insights."
+        }
       />
-
+      {!hasChildAccount ? (
+        <Card className="parent-dashboard__collection-card" variant="glow">
+          <div className="parent-dashboard__section-header">
+            <div>
+              <p className="eyebrow">Child Account Required</p>
+              <h3>No child account yet</h3>
+            </div>
+            <Badge tone="warm">Setup needed</Badge>
+          </div>
+          <p className="page-text">
+            Create a child account below before managing tasks, rewards, and progress.
+          </p>
+        </Card>
+      ) : null}
       <div className="parent-dashboard__hero-grid">
         <Card className="parent-dashboard__hero-card" variant="glow">
           <div className="parent-dashboard__hero-top">
             <div>
               <p className="eyebrow">Child Progress Summary</p>
-              <h3>{childProfile.name}'s week at a glance</h3>
+              <h3>{childProfile?.name || "Your child"}'s week at a glance</h3>
             </div>
             <Badge tone="warm">{activeTasks.length} active tasks</Badge>
           </div>
@@ -532,7 +609,7 @@ function ParentDashboard() {
         </Card>
         <Card className="parent-dashboard__summary-card" variant="soft">
           <span>Support flow</span>
-          <strong>{childProfile.name}</strong>
+          <strong>{childProfile?.name || "No child yet"}</strong>
           <p>Tasks are broken into small steps after creation</p>
         </Card>
       </div>
@@ -682,6 +759,57 @@ function ParentDashboard() {
           </div>
 
           <div className="parent-dashboard__side-column">
+            <Card className="parent-dashboard__form-card parent-dashboard__form-card--feature" variant="glow">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Child Account</p>
+                  <h3>Create a child sign in</h3>
+                </div>
+                <Badge tone="sky">Parent only</Badge>
+              </div>
+
+              <p className="page-text">
+                Children cannot create accounts by themselves. A parent creates the child profile and sign-in details.
+              </p>
+
+              <div className="parent-dashboard__form-grid">
+                <input
+                  type="text"
+                  placeholder="Child name"
+                  value={childAccountName}
+                  onChange={(e) => setChildAccountName(e.target.value)}
+                />
+
+                <input
+                  type="number"
+                  placeholder="Child age"
+                  value={childAccountAge}
+                  onChange={(e) => setChildAccountAge(e.target.value)}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Child username"
+                  value={childAccountUsername}
+                  onChange={(e) => setChildAccountUsername(e.target.value)}
+                />
+
+                <input
+                  type="password"
+                  placeholder="Child password"
+                  value={childAccountPassword}
+                  onChange={(e) => setChildAccountPassword(e.target.value)}
+                />
+
+                {childAccountMessage ? (
+                  <p className="parent-dashboard__message">{childAccountMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateChildAccount}>
+                  Create Child Account
+                </Button>
+              </div>
+            </Card>
             <Card
               className="parent-dashboard__form-card parent-dashboard__form-card--feature"
               variant="glow"
@@ -726,7 +854,7 @@ function ParentDashboard() {
                 {createMessage ? (
                   <p className="parent-dashboard__message">{createMessage}</p>
                 ) : null}
-                <Button onClick={handleCreateTask} disabled={isCreatingTask}>
+                <Button onClick={handleCreateTask} disabled={isCreatingTask || !hasChildAccount}>
                   {isCreatingTask ? "Creating Steps..." : "Create Task With Steps"}
                 </Button>
               </div>

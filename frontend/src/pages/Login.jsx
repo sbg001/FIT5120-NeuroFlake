@@ -1,60 +1,80 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
-import { getUsers, loginWithPin } from "../services";
+import { registerParent, signInUser } from "../services";
 
 function Login() {
-  const [users, setUsers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [pinCode, setPinCode] = useState("");
+  const [authMode, setAuthMode] = useState("sign-in");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [parentName, setParentName] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
+  const [parentPassword, setParentPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function loadUsers() {
-      const { data } = await getUsers();
-      setUsers(data || []);
-    }
-
-    loadUsers();
-  }, []);
-
-  const handleLogin = async () => {
-    setErrorMessage("");
-
-    if (!selectedUserId || !pinCode) {
-      setErrorMessage("Choose a profile and enter the PIN.");
-      return;
-    }
-
-    setIsLoading(true);
-    const result = await loginWithPin(selectedUserId, pinCode);
-    setIsLoading(false);
-
-    if (result.error) {
-      setErrorMessage("That PIN did not work. Please try again.");
-      return;
-    }
-
-    const user = result.data;
-
+  const completeLogin = (user) => {
     localStorage.setItem("current_user_id", user.user_id);
     localStorage.setItem("current_user_role", user.role);
     localStorage.setItem("current_user_name", user.name);
 
-    if (user.role === "parent") {
+    if (String(user.role).toLowerCase() === "parent") {
       navigate("/parent");
     } else {
       navigate("/child");
     }
   };
 
-  const selectedUser =
-    users.find((user) => String(user.user_id) === String(selectedUserId)) ||
-    null;
+  const handleSignIn = async () => {
+    setErrorMessage("");
+
+    if (!identifier || !password) {
+      setErrorMessage("Please enter your account and password.");
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await signInUser({
+      identifier,
+      password,
+    });
+    setIsLoading(false);
+
+    if (result.error) {
+      setErrorMessage(result.error);
+      return;
+    }
+
+    completeLogin(result.data);
+  };
+
+  const handleParentSignUp = async () => {
+    setErrorMessage("");
+
+    if (!parentName || !parentEmail || !parentPassword) {
+      setErrorMessage("Please complete all parent sign up fields.");
+      return;
+    }
+
+    setIsLoading(true);
+    const result = await registerParent({
+      name: parentName,
+      email: parentEmail,
+      password: parentPassword,
+    });
+    setIsLoading(false);
+
+    if (result.error) {
+      setErrorMessage(result.error);
+      return;
+    }
+
+    completeLogin(result.data);
+  };
 
   return (
     <section className="login-page">
@@ -71,92 +91,171 @@ function Login() {
         <div className="login-header">
           <PageHeader
             eyebrow="Login"
-            title="Choose your profile"
-            description="Use your private PIN to step into your calm routine space."
+            title={authMode === "sign-up" ? "Create parent account" : "Welcome back"}
+            description={
+              authMode === "sign-up"
+                ? "Parents create their own account first, then create child accounts safely."
+                : "Sign in with your account. NeuroFlake will take you to the right space."
+            }
           />
         </div>
 
         <div className="login-profile-grid">
-          {users.map((user) => {
-            const isSelected = String(user.user_id) === String(selectedUserId);
-            const roleLabel =
-              String(user.role).toLowerCase() === "parent"
-                ? "Parent"
-                : "Child";
+          <button
+            type="button"
+            className={
+              authMode === "sign-in"
+                ? "login-profile-button is-selected"
+                : "login-profile-button"
+            }
+            onClick={() => {
+              setAuthMode("sign-in");
+              setErrorMessage("");
+            }}
+          >
+            <span>✓</span>
+            <strong>Sign In</strong>
+            <small>Parent email or child username</small>
+          </button>
 
-            return (
-              <button
-                key={user.user_id}
-                type="button"
-                className={
-                  isSelected
-                    ? "login-profile-button is-selected"
-                    : "login-profile-button"
-                }
-                onClick={() => {
-                  setSelectedUserId(user.user_id);
-                  setErrorMessage("");
-                }}
-              >
-                <span>{roleLabel.slice(0, 1)}</span>
-                <strong>{roleLabel} Profile</strong>
-                <small>{user.name}</small>
-              </button>
-            );
-          })}
+          <button
+            type="button"
+            className={
+              authMode === "sign-up"
+                ? "login-profile-button is-selected"
+                : "login-profile-button"
+            }
+            onClick={() => {
+              setAuthMode("sign-up");
+              setErrorMessage("");
+            }}
+          >
+            <span>+</span>
+            <strong>Parent Sign Up</strong>
+            <small>Create a parent account</small>
+          </button>
         </div>
 
         <div className="login-demo-pin-box">
-          <strong>Iteration demo access</strong>
-          <p>Parent PIN: 1111</p>
-          <p>Child PIN: 2222</p>
+          <strong>Prototype access</strong>
+          <p>Parent: parent@neuroflake.test / parent123</p>
+          <p>Child: leo / child123</p>
         </div>
 
         <div className="login-form">
-          <label htmlFor="pin-code">
-            PIN
-            {selectedUser && <span>{selectedUser.role} profile selected</span>}
-          </label>
+          {authMode === "sign-in" && (
+            <>
+              <label htmlFor="login-identifier">Email or child username</label>
+              <input
+                id="login-identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => {
+                  setIdentifier(e.target.value);
+                  setErrorMessage("");
+                }}
+                placeholder="Enter parent email or child username"
+                autoComplete="username"
+              />
 
-          <input
-            id="pin-code"
-            type="password"
-            value={pinCode}
-            onChange={(e) => {
-              setPinCode(e.target.value);
-              setErrorMessage("");
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleLogin();
-              }
-            }}
-            placeholder="Enter PIN"
-            inputMode="numeric"
-            autoComplete="current-password"
-            maxLength={6}
-          />
+              <label htmlFor="login-password">Password</label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrorMessage("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleSignIn();
+                  }
+                }}
+                placeholder="Enter password"
+                autoComplete="current-password"
+              />
 
-          {errorMessage && (
-            <div className="login-error" role="alert">
-              <p>{errorMessage}</p>
-            </div>
+              {errorMessage && (
+                <div className="login-error" role="alert">
+                  <p>{errorMessage}</p>
+                </div>
+              )}
+
+              <Button onClick={handleSignIn} disabled={isLoading}>
+                {isLoading ? "Checking..." : "Sign In"}
+              </Button>
+
+              <p className="login-note">
+                Children cannot create accounts here. A parent or caregiver creates child accounts from the Parent Dashboard.
+              </p>
+            </>
           )}
 
-          <Button
-            onClick={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? "Checking..." : "Continue"}
-          </Button>
+          {authMode === "sign-up" && (
+            <>
+              <label htmlFor="parent-name">Parent name</label>
+              <input
+                id="parent-name"
+                type="text"
+                value={parentName}
+                onChange={(e) => {
+                  setParentName(e.target.value);
+                  setErrorMessage("");
+                }}
+                placeholder="Enter your name"
+              />
+
+              <label htmlFor="parent-email">Email</label>
+              <input
+                id="parent-email"
+                type="email"
+                value={parentEmail}
+                onChange={(e) => {
+                  setParentEmail(e.target.value);
+                  setErrorMessage("");
+                }}
+                placeholder="Enter email"
+                autoComplete="email"
+              />
+
+              <label htmlFor="parent-password">Password</label>
+              <input
+                id="parent-password"
+                type="password"
+                value={parentPassword}
+                onChange={(e) => {
+                  setParentPassword(e.target.value);
+                  setErrorMessage("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handleParentSignUp();
+                  }
+                }}
+                placeholder="Create password"
+                autoComplete="new-password"
+              />
+
+              {errorMessage && (
+                <div className="login-error" role="alert">
+                  <p>{errorMessage}</p>
+                </div>
+              )}
+
+              <Button onClick={handleParentSignUp} disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create Parent Account"}
+              </Button>
+
+              <p className="login-note">
+                After signing up, parents can create one or more child accounts.
+              </p>
+            </>
+          )}
 
           <Button as={Link} to="/" variant="secondary" className="login-home-button">
             Back to Home
           </Button>
-
-          <p className="login-note">
-            PINs stay hidden on this page. Ask a parent or caregiver if you need help.
-          </p>
         </div>
       </Card>
     </section>

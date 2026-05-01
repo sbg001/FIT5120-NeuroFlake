@@ -1,49 +1,78 @@
-import { mockRoutines, mockRoutineItems } from "../data/mockRoutines";
-import { supabase } from "../lib/supabase";
+const API_BASE_URL =
+  import.meta.env.VITE_CHATBOT_API_URL || "http://127.0.0.1:8000";
 
-export async function getRoutines() {
-  if (!supabase) {
-    return { data: mockRoutines, error: null };
+function getCurrentChildId() {
+  const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
+  const currentUserId = localStorage.getItem("current_user_id");
+
+  if (currentRole === "child" && currentUserId) {
+    return String(currentUserId);
   }
 
-  const { data, error } = await supabase
-    .from("routines")
-    .select("*")
-    .order("display_order", { ascending: true });
+  return "";
+}
 
-  if (error || !data || data.length === 0) {
-    return { data: mockRoutines, error: null };
+async function apiRequest(path, options = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: data?.detail || data?.error || "Request failed.",
+      };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error.message || "Request failed.",
+    };
+  }
+}
+
+export async function getRoutines(childId) {
+  const resolvedChildId = childId || getCurrentChildId();
+  const query = resolvedChildId ? `?child_id=${encodeURIComponent(resolvedChildId)}` : "";
+
+  const result = await apiRequest(`/api/routines${query}`, {
+    method: "GET",
+  });
+
+  if (result.error || !Array.isArray(result.data)) {
+    return { data: [], error: null };
   }
 
-  return { data, error: null };
+  return { data: result.data, error: null };
 }
 
 export async function getRoutineItems(routineId) {
-  if (!supabase) {
-    const items = mockRoutineItems.filter(
-      (item) => item.routine_id === Number(routineId)
-    );
-    return { data: items, error: null };
+  if (!routineId) {
+    return { data: [], error: null };
   }
 
-  const { data, error } = await supabase
-    .from("routine_items")
-    .select("*")
-    .eq("routine_id", Number(routineId))
-    .order("item_order", { ascending: true });
+  const result = await apiRequest(`/api/routines/${routineId}/items`, {
+    method: "GET",
+  });
 
-  if (error || !data || data.length === 0) {
-    const items = mockRoutineItems.filter(
-      (item) => item.routine_id === Number(routineId)
-    );
-    return { data: items, error: null };
+  if (result.error || !Array.isArray(result.data)) {
+    return { data: [], error: null };
   }
 
-  return { data, error: null };
+  return { data: result.data, error: null };
 }
 
-export async function getRoutineBlocksWithItems() {
-  const routinesResult = await getRoutines();
+export async function getRoutineBlocksWithItems(childId) {
+  const routinesResult = await getRoutines(childId);
   const routines = routinesResult.data || [];
 
   const blocks = await Promise.all(
@@ -65,50 +94,14 @@ export async function getRoutineBlocksWithItems() {
 }
 
 export async function updateRoutineItem(itemId, isCompleted) {
-  const payload = {
-    is_completed: isCompleted,
-    completed_at: isCompleted ? new Date().toISOString() : null,
-  };
-
-  if (!supabase) {
-    const item =
-      mockRoutineItems.find(
-        (routineItem) => routineItem.item_id === Number(itemId)
-      ) || null;
-
-    if (!item) {
-      return { data: null, error: "Routine item not found." };
-    }
-
-    item.is_completed = isCompleted;
-    item.completed_at = payload.completed_at;
-
-    return { data: item, error: null };
+  if (!itemId) {
+    return { data: null, error: "Routine item not found." };
   }
 
-  const { data, error } = await supabase
-    .from("routine_items")
-    .update(payload)
-    .eq("item_id", Number(itemId))
-    .select()
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    const item =
-      mockRoutineItems.find(
-        (routineItem) => routineItem.item_id === Number(itemId)
-      ) || null;
-
-    if (!item) {
-      return { data: null, error: "Routine item not found." };
-    }
-
-    item.is_completed = isCompleted;
-    item.completed_at = payload.completed_at;
-
-    return { data: item, error: null };
-  }
-
-  return { data, error: null };
+  return apiRequest(`/api/routine-items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      is_completed: Boolean(isCompleted),
+    }),
+  });
 }

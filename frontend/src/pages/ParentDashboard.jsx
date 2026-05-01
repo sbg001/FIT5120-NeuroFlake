@@ -6,29 +6,33 @@ import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
   createChildAccount,
+  createCommunicationPrompt,
   createParentReward,
-  createRewardTransaction,
+  createRoutine,
+  createRoutineItem,
+  createSupportResource,
   createTask,
   createTaskStep,
+  createTrigger,
   deleteParentReward,
   deleteTask,
-  deleteTaskStep,
+  generateTaskSteps,
   getAllRewardsForParent,
   getChildProfile,
-  getLatestRewardSummary,
-  getParentApprovedRewards,
+  getCommunicationPrompts,
+  getEmotionLogs,
   getParentProfile,
+  getPersonalisedSuggestions,
   getPointsBalance,
-  getRewardTransactions,
+  getRoutineBlocksWithItems,
   getSensoryRiskPrediction,
-  getTaskSteps,
+  getSupportResources,
   getTasks,
+  getTriggers,
+  resetTaskStatus,
   updateParentReward,
-  updatePointsBalance,
   updateTask,
-  updateTaskStep,
   updateTaskStepCount,
-  generateTaskSteps,
 } from "../services";
 
 const priorityTypeOptions = [
@@ -91,23 +95,136 @@ function ParentDashboard() {
 
   const [riskForecast, setRiskForecast] = useState(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  const [triggers, setTriggers] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [communicationPrompts, setCommunicationPrompts] = useState([]);
+  const [supportResources, setSupportResources] = useState([]);
+  const [routineBlocks, setRoutineBlocks] = useState([]);
+
+  const [triggerTitle, setTriggerTitle] = useState("");
+  const [triggerType, setTriggerType] = useState("");
+  const [triggerNotes, setTriggerNotes] = useState("");
+  const [triggerMessage, setTriggerMessage] = useState("");
+
+  const [routineTitle, setRoutineTitle] = useState("");
+  const [routineDescription, setRoutineDescription] = useState("");
+  const [routineItemTitle, setRoutineItemTitle] = useState("");
+  const [routineItemReminder, setRoutineItemReminder] = useState("");
+  const [routineMessage, setRoutineMessage] = useState("");
+
+  const [promptTitle, setPromptTitle] = useState("");
+  const [promptText, setPromptText] = useState("");
+  const [promptCategory, setPromptCategory] = useState("");
+  const [promptMessage, setPromptMessage] = useState("");
+
+  const [resourceTitle, setResourceTitle] = useState("");
+  const [resourceCategory, setResourceCategory] = useState("");
+  const [resourceDescription, setResourceDescription] = useState("");
+  const [resourceUrl, setResourceUrl] = useState("");
+  const [resourceMessage, setResourceMessage] = useState("");
+
   const [childAccountName, setChildAccountName] = useState("");
   const [childAccountAge, setChildAccountAge] = useState("");
   const [childAccountUsername, setChildAccountUsername] = useState("");
   const [childAccountPassword, setChildAccountPassword] = useState("");
   const [childAccountMessage, setChildAccountMessage] = useState("");
 
-  const [weeklyData] = useState([
-    { day: "Mon", happy: 4, overwhelmed: 1 },
-    { day: "Tue", happy: 3, overwhelmed: 2 },
-    { day: "Wed", happy: 5, overwhelmed: 0 },
-    { day: "Thu", happy: 2, overwhelmed: 3 },
-    { day: "Fri", happy: 4, overwhelmed: 1 },
-    { day: "Sat", happy: 6, overwhelmed: 0 },
-    { day: "Sun", happy: 5, overwhelmed: 1 },
-  ]);
+  const [emotionLogs, setEmotionLogs] = useState([]);
+  const [selectedRoutineId, setSelectedRoutineId] = useState("");
+  const [existingRoutineItemTitle, setExistingRoutineItemTitle] = useState("");
+  const [existingRoutineItemDescription, setExistingRoutineItemDescription] = useState("");
+  const [existingRoutineItemReminder, setExistingRoutineItemReminder] = useState("");
+  const [routineItemMessage, setRoutineItemMessage] = useState("");
+  const [reminderNotificationMessage, setReminderNotificationMessage] = useState("");
 
   const hasChildAccount = Boolean(childProfile?.user_id);
+  const buildWeeklyEmotionData = (logs) => {
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const initialData = dayLabels.map((day) => ({
+    day,
+    happy: 0,
+    overwhelmed: 0,
+  }));
+
+  (logs || []).forEach((log) => {
+    if (!log.logged_at) return;
+
+    const logDate = new Date(log.logged_at);
+    const dayIndex = logDate.getDay();
+    const emotionType = String(log.emotion_type || "").toLowerCase();
+
+    if (emotionType === "happy" || emotionType === "good") {
+      initialData[dayIndex].happy += 1;
+    }
+
+    if (emotionType === "overwhelmed") {
+      initialData[dayIndex].overwhelmed += 1;
+    }
+  });
+
+  const todayIndex = new Date().getDay();
+
+  return [
+    ...initialData.slice(todayIndex + 1),
+    ...initialData.slice(0, todayIndex + 1),
+  ];
+};
+
+const weeklyEmotionData = buildWeeklyEmotionData(emotionLogs);
+
+const maxWeeklyEmotionValue = Math.max(
+  1,
+  ...weeklyEmotionData.map((data) => Math.max(data.happy, data.overwhelmed))
+);
+
+const getTodayReminderKey = (itemId) => {
+  const today = new Date().toISOString().slice(0, 10);
+  return `neuroflake_reminder_${today}_${itemId}`;
+};
+
+const showRoutineReminderNotification = (item, routineTitle) => {
+  if (!("Notification" in window)) {
+    return;
+  }
+
+  if (Notification.permission !== "granted") {
+    return;
+  }
+
+  const reminderKey = getTodayReminderKey(item.item_id);
+
+  if (localStorage.getItem(reminderKey)) {
+    return;
+  }
+
+  new Notification("NeuroFlake routine reminder", {
+    body: `${routineTitle}: ${item.title}`,
+  });
+
+  localStorage.setItem(reminderKey, "shown");
+};
+
+const checkRoutineReminders = () => {
+  if (!routineBlocks.length || !("Notification" in window)) {
+    return;
+  }
+
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5);
+
+  routineBlocks.forEach((routine) => {
+    (routine.items || []).forEach((item) => {
+      if (!item.reminder_time || item.is_completed) {
+        return;
+      }
+
+      if (String(item.reminder_time).slice(0, 5) === currentTime) {
+        showRoutineReminderNotification(item, routine.title);
+      }
+    });
+  });
+};
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -118,16 +235,43 @@ function ParentDashboard() {
         ? await getPointsBalance(childResult.data.user_id)
         : { data: { points_balance: 0 }, error: null };
       const rewardsResult = await getAllRewardsForParent();
+      const childId = childResult.data?.user_id;
+
+      const triggersResult = await getTriggers(childId);
+      const suggestionsResult = await getPersonalisedSuggestions(childId);
+      const routinesResult = await getRoutineBlocksWithItems(childId);
+      const promptsResult = await getCommunicationPrompts(childId);
+      const resourcesResult = await getSupportResources();
+      const emotionLogsResult = await getEmotionLogs(childId);
 
       setParentProfile(parentResult.data);
       setChildProfile(childResult.data);
       setTasks(tasksResult.data || []);
       setPointsData(pointsResult.data);
       setRewards(rewardsResult.data || []);
+      setTriggers(triggersResult.data || []);
+      setSuggestions(suggestionsResult.data || []);
+      setRoutineBlocks(routinesResult.data || []);
+      setCommunicationPrompts(promptsResult.data || []);
+      setSupportResources(resourcesResult.data || []);
+      setEmotionLogs(emotionLogsResult.data || []);
     }
 
     loadDashboardData();
   }, []);
+  useEffect(() => {
+    if (!routineBlocks.length) return;
+
+    checkRoutineReminders();
+
+    const reminderInterval = window.setInterval(() => {
+      checkRoutineReminders();
+    }, 30000);
+
+    return () => {
+      window.clearInterval(reminderInterval);
+    };
+  }, [routineBlocks]);
 
   const refreshTasks = async () => {
     const refreshedTasks = await getTasks();
@@ -137,6 +281,24 @@ function ParentDashboard() {
   const refreshRewards = async () => {
     const rewardsResult = await getAllRewardsForParent();
     setRewards(rewardsResult.data || []);
+  };
+
+  const refreshEpic6Data = async () => {
+    if (!childProfile?.user_id) return;
+
+    const triggersResult = await getTriggers(childProfile.user_id);
+    const suggestionsResult = await getPersonalisedSuggestions(childProfile.user_id);
+    const routinesResult = await getRoutineBlocksWithItems(childProfile.user_id);
+    const promptsResult = await getCommunicationPrompts(childProfile.user_id);
+    const resourcesResult = await getSupportResources();
+    const emotionLogsResult = await getEmotionLogs(childProfile.user_id);
+
+    setTriggers(triggersResult.data || []);
+    setSuggestions(suggestionsResult.data || []);
+    setRoutineBlocks(routinesResult.data || []);
+    setCommunicationPrompts(promptsResult.data || []);
+    setSupportResources(resourcesResult.data || []);
+    setEmotionLogs(emotionLogsResult.data || []);
   };
 
   async function loadInsights() {
@@ -159,7 +321,7 @@ function ParentDashboard() {
 
   const handleCreateTask = async () => {
     setCreateMessage("");
-    
+
     if (!hasChildAccount) {
       setCreateMessage("Please create a child account before creating tasks.");
       return;
@@ -314,8 +476,8 @@ function ParentDashboard() {
     setResetTaskMessage("Task reset successfully.");
   };
 
-    const handleCreateReward = async () => {
-      setRewardMessage("");
+  const handleCreateReward = async () => {
+    setRewardMessage("");
 
     if (!rewardTitle || !rewardCost) {
       setRewardMessage("Please complete the required reward fields.");
@@ -344,43 +506,43 @@ function ParentDashboard() {
     setRewardMessage("Reward created successfully.");
   };
 
-const handleCreateChildAccount = async () => {
-  setChildAccountMessage("");
+  const handleCreateChildAccount = async () => {
+    setChildAccountMessage("");
 
-  if (
-    !childAccountName ||
-    !childAccountAge ||
-    !childAccountUsername ||
-    !childAccountPassword
-  ) {
-    setChildAccountMessage("Please complete all child account fields.");
-    return;
-  }
+    if (
+      !childAccountName ||
+      !childAccountAge ||
+      !childAccountUsername ||
+      !childAccountPassword
+    ) {
+      setChildAccountMessage("Please complete all child account fields.");
+      return;
+    }
 
-  const result = await createChildAccount({
-    parentId: parentProfile.user_id,
-    name: childAccountName,
-    age: childAccountAge,
-    username: childAccountUsername,
-    password: childAccountPassword,
-  });
+    const result = await createChildAccount({
+      parentId: parentProfile.user_id,
+      name: childAccountName,
+      age: childAccountAge,
+      username: childAccountUsername,
+      password: childAccountPassword,
+    });
 
-  if (result.error) {
-    setChildAccountMessage(result.error);
-    return;
-  }
+    if (result.error) {
+      setChildAccountMessage(result.error);
+      return;
+    }
 
-  setChildProfile(result.data);
-  setPointsData({ points_balance: 0 });
-  setTasks([]);
-  setChildAccountName("");
-  setChildAccountAge("");
-  setChildAccountUsername("");
-  setChildAccountPassword("");
-  setChildAccountMessage(
-    "Child account created successfully. The child can now sign in with their username and password."
-  );
-};
+    setChildProfile(result.data);
+    setPointsData({ points_balance: 0 });
+    setTasks([]);
+    setChildAccountName("");
+    setChildAccountAge("");
+    setChildAccountUsername("");
+    setChildAccountPassword("");
+    setChildAccountMessage(
+      "Child account created successfully. The child can now sign in with their username and password."
+    );
+  };
 
   const handleSelectEditReward = (rewardId) => {
     setEditRewardId(rewardId);
@@ -439,6 +601,202 @@ const handleCreateChildAccount = async () => {
     await refreshRewards();
     setDeleteRewardId("");
     setDeleteRewardMessage("Reward deleted successfully.");
+  };
+
+  const handleCreateTrigger = async () => {
+    setTriggerMessage("");
+
+    if (!hasChildAccount) {
+      setTriggerMessage("Please create a child account before saving triggers.");
+      return;
+    }
+
+    if (!triggerTitle || !triggerType) {
+      setTriggerMessage("Please complete the trigger title and type.");
+      return;
+    }
+
+    const result = await createTrigger({
+      child_id: childProfile.user_id,
+      trigger_title: triggerTitle,
+      trigger_type: triggerType,
+      notes: triggerNotes,
+    });
+
+    if (result.error) {
+      setTriggerMessage(result.error);
+      return;
+    }
+
+    setTriggerTitle("");
+    setTriggerType("");
+    setTriggerNotes("");
+    setTriggerMessage("Trigger saved successfully.");
+    await refreshEpic6Data();
+  };
+
+  const handleCreateRoutine = async () => {
+    setRoutineMessage("");
+
+    if (!hasChildAccount) {
+      setRoutineMessage("Please create a child account before creating routines.");
+      return;
+    }
+
+    if (!routineTitle || !routineItemTitle) {
+      setRoutineMessage("Please complete the routine and first item title.");
+      return;
+    }
+
+    const routineResult = await createRoutine({
+      child_id: childProfile.user_id,
+      title: routineTitle,
+      description: routineDescription,
+      display_order: routineBlocks.length + 1,
+    });
+
+    if (routineResult.error) {
+      setRoutineMessage(routineResult.error);
+      return;
+    }
+
+    const itemResult = await createRoutineItem({
+      routine_id: routineResult.data.routine_id,
+      item_order: 1,
+      title: routineItemTitle,
+      description: routineDescription,
+      reminder_time: routineItemReminder,
+    });
+
+    if (itemResult.error) {
+      setRoutineMessage("Routine created, but the reminder item could not be saved.");
+      await refreshEpic6Data();
+      return;
+    }
+
+    setRoutineTitle("");
+    setRoutineDescription("");
+    setRoutineItemTitle("");
+    setRoutineItemReminder("");
+    setRoutineMessage("Routine and reminder saved successfully.");
+    await refreshEpic6Data();
+  };
+  const handleCreateRoutineItemForExistingRoutine = async () => {
+    setRoutineItemMessage("");
+
+    if (!selectedRoutineId || !existingRoutineItemTitle) {
+      setRoutineItemMessage("Please select a routine and enter an item title.");
+      return;
+    }
+
+    const selectedRoutine = routineBlocks.find(
+      (routine) => String(routine.routine_id) === String(selectedRoutineId)
+    );
+
+    const nextOrder = (selectedRoutine?.items?.length || 0) + 1;
+
+    const result = await createRoutineItem({
+      routine_id: selectedRoutineId,
+      item_order: nextOrder,
+      title: existingRoutineItemTitle,
+      description: existingRoutineItemDescription,
+      reminder_time: existingRoutineItemReminder,
+    });
+
+    if (result.error) {
+      setRoutineItemMessage(result.error);
+      return;
+    }
+
+    setExistingRoutineItemTitle("");
+    setExistingRoutineItemDescription("");
+    setExistingRoutineItemReminder("");
+    setRoutineItemMessage("Routine item and reminder saved successfully.");
+    await refreshEpic6Data();
+  };
+
+  const handleEnableReminderNotifications = async () => {
+    setReminderNotificationMessage("");
+
+    if (!("Notification" in window)) {
+      setReminderNotificationMessage("This browser does not support notifications.");
+      return;
+    }
+
+    if (Notification.permission === "granted") {
+      setReminderNotificationMessage("Reminder notifications are already enabled.");
+      checkRoutineReminders();
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission === "granted") {
+      setReminderNotificationMessage("Reminder notifications enabled for this browser.");
+      checkRoutineReminders();
+      return;
+    }
+
+    setReminderNotificationMessage("Notifications were not enabled.");
+  };
+  const handleCreatePrompt = async () => {
+    setPromptMessage("");
+
+    if (!hasChildAccount) {
+      setPromptMessage("Please create a child account before creating prompts.");
+      return;
+    }
+
+    if (!promptTitle || !promptText) {
+      setPromptMessage("Please complete the prompt title and text.");
+      return;
+    }
+
+    const result = await createCommunicationPrompt({
+      child_id: childProfile.user_id,
+      title: promptTitle,
+      prompt_text: promptText,
+      category: promptCategory || "general",
+    });
+
+    if (result.error) {
+      setPromptMessage(result.error);
+      return;
+    }
+
+    setPromptTitle("");
+    setPromptText("");
+    setPromptCategory("");
+    setPromptMessage("Communication prompt saved successfully.");
+    await refreshEpic6Data();
+  };
+
+  const handleCreateResource = async () => {
+    setResourceMessage("");
+
+    if (!resourceTitle || !resourceCategory || !resourceDescription) {
+      setResourceMessage("Please complete the resource title, category, and description.");
+      return;
+    }
+
+    const result = await createSupportResource({
+      title: resourceTitle,
+      category: resourceCategory,
+      description: resourceDescription,
+      url: resourceUrl,
+    });
+
+    if (result.error) {
+      setResourceMessage(result.error);
+      return;
+    }
+
+    setResourceTitle("");
+    setResourceCategory("");
+    setResourceDescription("");
+    setResourceUrl("");
+    setResourceMessage("Support resource saved successfully.");
+    await refreshEpic6Data();
   };
 
   if (!parentProfile || !pointsData) {
@@ -505,6 +863,20 @@ const handleCreateChildAccount = async () => {
         ? "warm"
         : "default";
 
+  const triggerCounts = triggers.reduce((counts, trigger) => {
+    const key = trigger.trigger_type || trigger.trigger_title || "Other";
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+
+  const repeatedTriggerEntry = Object.entries(triggerCounts).sort(
+    (first, second) => second[1] - first[1]
+  )[0];
+
+  const repeatedTriggerLabel = repeatedTriggerEntry
+    ? `${repeatedTriggerEntry[0]} (${repeatedTriggerEntry[1]} times)`
+    : "No repeated trigger yet";
+
   return (
     <section className="page-section parent-dashboard">
       <PageHeader
@@ -516,6 +888,7 @@ const handleCreateChildAccount = async () => {
             : "Create a child account first to start managing tasks, rewards, and support insights."
         }
       />
+
       {!hasChildAccount ? (
         <Card className="parent-dashboard__collection-card" variant="glow">
           <div className="parent-dashboard__section-header">
@@ -530,6 +903,7 @@ const handleCreateChildAccount = async () => {
           </p>
         </Card>
       ) : null}
+
       <div className="parent-dashboard__hero-grid">
         <Card className="parent-dashboard__hero-card" variant="glow">
           <div className="parent-dashboard__hero-top">
@@ -619,7 +993,8 @@ const handleCreateChildAccount = async () => {
           {[
             { id: "tasks", label: "Tasks", note: "Create, edit, reset, and review" },
             { id: "rewards", label: "Rewards", note: "Control the reward catalog" },
-            { id: "insights", label: "Insights", note: "View support forecasts and patterns" },
+            { id: "insights", label: "Insights", note: "Triggers and personalised suggestions" },
+            { id: "support", label: "Support", note: "Routines, prompts, and resources" },
           ].map((section) => (
             <button
               key={section.id}
@@ -810,6 +1185,7 @@ const handleCreateChildAccount = async () => {
                 </Button>
               </div>
             </Card>
+
             <Card
               className="parent-dashboard__form-card parent-dashboard__form-card--feature"
               variant="glow"
@@ -1112,7 +1488,7 @@ const handleCreateChildAccount = async () => {
             </Card>
           </div>
         </div>
-      ) : (
+      ) : activeSection === "insights" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
             <Card className="parent-dashboard__collection-card" variant="glow">
@@ -1178,25 +1554,111 @@ const handleCreateChildAccount = async () => {
                 </span>
               </div>
 
+
               <div className="parent-dashboard__chart">
-                {weeklyData.map((data) => (
+                {weeklyEmotionData.map((data) => (
                   <div key={data.day} className="parent-dashboard__chart-day">
                     <div className="parent-dashboard__chart-bars">
                       <div
                         className="parent-dashboard__chart-bar parent-dashboard__chart-bar--happy"
-                        style={{ height: `${(data.happy / 6) * 100}%` }}
-                        aria-label={`${data.day} happy score ${data.happy}`}
+                        style={{ height: `${(data.happy / maxWeeklyEmotionValue) * 100}%` }}
+                        aria-label={`${data.day} happy count ${data.happy}`}
                       />
                       <div
                         className="parent-dashboard__chart-bar parent-dashboard__chart-bar--overwhelmed"
-                        style={{ height: `${(data.overwhelmed / 6) * 100}%` }}
-                        aria-label={`${data.day} overwhelmed score ${data.overwhelmed}`}
+                        style={{ height: `${(data.overwhelmed / maxWeeklyEmotionValue) * 100}%` }}
+                        aria-label={`${data.day} overwhelmed count ${data.overwhelmed}`}
                       />
                     </div>
                     <span>{data.day}</span>
                   </div>
                 ))}
               </div>
+              <p className="page-text">
+                This chart is calculated from saved emotion check-ins.
+              </p>
+            </Card>
+
+            <Card className="parent-dashboard__collection-card" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Trigger Tracking</p>
+                  <h3>Recorded friction points</h3>
+                </div>
+                <Badge tone="warm">{triggers.length} triggers</Badge>
+              </div>
+
+              <p className="page-text">
+                Repeated trigger: {repeatedTriggerLabel}
+              </p>
+
+              {triggers.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {triggers.map((trigger) => (
+                    <div key={trigger.trigger_id} className="parent-dashboard__task-item">
+                      <div className="parent-dashboard__task-item-top">
+                        <div>
+                          <h4>{trigger.trigger_title}</h4>
+                          <p>{trigger.notes || "No notes added."}</p>
+                        </div>
+                        <Badge tone="sky">{trigger.trigger_type}</Badge>
+                      </div>
+                      <div className="parent-dashboard__task-meta">
+                        <span>
+                          {trigger.logged_at
+                            ? new Date(trigger.logged_at).toLocaleString()
+                            : "Recently added"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F50E}"}
+                  </div>
+                  <h4>No triggers yet</h4>
+                  <p>Add a trigger to start seeing repeated patterns.</p>
+                </div>
+              )}
+            </Card>
+
+            <Card className="parent-dashboard__collection-card" variant="glow">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Personalised Suggestions</p>
+                  <h3>Actionable parent guidance</h3>
+                </div>
+                <Badge tone="mint">{suggestions.length} suggestions</Badge>
+              </div>
+
+              {suggestions.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={`${suggestion.title}-${index}`}
+                      className="parent-dashboard__task-item"
+                    >
+                      <div className="parent-dashboard__task-item-top">
+                        <div>
+                          <h4>{suggestion.title}</h4>
+                          <p>{suggestion.text}</p>
+                        </div>
+                        <Badge tone="warm">{suggestion.source || "guidance"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F4A1}"}
+                  </div>
+                  <h4>No suggestions yet</h4>
+                  <p>Add triggers or emotion logs to generate support guidance.</p>
+                </div>
+              )}
             </Card>
           </div>
 
@@ -1216,6 +1678,394 @@ const handleCreateChildAccount = async () => {
               <Button variant="secondary" onClick={loadInsights} disabled={isLoadingInsights}>
                 {isLoadingInsights ? "Refreshing..." : "Refresh Insights"}
               </Button>
+            </Card>
+
+            <Card
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
+              variant="glow"
+            >
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Add Trigger</p>
+                  <h3>Log a support signal</h3>
+                </div>
+              </div>
+
+              <div className="parent-dashboard__form-grid">
+                <input
+                  type="text"
+                  placeholder="Trigger title, e.g. Loud noise"
+                  value={triggerTitle}
+                  onChange={(event) => setTriggerTitle(event.target.value)}
+                />
+
+                <select
+                  value={triggerType}
+                  onChange={(event) => setTriggerType(event.target.value)}
+                >
+                  <option value="">Select trigger type</option>
+                  <option value="noise">Noise</option>
+                  <option value="transition">Transition</option>
+                  <option value="routine change">Routine change</option>
+                  <option value="task difficulty">Task difficulty</option>
+                  <option value="sensory overload">Sensory overload</option>
+                  <option value="other">Other</option>
+                </select>
+
+                <textarea
+                  placeholder="Notes"
+                  value={triggerNotes}
+                  onChange={(event) => setTriggerNotes(event.target.value)}
+                  rows={4}
+                />
+
+                {triggerMessage ? (
+                  <p className="parent-dashboard__message">{triggerMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateTrigger} disabled={!hasChildAccount}>
+                  Save Trigger
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <div className="parent-dashboard__workspace-grid">
+          <div className="parent-dashboard__main-column">
+            <Card className="parent-dashboard__collection-card" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Routine Planner</p>
+                  <h3>Saved routines and reminders</h3>
+                </div>
+                <Badge tone="sky">{routineBlocks.length} routines</Badge>
+              </div>
+
+              {routineBlocks.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {routineBlocks.map((routine) => (
+                    <div key={routine.routine_id} className="parent-dashboard__task-item">
+                      <div className="parent-dashboard__task-item-top">
+                        <div>
+                          <h4>{routine.title}</h4>
+                          <p>{routine.description || "No description added."}</p>
+                        </div>
+                        <Badge tone="mint">
+                          {routine.completed_count || 0}/{routine.total_count || 0}
+                        </Badge>
+                      </div>
+
+                      {routine.items?.length > 0 ? (
+                        <div className="parent-dashboard__task-list">
+                          {routine.items.map((item) => (
+                            <div key={item.item_id} className="parent-dashboard__task-meta">
+                              <span>{item.title}</span>
+                              <span>
+                                {item.reminder_time
+                                  ? `Reminder: ${item.reminder_time}`
+                                  : "No reminder"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="page-text">No routine items yet.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F4C5}"}
+                  </div>
+                  <h4>No routines yet</h4>
+                  <p>Create a routine and reminder to support a consistent schedule.</p>
+                </div>
+              )}
+            </Card>
+
+            <Card className="parent-dashboard__collection-card" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Communication Prompts</p>
+                  <h3>Conversation support</h3>
+                </div>
+                <Badge tone="warm">{communicationPrompts.length} prompts</Badge>
+              </div>
+
+              {communicationPrompts.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {communicationPrompts.map((prompt) => (
+                    <div key={prompt.prompt_id} className="parent-dashboard__task-item">
+                      <div className="parent-dashboard__task-item-top">
+                        <div>
+                          <h4>{prompt.title}</h4>
+                          <p>{prompt.prompt_text}</p>
+                        </div>
+                        <Badge tone="sky">{prompt.category || "general"}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F4AC}"}
+                  </div>
+                  <h4>No prompts yet</h4>
+                  <p>Add prompts to help parents stay updated with the child's activities.</p>
+                </div>
+              )}
+            </Card>
+
+            <Card className="parent-dashboard__collection-card" variant="glow">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Resources & Expert Tips</p>
+                  <h3>Support library</h3>
+                </div>
+                <Badge tone="mint">{supportResources.length} resources</Badge>
+              </div>
+
+              {supportResources.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {supportResources.map((resource) => (
+                    <div key={resource.resource_id} className="parent-dashboard__task-item">
+                      <div className="parent-dashboard__task-item-top">
+                        <div>
+                          <h4>{resource.title}</h4>
+                          <p>{resource.description}</p>
+                        </div>
+                        <Badge tone="warm">{resource.category}</Badge>
+                      </div>
+                      {resource.url ? (
+                        <div className="parent-dashboard__task-meta">
+                          <a href={resource.url} target="_blank" rel="noreferrer">
+                            Open resource
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F4DA}"}
+                  </div>
+                  <h4>No resources yet</h4>
+                  <p>Add support resources or expert tips for parents.</p>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          <div className="parent-dashboard__side-column">
+            <Card className="parent-dashboard__form-card" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Reminder Notifications</p>
+                  <h3>Enable browser reminders</h3>
+                </div>
+              </div>
+
+              <p className="page-text">
+                This prototype sends a browser notification when the page is open and the reminder time is reached.
+              </p>
+
+              {reminderNotificationMessage ? (
+                <p className="parent-dashboard__message">{reminderNotificationMessage}</p>
+              ) : null}
+
+              <Button variant="secondary" onClick={handleEnableReminderNotifications}>
+                Enable Reminder Notifications
+              </Button>
+            </Card>
+            <Card
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
+              variant="glow"
+            >
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Create Routine</p>
+                  <h3>Plan a consistent schedule</h3>
+                </div>
+              </div>
+
+              <div className="parent-dashboard__form-grid">
+                <input
+                  type="text"
+                  placeholder="Routine title"
+                  value={routineTitle}
+                  onChange={(event) => setRoutineTitle(event.target.value)}
+                />
+
+                <textarea
+                  placeholder="Routine description"
+                  value={routineDescription}
+                  onChange={(event) => setRoutineDescription(event.target.value)}
+                  rows={3}
+                />
+
+                <input
+                  type="text"
+                  placeholder="First routine item"
+                  value={routineItemTitle}
+                  onChange={(event) => setRoutineItemTitle(event.target.value)}
+                />
+
+                <input
+                  type="time"
+                  value={routineItemReminder}
+                  onChange={(event) => setRoutineItemReminder(event.target.value)}
+                />
+
+                {routineMessage ? (
+                  <p className="parent-dashboard__message">{routineMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateRoutine} disabled={!hasChildAccount}>
+                  Create Routine
+                </Button>
+              </div>
+            </Card>
+            <Card className="parent-dashboard__form-card" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Add Routine Item</p>
+                  <h3>Extend an existing routine</h3>
+                </div>
+              </div>
+
+              <div className="parent-dashboard__form-grid">
+                <select
+                  value={selectedRoutineId}
+                  onChange={(event) => setSelectedRoutineId(event.target.value)}
+                >
+                  <option value="">Select routine</option>
+                  {routineBlocks.map((routine) => (
+                    <option key={routine.routine_id} value={routine.routine_id}>
+                      {routine.title}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Routine item title"
+                  value={existingRoutineItemTitle}
+                  onChange={(event) => setExistingRoutineItemTitle(event.target.value)}
+                />
+
+                <textarea
+                  placeholder="Item description"
+                  value={existingRoutineItemDescription}
+                  onChange={(event) => setExistingRoutineItemDescription(event.target.value)}
+                  rows={3}
+                />
+
+                <input
+                  type="time"
+                  value={existingRoutineItemReminder}
+                  onChange={(event) => setExistingRoutineItemReminder(event.target.value)}
+                />
+
+                {routineItemMessage ? (
+                  <p className="parent-dashboard__message">{routineItemMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateRoutineItemForExistingRoutine} disabled={!hasChildAccount}>
+                  Add Routine Item
+                </Button>
+              </div>
+            </Card>
+            <Card className="parent-dashboard__form-card" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Add Prompt</p>
+                  <h3>Support communication</h3>
+                </div>
+              </div>
+
+              <div className="parent-dashboard__form-grid">
+                <input
+                  type="text"
+                  placeholder="Prompt title"
+                  value={promptTitle}
+                  onChange={(event) => setPromptTitle(event.target.value)}
+                />
+
+                <textarea
+                  placeholder="Prompt text"
+                  value={promptText}
+                  onChange={(event) => setPromptText(event.target.value)}
+                  rows={3}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Category"
+                  value={promptCategory}
+                  onChange={(event) => setPromptCategory(event.target.value)}
+                />
+
+                {promptMessage ? (
+                  <p className="parent-dashboard__message">{promptMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreatePrompt} disabled={!hasChildAccount}>
+                  Create Prompt
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="parent-dashboard__form-card" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Add Resource</p>
+                  <h3>Save expert tips</h3>
+                </div>
+              </div>
+
+              <div className="parent-dashboard__form-grid">
+                <input
+                  type="text"
+                  placeholder="Resource title"
+                  value={resourceTitle}
+                  onChange={(event) => setResourceTitle(event.target.value)}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Category"
+                  value={resourceCategory}
+                  onChange={(event) => setResourceCategory(event.target.value)}
+                />
+
+                <textarea
+                  placeholder="Description"
+                  value={resourceDescription}
+                  onChange={(event) => setResourceDescription(event.target.value)}
+                  rows={3}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Optional URL"
+                  value={resourceUrl}
+                  onChange={(event) => setResourceUrl(event.target.value)}
+                />
+
+                {resourceMessage ? (
+                  <p className="parent-dashboard__message">{resourceMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateResource}>
+                  Create Resource
+                </Button>
+              </div>
             </Card>
           </div>
         </div>

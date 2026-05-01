@@ -93,6 +93,50 @@ export async function getRoutineBlocksWithItems(childId) {
   return { data: blocks, error: null };
 }
 
+export async function createRoutine({
+  child_id,
+  title,
+  description,
+  display_order = 0,
+}) {
+  if (!child_id || !title) {
+    return { data: null, error: "Please complete routine title." };
+  }
+
+  return apiRequest("/api/routines", {
+    method: "POST",
+    body: JSON.stringify({
+      child_id,
+      title,
+      description: description || null,
+      display_order: Number(display_order || 0),
+    }),
+  });
+}
+
+export async function createRoutineItem({
+  routine_id,
+  item_order = 0,
+  title,
+  description,
+  reminder_time,
+}) {
+  if (!routine_id || !title) {
+    return { data: null, error: "Please complete routine item title." };
+  }
+
+  return apiRequest("/api/routine-items", {
+    method: "POST",
+    body: JSON.stringify({
+      routine_id,
+      item_order: Number(item_order || 0),
+      title,
+      description: description || null,
+      reminder_time: reminder_time || null,
+    }),
+  });
+}
+
 export async function updateRoutineItem(itemId, isCompleted) {
   if (!itemId) {
     return { data: null, error: "Routine item not found." };

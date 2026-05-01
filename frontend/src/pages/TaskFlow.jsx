@@ -113,28 +113,63 @@ function TaskFlow() {
   };
 
   const handleFinishTask = async () => {
-    await completeTask(taskId);
+    if (!task?.child_id || !task?.task_id) {
+      setSupportMessage("This task is missing child or task information.");
+      return;
+    }
+
+    const completeResult = await completeTask(taskId);
+
+    if (completeResult.error) {
+      setSupportMessage("The task could not be completed yet. Please try again.");
+      return;
+    }
 
     const pointsResult = await getPointsBalance(task.child_id);
-    const currentPoints = pointsResult.data?.points_balance ?? 0;
-    const earnedPoints = 10;
+    const currentPoints = Number(pointsResult.data?.points_balance || 0);
+
+    const completedStepCount = Math.max(steps.length, 1);
+    const earnedPoints = completedStepCount * 10;
     const updatedPoints = currentPoints + earnedPoints;
 
-    await createRewardTransaction({
+    const transactionResult = await createRewardTransaction({
       child_id: task.child_id,
       task_id: task.task_id,
       points_earned: earnedPoints,
-      steps_completed: steps.length,
+      steps_completed: completedStepCount,
       transaction_type: "earn",
     });
 
-    await updatePointsBalance(task.child_id, updatedPoints);
+    if (transactionResult.error) {
+      setSupportMessage("The task was completed, but reward points could not be recorded.");
+      return;
+    }
+
+    const updatePointsResult = await updatePointsBalance(task.child_id, updatedPoints);
+
+    if (updatePointsResult.error) {
+      setSupportMessage("The task was completed, but the points balance could not be updated.");
+      return;
+    }
 
     setTask((prevTask) =>
-      prevTask ? { ...prevTask, status: "completed" } : prevTask
+      prevTask
+        ? {
+            ...prevTask,
+            status: "completed",
+            completed_steps: completedStepCount,
+          }
+        : prevTask
     );
 
-    navigate("/rewards", { state: { showCelebration: true } });
+    navigate("/rewards", {
+      state: {
+        showCelebration: true,
+        pointsEarned: earnedPoints,
+        updatedPointsBalance: updatedPoints,
+        taskTitle: task.title,
+      },
+    });
   };
 
   const handleDone = async () => {

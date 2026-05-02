@@ -17,6 +17,7 @@ function ChildDashboard() {
   const [child, setChild] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [points, setPoints] = useState(null);
+  const [isLoadingBoard, setIsLoadingBoard] = useState(true);
 
   const [theme, setTheme] = useState("fun");
   const [characterStyle, setCharacterStyle] = useState("star");
@@ -25,20 +26,27 @@ function ChildDashboard() {
 
   useEffect(() => {
     async function loadData() {
+      setIsLoadingBoard(true);
       const { data: childData } = await getChildProfile();
-      const { data: tasksData } = await getTasks();
-      const { data: pointsData } = await getPointsBalance(childData?.user_id);
-      const { data: preferenceData } = await getChildPreferences();
 
       setChild(childData);
-      setTasks(tasksData || []);
-      setPoints(pointsData);
 
-      if (preferenceData) {
-        setTheme(preferenceData.theme || "fun");
-        setCharacterStyle(preferenceData.character_style || "star");
-        setRewardInterest(preferenceData.reward_interest || "games");
+      const [tasksResult, pointsResult, preferenceResult] = await Promise.all([
+        getTasks(childData?.user_id),
+        getPointsBalance(childData?.user_id),
+        getChildPreferences(),
+      ]);
+
+      setTasks(tasksResult.data || []);
+      setPoints(pointsResult.data);
+
+      if (preferenceResult.data) {
+        setTheme(preferenceResult.data.theme || "fun");
+        setCharacterStyle(preferenceResult.data.character_style || "star");
+        setRewardInterest(preferenceResult.data.reward_interest || "games");
       }
+
+      setIsLoadingBoard(false);
     }
 
     loadData();
@@ -63,7 +71,7 @@ function ChildDashboard() {
     window.dispatchEvent(new Event("preferencesUpdated"));
   };
 
-  if (!child) {
+  if (!child || isLoadingBoard) {
     return <p className="page-text">Loading dashboard...</p>;
   }
 

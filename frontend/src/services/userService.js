@@ -61,34 +61,6 @@ function getCurrentUserId() {
   return localStorage.getItem("current_user_id");
 }
 
-function getCurrentMockUser() {
-  const currentUserId = getCurrentUserId();
-
-  if (!currentUserId) {
-    return null;
-  }
-
-  return (
-    readMockUsers().find(
-      (user) => String(user.user_id) === String(currentUserId)
-    ) || null
-  );
-}
-
-function getFirstMockChildForParent(parentId) {
-  const users = readMockUsers();
-
-  return (
-    users.find(
-      (user) =>
-        String(user.role).toLowerCase() === "child" &&
-        String(user.parent_id) === String(parentId)
-    ) ||
-    users.find((user) => String(user.role).toLowerCase() === "child") ||
-    mockChildProfile
-  );
-}
-
 function toLoginProfile(user) {
   return {
     user_id: user.user_id,
@@ -310,6 +282,17 @@ export async function createChildAccount({
   });
 }
 
+export async function updateChildPassword({ parentId, childId, password }) {
+  return apiRequest(`/api/auth/children/${childId}/password`, {
+    method: "PUT",
+    body: JSON.stringify({
+      parentId,
+      childId,
+      password,
+    }),
+  });
+}
+
 // =======================
 // GET CHILDREN BY PARENT
 // =======================
@@ -334,11 +317,18 @@ export async function signInParent({ email, password }) {
 // GET CHILD PREFERENCES
 // =======================
 export async function getChildPreferences() {
-  const childProfileResult = await getChildProfile();
-  const childProfile = childProfileResult.data;
+  const currentUserId = localStorage.getItem("current_user_id");
+  const currentUserRole = String(
+    localStorage.getItem("current_user_role") || ""
+  ).toLowerCase();
+
+  const childId =
+    currentUserRole === "child"
+      ? currentUserId
+      : localStorage.getItem("current_child_id");
 
   const fallbackPreferences = {
-    child_id: childProfile?.user_id || null,
+    child_id: childId || null,
     theme: "fun",
     character_style: "star",
     reward_interest: "games",
@@ -351,9 +341,15 @@ export async function getChildPreferences() {
 // UPSERT CHILD PREFERENCES
 // =======================
 export async function upsertChildPreferences(payload) {
-  const childProfileResult = await getChildProfile();
-  const childProfile = childProfileResult.data;
-  const childId = payload.child_id || childProfile?.user_id;
+  const currentUserId = localStorage.getItem("current_user_id");
+  const currentUserRole = String(
+    localStorage.getItem("current_user_role") || ""
+  ).toLowerCase();
+  const fallbackChildId =
+    currentUserRole === "child"
+      ? currentUserId
+      : localStorage.getItem("current_child_id");
+  const childId = payload.child_id || fallbackChildId;
 
   const preferencePayload = {
     child_id: childId,

@@ -5,6 +5,8 @@ import AnimatedBackground from "../ui/AnimatedBackground";
 import FloatingCompanion from "../ui/FloatingCompanion";
 
 function AppLayout() {
+  const isLoggedIn = Boolean(localStorage.getItem("current_user_id"));
+
   return (
     <div className="app-shell">
       <AnimatedBackground />
@@ -12,7 +14,7 @@ function AppLayout() {
       <PageContainer>
         <Outlet />
       </PageContainer>
-      <FloatingCompanion />
+      {isLoggedIn ? <FloatingCompanion /> : null}
     </div>
   );
 }

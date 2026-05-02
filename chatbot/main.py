@@ -98,6 +98,12 @@ class CreateChildRequest(BaseModel):
     password: str
     age: int
 
+
+class UpdateChildPasswordRequest(BaseModel):
+    parentId: str
+    childId: str
+    password: str
+
 # ==========================================
 # AUTH ENDPOINTS
 # ==========================================
@@ -338,6 +344,81 @@ async def get_children(parent_id: str):
     except Exception as e:
         print(f"Get children error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not load child accounts.")
+
+
+@app.put("/api/auth/children/{child_id}/password")
+async def update_child_password(child_id: str, request: UpdateChildPasswordRequest):
+    parent_id = request.parentId
+    request_child_id = request.childId
+    password = request.password
+
+    if not parent_id or not request_child_id or not password:
+        raise HTTPException(status_code=400, detail="Please complete the child password fields.")
+
+    if str(child_id) != str(request_child_id):
+        raise HTTPException(status_code=400, detail="Child account details do not match.")
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            SELECT user_id
+            FROM users
+            WHERE user_id = %s AND role = 'parent'
+            LIMIT 1
+            """,
+            (parent_id,),
+        )
+
+        parent = cur.fetchone()
+
+        if not parent:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=403, detail="A valid parent account is required.")
+
+        cur.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE user_id = %s AND role = 'child' AND parent_id = %s
+            LIMIT 1
+            """,
+            (child_id, parent_id),
+        )
+
+        child = cur.fetchone()
+
+        if not child:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Child account not found for this parent.")
+
+        cur.execute(
+            """
+            UPDATE users
+            SET password = %s
+            WHERE user_id = %s
+            RETURNING *
+            """,
+            (password, child_id),
+        )
+
+        updated_child = cur.fetchone()
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return user_row_to_dict(updated_child)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Update child password error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not update the child password.")
 
 def task_row_to_dict(row):
     if not row:

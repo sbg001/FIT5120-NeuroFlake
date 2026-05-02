@@ -166,14 +166,19 @@ img {
 }
 
 .top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 22px 24px 8px;
+  padding: 18px 24px 8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  background: linear-gradient(180deg, rgba(246, 251, 255, 0.96), rgba(246, 251, 255, 0.78));
+  backdrop-filter: blur(18px);
 }
 
 .brand-block {
@@ -1583,6 +1588,55 @@ a:focus-visible {
     rgba(255, 255, 255, 0.94);
 }
 
+.parent-setup-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 28;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.parent-setup-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(21, 34, 47, 0.56);
+  backdrop-filter: blur(8px);
+}
+
+.parent-setup-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(620px, 100%);
+  padding: 28px;
+}
+
+.parent-setup-modal__content {
+  display: grid;
+  gap: 18px;
+}
+
+.parent-setup-modal__hero {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 28px rgba(74, 108, 161, 0.12);
+  font-size: 2rem;
+}
+
+.parent-setup-modal__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.parent-setup-modal__form {
+  display: grid;
+  gap: 14px;
+}
+
 .parent-dashboard__message {
   margin: 0;
   color: #31546b;
@@ -2478,6 +2532,10 @@ a:focus-visible {
   }
 
   .task-assistant-modal__panel {
+    padding: 22px;
+  }
+
+  .parent-setup-modal__panel {
     padding: 22px;
   }
 }

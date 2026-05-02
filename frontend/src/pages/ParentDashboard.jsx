@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
@@ -31,6 +31,7 @@ import {
   getTriggers,
   resetTaskStatus,
   updateParentReward,
+  updateChildPassword,
   updateTask,
   updateTaskStepCount,
 } from "../services";
@@ -53,6 +54,9 @@ function ParentDashboard() {
   const [childProfile, setChildProfile] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [pointsData, setPointsData] = useState(null);
+  const [isLoadingCore, setIsLoadingCore] = useState(true);
+  const [isLoadingSupport, setIsLoadingSupport] = useState(false);
+  const [hasLoadedSupport, setHasLoadedSupport] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -128,6 +132,9 @@ function ParentDashboard() {
   const [childAccountUsername, setChildAccountUsername] = useState("");
   const [childAccountPassword, setChildAccountPassword] = useState("");
   const [childAccountMessage, setChildAccountMessage] = useState("");
+  const [childPassword, setChildPassword] = useState("");
+  const [childPasswordConfirm, setChildPasswordConfirm] = useState("");
+  const [childPasswordMessage, setChildPasswordMessage] = useState("");
 
   const [emotionLogs, setEmotionLogs] = useState([]);
   const [selectedRoutineId, setSelectedRoutineId] = useState("");
@@ -183,7 +190,7 @@ const getTodayReminderKey = (itemId) => {
   return `neuroflake_reminder_${today}_${itemId}`;
 };
 
-const showRoutineReminderNotification = (item, routineTitle) => {
+const showRoutineReminderNotification = useCallback((item, routineTitle) => {
   if (!("Notification" in window)) {
     return;
   }
@@ -203,9 +210,9 @@ const showRoutineReminderNotification = (item, routineTitle) => {
   });
 
   localStorage.setItem(reminderKey, "shown");
-};
+}, []);
 
-const checkRoutineReminders = () => {
+const checkRoutineReminders = useCallback(() => {
   if (!routineBlocks.length || !("Notification" in window)) {
     return;
   }
@@ -224,41 +231,79 @@ const checkRoutineReminders = () => {
       }
     });
   });
-};
+}, [routineBlocks, showRoutineReminderNotification]);
 
   useEffect(() => {
-    async function loadDashboardData() {
-      const parentResult = await getParentProfile();
-      const childResult = await getChildProfile();
-      const tasksResult = await getTasks();
-      const pointsResult = childResult.data
-        ? await getPointsBalance(childResult.data.user_id)
-        : { data: { points_balance: 0 }, error: null };
-      const rewardsResult = await getAllRewardsForParent();
-      const childId = childResult.data?.user_id;
+    async function loadCoreDashboardData() {
+      setIsLoadingCore(true);
 
-      const triggersResult = await getTriggers(childId);
-      const suggestionsResult = await getPersonalisedSuggestions(childId);
-      const routinesResult = await getRoutineBlocksWithItems(childId);
-      const promptsResult = await getCommunicationPrompts(childId);
-      const resourcesResult = await getSupportResources();
-      const emotionLogsResult = await getEmotionLogs(childId);
+      const [parentResult, childResult] = await Promise.all([
+        getParentProfile(),
+        getChildProfile(),
+      ]);
+
+      const childId = childResult.data?.user_id;
 
       setParentProfile(parentResult.data);
       setChildProfile(childResult.data);
+
+      const [tasksResult, pointsResult, rewardsResult] = await Promise.all([
+        getTasks(childId),
+        childId
+          ? getPointsBalance(childId)
+          : Promise.resolve({ data: { points_balance: 0 }, error: null }),
+        getAllRewardsForParent(),
+      ]);
+
       setTasks(tasksResult.data || []);
-      setPointsData(pointsResult.data);
+      setPointsData(pointsResult.data || { points_balance: 0 });
       setRewards(rewardsResult.data || []);
-      setTriggers(triggersResult.data || []);
-      setSuggestions(suggestionsResult.data || []);
-      setRoutineBlocks(routinesResult.data || []);
-      setCommunicationPrompts(promptsResult.data || []);
-      setSupportResources(resourcesResult.data || []);
-      setEmotionLogs(emotionLogsResult.data || []);
+      setIsLoadingCore(false);
     }
 
-    loadDashboardData();
+    loadCoreDashboardData();
   }, []);
+
+  const loadSupportData = async (childId) => {
+    if (!childId) {
+      setTriggers([]);
+      setSuggestions([]);
+      setRoutineBlocks([]);
+      setCommunicationPrompts([]);
+      setSupportResources([]);
+      setEmotionLogs([]);
+      setHasLoadedSupport(true);
+      return;
+    }
+
+    setIsLoadingSupport(true);
+
+    const [
+      triggersResult,
+      suggestionsResult,
+      routinesResult,
+      promptsResult,
+      resourcesResult,
+      emotionLogsResult,
+    ] = await Promise.all([
+      getTriggers(childId),
+      getPersonalisedSuggestions(childId),
+      getRoutineBlocksWithItems(childId),
+      getCommunicationPrompts(childId),
+      getSupportResources(),
+      getEmotionLogs(childId),
+    ]);
+
+    setTriggers(triggersResult.data || []);
+    setSuggestions(suggestionsResult.data || []);
+    setRoutineBlocks(routinesResult.data || []);
+    setCommunicationPrompts(promptsResult.data || []);
+    setSupportResources(resourcesResult.data || []);
+    setEmotionLogs(emotionLogsResult.data || []);
+    setHasLoadedSupport(true);
+    setIsLoadingSupport(false);
+  };
+
   useEffect(() => {
     if (!routineBlocks.length) return;
 
@@ -271,10 +316,10 @@ const checkRoutineReminders = () => {
     return () => {
       window.clearInterval(reminderInterval);
     };
-  }, [routineBlocks]);
+  }, [routineBlocks, checkRoutineReminders]);
 
   const refreshTasks = async () => {
-    const refreshedTasks = await getTasks();
+    const refreshedTasks = await getTasks(childProfile?.user_id);
     setTasks(refreshedTasks.data || []);
   };
 
@@ -284,21 +329,7 @@ const checkRoutineReminders = () => {
   };
 
   const refreshEpic6Data = async () => {
-    if (!childProfile?.user_id) return;
-
-    const triggersResult = await getTriggers(childProfile.user_id);
-    const suggestionsResult = await getPersonalisedSuggestions(childProfile.user_id);
-    const routinesResult = await getRoutineBlocksWithItems(childProfile.user_id);
-    const promptsResult = await getCommunicationPrompts(childProfile.user_id);
-    const resourcesResult = await getSupportResources();
-    const emotionLogsResult = await getEmotionLogs(childProfile.user_id);
-
-    setTriggers(triggersResult.data || []);
-    setSuggestions(suggestionsResult.data || []);
-    setRoutineBlocks(routinesResult.data || []);
-    setCommunicationPrompts(promptsResult.data || []);
-    setSupportResources(resourcesResult.data || []);
-    setEmotionLogs(emotionLogsResult.data || []);
+    await loadSupportData(childProfile?.user_id);
   };
 
   async function loadInsights() {
@@ -509,6 +540,11 @@ const checkRoutineReminders = () => {
   const handleCreateChildAccount = async () => {
     setChildAccountMessage("");
 
+    if (hasChildAccount) {
+      setChildAccountMessage("This parent account already has a child profile.");
+      return;
+    }
+
     if (
       !childAccountName ||
       !childAccountAge ||
@@ -533,8 +569,16 @@ const checkRoutineReminders = () => {
     }
 
     setChildProfile(result.data);
+    localStorage.setItem("current_child_id", String(result.data.user_id));
     setPointsData({ points_balance: 0 });
     setTasks([]);
+    setHasLoadedSupport(false);
+    setTriggers([]);
+    setSuggestions([]);
+    setRoutineBlocks([]);
+    setCommunicationPrompts([]);
+    setSupportResources([]);
+    setEmotionLogs([]);
     setChildAccountName("");
     setChildAccountAge("");
     setChildAccountUsername("");
@@ -542,6 +586,40 @@ const checkRoutineReminders = () => {
     setChildAccountMessage(
       "Child account created successfully. The child can now sign in with their username and password."
     );
+  };
+
+  const handleUpdateChildPassword = async () => {
+    setChildPasswordMessage("");
+
+    if (!hasChildAccount) {
+      setChildPasswordMessage("Create a child profile first.");
+      return;
+    }
+
+    if (!childPassword || !childPasswordConfirm) {
+      setChildPasswordMessage("Please enter and confirm the new password.");
+      return;
+    }
+
+    if (childPassword !== childPasswordConfirm) {
+      setChildPasswordMessage("The passwords do not match.");
+      return;
+    }
+
+    const result = await updateChildPassword({
+      parentId: parentProfile.user_id,
+      childId: childProfile.user_id,
+      password: childPassword,
+    });
+
+    if (result.error) {
+      setChildPasswordMessage(result.error);
+      return;
+    }
+
+    setChildPassword("");
+    setChildPasswordConfirm("");
+    setChildPasswordMessage("Child password updated successfully.");
   };
 
   const handleSelectEditReward = (rewardId) => {
@@ -799,7 +877,7 @@ const checkRoutineReminders = () => {
     await refreshEpic6Data();
   };
 
-  if (!parentProfile || !pointsData) {
+  if (!parentProfile || !pointsData || isLoadingCore) {
     return (
       <section className="page-section">
         <p>Loading dashboard...</p>
@@ -876,9 +954,65 @@ const checkRoutineReminders = () => {
   const repeatedTriggerLabel = repeatedTriggerEntry
     ? `${repeatedTriggerEntry[0]} (${repeatedTriggerEntry[1]} times)`
     : "No repeated trigger yet";
+  const shouldShowChildSetup = !isLoadingCore && Boolean(parentProfile) && !hasChildAccount;
 
   return (
     <section className="page-section parent-dashboard">
+      {shouldShowChildSetup ? (
+        <div className="parent-setup-modal" role="dialog" aria-modal="true" aria-labelledby="child-setup-title">
+          <div className="parent-setup-modal__backdrop" />
+          <Card className="parent-setup-modal__panel" variant="glow">
+            <div className="parent-setup-modal__content">
+              <div className="parent-setup-modal__hero" aria-hidden="true">
+                {"\u{1F476}"}
+              </div>
+              <div className="parent-setup-modal__copy">
+                <p className="eyebrow">First Step</p>
+                <h3 id="child-setup-title">Create your child profile</h3>
+                <p className="page-text">
+                  Add one child account so tasks, rewards, and support tools stay simple and easy to manage.
+                </p>
+              </div>
+
+              <div className="parent-setup-modal__form">
+                <input
+                  type="text"
+                  placeholder="Child name"
+                  value={childAccountName}
+                  onChange={(event) => setChildAccountName(event.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Child age"
+                  value={childAccountAge}
+                  onChange={(event) => setChildAccountAge(event.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Child username"
+                  value={childAccountUsername}
+                  onChange={(event) => setChildAccountUsername(event.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Child password"
+                  value={childAccountPassword}
+                  onChange={(event) => setChildAccountPassword(event.target.value)}
+                />
+
+                {childAccountMessage ? (
+                  <p className="parent-dashboard__message">{childAccountMessage}</p>
+                ) : null}
+
+                <Button onClick={handleCreateChildAccount}>
+                  Save Child Profile
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
       <PageHeader
         eyebrow="Parent Dashboard"
         title={`Welcome, ${parentProfile.name}`}
@@ -888,21 +1022,6 @@ const checkRoutineReminders = () => {
             : "Create a child account first to start managing tasks, rewards, and support insights."
         }
       />
-
-      {!hasChildAccount ? (
-        <Card className="parent-dashboard__collection-card" variant="glow">
-          <div className="parent-dashboard__section-header">
-            <div>
-              <p className="eyebrow">Child Account Required</p>
-              <h3>No child account yet</h3>
-            </div>
-            <Badge tone="warm">Setup needed</Badge>
-          </div>
-          <p className="page-text">
-            Create a child account below before managing tasks, rewards, and progress.
-          </p>
-        </Card>
-      ) : null}
 
       <div className="parent-dashboard__hero-grid">
         <Card className="parent-dashboard__hero-card" variant="glow">
@@ -1003,6 +1122,13 @@ const checkRoutineReminders = () => {
                 setActiveSection(section.id);
                 if (section.id === "insights" && !riskForecast) {
                   loadInsights();
+                }
+                if (
+                  (section.id === "insights" || section.id === "support") &&
+                  !hasLoadedSupport &&
+                  !isLoadingCore
+                ) {
+                  loadSupportData(childProfile?.user_id);
                 }
               }}
               className={[
@@ -1134,54 +1260,41 @@ const checkRoutineReminders = () => {
           </div>
 
           <div className="parent-dashboard__side-column">
-            <Card className="parent-dashboard__form-card parent-dashboard__form-card--feature" variant="glow">
+            <Card className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Child Account</p>
-                  <h3>Create a child sign in</h3>
+                  <p className="eyebrow">Child Sign-In</p>
+                  <h3>Keep access simple</h3>
                 </div>
-                <Badge tone="sky">Parent only</Badge>
               </div>
-
-              <p className="page-text">
-                Children cannot create accounts by themselves. A parent creates the child profile and sign-in details.
-              </p>
 
               <div className="parent-dashboard__form-grid">
                 <input
                   type="text"
-                  placeholder="Child name"
-                  value={childAccountName}
-                  onChange={(e) => setChildAccountName(e.target.value)}
-                />
-
-                <input
-                  type="number"
-                  placeholder="Child age"
-                  value={childAccountAge}
-                  onChange={(e) => setChildAccountAge(e.target.value)}
-                />
-
-                <input
-                  type="text"
+                  value={childProfile?.username || ""}
+                  readOnly
+                  aria-label="Child username"
                   placeholder="Child username"
-                  value={childAccountUsername}
-                  onChange={(e) => setChildAccountUsername(e.target.value)}
                 />
-
                 <input
                   type="password"
-                  placeholder="Child password"
-                  value={childAccountPassword}
-                  onChange={(e) => setChildAccountPassword(e.target.value)}
+                  placeholder="New child password"
+                  value={childPassword}
+                  onChange={(e) => setChildPassword(e.target.value)}
+                  disabled={!hasChildAccount}
                 />
-
-                {childAccountMessage ? (
-                  <p className="parent-dashboard__message">{childAccountMessage}</p>
+                <input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={childPasswordConfirm}
+                  onChange={(e) => setChildPasswordConfirm(e.target.value)}
+                  disabled={!hasChildAccount}
+                />
+                {childPasswordMessage ? (
+                  <p className="parent-dashboard__message">{childPasswordMessage}</p>
                 ) : null}
-
-                <Button onClick={handleCreateChildAccount}>
-                  Create Child Account
+                <Button onClick={handleUpdateChildPassword} disabled={!hasChildAccount}>
+                  Update Child Password
                 </Button>
               </div>
             </Card>
@@ -1511,6 +1624,10 @@ const checkRoutineReminders = () => {
                 emotion-related telemetry.
               </p>
 
+              {isLoadingSupport ? (
+                <p className="page-text">Loading support insights...</p>
+              ) : null}
+
               {riskForecast ? (
                 <div className="parent-dashboard__insight-callout">
                   <strong>AI advisory</strong>
@@ -1537,6 +1654,10 @@ const checkRoutineReminders = () => {
                   <h3>Pattern snapshot</h3>
                 </div>
               </div>
+
+              {isLoadingSupport ? (
+                <p className="page-text">Loading emotion patterns...</p>
+              ) : null}
 
               <p className="page-text">
                 Tracking reported happy moments and overwhelmed moments can help
@@ -1733,6 +1854,20 @@ const checkRoutineReminders = () => {
       ) : (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
+            {isLoadingSupport ? (
+              <Card className="parent-dashboard__collection-card" variant="soft">
+                <div className="parent-dashboard__section-header">
+                  <div>
+                    <p className="eyebrow">Support Tools</p>
+                    <h3>Loading routines, prompts, and resources</h3>
+                  </div>
+                </div>
+                <p className="page-text">
+                  We are getting the support tools ready so parents can see only the most useful information.
+                </p>
+              </Card>
+            ) : null}
+
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>

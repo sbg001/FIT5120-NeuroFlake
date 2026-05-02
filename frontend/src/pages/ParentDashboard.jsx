@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
@@ -36,20 +37,8 @@ import {
   updateTaskStepCount,
 } from "../services";
 
-const priorityTypeOptions = [
-  { value: "importance", label: "Importance" },
-  { value: "urgency", label: "Urgency" },
-  { value: "happiness", label: "Happiness" },
-];
-
-const priorityRankOptions = [
-  { value: "1", label: "1 - Low" },
-  { value: "2", label: "2 - Medium" },
-  { value: "3", label: "3 - High" },
-];
-
 function ParentDashboard() {
-  const [activeSection, setActiveSection] = useState("tasks");
+  const location = useLocation();
   const [parentProfile, setParentProfile] = useState(null);
   const [childProfile, setChildProfile] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -60,16 +49,12 @@ function ParentDashboard() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priorityType, setPriorityType] = useState("");
-  const [priorityRank, setPriorityRank] = useState("");
   const [createMessage, setCreateMessage] = useState("");
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
   const [editTaskId, setEditTaskId] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
-  const [editPriorityType, setEditPriorityType] = useState("");
-  const [editPriorityRank, setEditPriorityRank] = useState("");
   const [editMessage, setEditMessage] = useState("");
 
   const [deleteTaskId, setDeleteTaskId] = useState("");
@@ -80,18 +65,12 @@ function ParentDashboard() {
 
   const [rewards, setRewards] = useState([]);
   const [rewardTitle, setRewardTitle] = useState("");
-  const [rewardEmoji, setRewardEmoji] = useState("\u{1F381}");
   const [rewardCost, setRewardCost] = useState("");
-  const [rewardTheme, setRewardTheme] = useState("");
-  const [rewardApproved, setRewardApproved] = useState(true);
   const [rewardMessage, setRewardMessage] = useState("");
 
   const [editRewardId, setEditRewardId] = useState("");
   const [editRewardTitle, setEditRewardTitle] = useState("");
-  const [editRewardEmoji, setEditRewardEmoji] = useState("\u{1F381}");
   const [editRewardCost, setEditRewardCost] = useState("");
-  const [editRewardTheme, setEditRewardTheme] = useState("");
-  const [editRewardApproved, setEditRewardApproved] = useState(true);
   const [editRewardMessage, setEditRewardMessage] = useState("");
 
   const [deleteRewardId, setDeleteRewardId] = useState("");
@@ -143,6 +122,13 @@ function ParentDashboard() {
   const [existingRoutineItemReminder, setExistingRoutineItemReminder] = useState("");
   const [routineItemMessage, setRoutineItemMessage] = useState("");
   const [reminderNotificationMessage, setReminderNotificationMessage] = useState("");
+
+  const activeSection = useMemo(() => {
+    if (location.pathname === "/parent/rewards") return "rewards";
+    if (location.pathname === "/parent/insights") return "insights";
+    if (location.pathname === "/parent/support") return "support";
+    return "tasks";
+  }, [location.pathname]);
 
   const hasChildAccount = Boolean(childProfile?.user_id);
   const buildWeeklyEmotionData = (logs) => {
@@ -264,7 +250,7 @@ const checkRoutineReminders = useCallback(() => {
     loadCoreDashboardData();
   }, []);
 
-  const loadSupportData = async (childId) => {
+  const loadSupportData = useCallback(async (childId) => {
     if (!childId) {
       setTriggers([]);
       setSuggestions([]);
@@ -302,7 +288,56 @@ const checkRoutineReminders = useCallback(() => {
     setEmotionLogs(emotionLogsResult.data || []);
     setHasLoadedSupport(true);
     setIsLoadingSupport(false);
-  };
+  }, []);
+
+  const loadInsights = useCallback(async () => {
+    setIsLoadingInsights(true);
+
+    const todaysTelemetry = {
+      hoursSlept: 6.5,
+      overwhelmedCount: 2,
+      tasksAbandoned: 1,
+      tasksCompleted: 3,
+    };
+
+    const prediction = await getSensoryRiskPrediction(todaysTelemetry);
+    if (prediction) {
+      setRiskForecast(prediction);
+    }
+
+    setIsLoadingInsights(false);
+  }, []);
+
+  useEffect(() => {
+    if (isLoadingCore || !childProfile?.user_id) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (activeSection === "insights" && !riskForecast) {
+        void loadInsights();
+      }
+
+      if (
+        (activeSection === "insights" || activeSection === "support") &&
+        !hasLoadedSupport
+      ) {
+        void loadSupportData(childProfile.user_id);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeSection,
+    childProfile,
+    hasLoadedSupport,
+    isLoadingCore,
+    loadInsights,
+    loadSupportData,
+    riskForecast,
+  ]);
 
   useEffect(() => {
     if (!routineBlocks.length) return;
@@ -332,24 +367,6 @@ const checkRoutineReminders = useCallback(() => {
     await loadSupportData(childProfile?.user_id);
   };
 
-  async function loadInsights() {
-    setIsLoadingInsights(true);
-
-    const todaysTelemetry = {
-      hoursSlept: 6.5,
-      overwhelmedCount: 2,
-      tasksAbandoned: 1,
-      tasksCompleted: 3,
-    };
-
-    const prediction = await getSensoryRiskPrediction(todaysTelemetry);
-    if (prediction) {
-      setRiskForecast(prediction);
-    }
-
-    setIsLoadingInsights(false);
-  }
-
   const handleCreateTask = async () => {
     setCreateMessage("");
 
@@ -358,8 +375,8 @@ const checkRoutineReminders = useCallback(() => {
       return;
     }
 
-    if (!title || !description || !priorityType || !priorityRank) {
-      setCreateMessage("Please complete all task fields.");
+    if (!title.trim()) {
+      setCreateMessage("Please enter a task title.");
       return;
     }
 
@@ -368,13 +385,13 @@ const checkRoutineReminders = useCallback(() => {
     const result = await createTask({
       child_id: childProfile.user_id,
       created_by: parentProfile.user_id,
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim() || title.trim(),
       status: "pending",
       total_steps: 0,
       completed_steps: 0,
-      priority_type: priorityType,
-      priority_rank: Number(priorityRank),
+      priority_type: null,
+      priority_rank: null,
     });
 
     if (result.error) {
@@ -384,7 +401,10 @@ const checkRoutineReminders = useCallback(() => {
     }
 
     const createdTask = result.data;
-    const generatedStepsResult = await generateTaskSteps(title, description);
+    const generatedStepsResult = await generateTaskSteps(
+      title.trim(),
+      description.trim() || title.trim()
+    );
     const generatedSteps = generatedStepsResult.data || [];
 
     if (generatedSteps.length < 2 || generatedSteps.length > 5) {
@@ -421,8 +441,6 @@ const checkRoutineReminders = useCallback(() => {
 
     setTitle("");
     setDescription("");
-    setPriorityType("");
-    setPriorityRank("");
     setCreateMessage(
       generatedStepsResult.usedFallback
         ? "Task created with simple local steps. The AI helper was not available."
@@ -439,24 +457,24 @@ const checkRoutineReminders = useCallback(() => {
 
     setEditTitle(selectedTask.title || "");
     setEditDescription(selectedTask.description || "");
-    setEditPriorityType(selectedTask.priority_type || "");
-    setEditPriorityRank(String(selectedTask.priority_rank || ""));
     setEditMessage("");
   };
 
   const handleUpdateTask = async () => {
     setEditMessage("");
 
-    if (!editTaskId || !editTitle || !editDescription || !editPriorityType || !editPriorityRank) {
-      setEditMessage("Please complete all edit task fields.");
+    if (!editTaskId || !editTitle.trim()) {
+      setEditMessage("Please choose a task and update its title.");
       return;
     }
 
+    const selectedTask = tasks.find((task) => String(task.task_id) === String(editTaskId));
+
     const result = await updateTask(editTaskId, {
-      title: editTitle,
-      description: editDescription,
-      priority_type: editPriorityType,
-      priority_rank: Number(editPriorityRank),
+      title: editTitle.trim(),
+      description: editDescription.trim() || editTitle.trim(),
+      priority_type: selectedTask?.priority_type || null,
+      priority_rank: selectedTask?.priority_rank || null,
     });
 
     if (result.error) {
@@ -517,10 +535,7 @@ const checkRoutineReminders = useCallback(() => {
 
     const result = await createParentReward({
       title: rewardTitle,
-      emoji: rewardEmoji,
       cost: Number(rewardCost),
-      theme: rewardTheme,
-      approved: rewardApproved,
     });
 
     if (result.error) {
@@ -530,10 +545,7 @@ const checkRoutineReminders = useCallback(() => {
 
     await refreshRewards();
     setRewardTitle("");
-    setRewardEmoji("\u{1F381}");
     setRewardCost("");
-    setRewardTheme("");
-    setRewardApproved(true);
     setRewardMessage("Reward created successfully.");
   };
 
@@ -629,10 +641,7 @@ const checkRoutineReminders = useCallback(() => {
     if (!reward) return;
 
     setEditRewardTitle(reward.title || "");
-    setEditRewardEmoji(reward.emoji || "\u{1F381}");
     setEditRewardCost(String(reward.cost || ""));
-    setEditRewardTheme(reward.theme || "");
-    setEditRewardApproved(reward.approved ?? true);
     setEditRewardMessage("");
   };
 
@@ -646,10 +655,7 @@ const checkRoutineReminders = useCallback(() => {
 
     const result = await updateParentReward(editRewardId, {
       title: editRewardTitle,
-      emoji: editRewardEmoji,
       cost: Number(editRewardCost),
-      theme: editRewardTheme,
-      approved: editRewardApproved,
     });
 
     if (result.error) {
@@ -955,6 +961,38 @@ const checkRoutineReminders = useCallback(() => {
     ? `${repeatedTriggerEntry[0]} (${repeatedTriggerEntry[1]} times)`
     : "No repeated trigger yet";
   const shouldShowChildSetup = !isLoadingCore && Boolean(parentProfile) && !hasChildAccount;
+  const isTasksPage = activeSection === "tasks";
+
+  const sectionHeader = {
+    tasks: {
+      eyebrow: "Parent Dashboard",
+      title: `Welcome, ${parentProfile.name}`,
+      description: hasChildAccount
+        ? `A calm control center for managing ${childProfile.name}'s tasks and progress.`
+        : "Create a child account first to start managing tasks and progress.",
+    },
+    rewards: {
+      eyebrow: "Rewards",
+      title: "Reward management",
+      description: hasChildAccount
+        ? `Manage ${childProfile.name}'s rewards in one place.`
+        : "Create a child account first to start managing rewards.",
+    },
+    insights: {
+      eyebrow: "Insights",
+      title: "Behavior and progress insights",
+      description: hasChildAccount
+        ? `Review patterns, triggers, and emotional trends for ${childProfile.name}.`
+        : "Create a child account first to start viewing insights.",
+    },
+    support: {
+      eyebrow: "Support",
+      title: "Support tools and routines",
+      description: hasChildAccount
+        ? `Manage routines, prompts, and support resources for ${childProfile.name}.`
+        : "Create a child account first to start managing support tools.",
+    },
+  }[activeSection];
 
   return (
     <section className="page-section parent-dashboard">
@@ -1014,15 +1052,13 @@ const checkRoutineReminders = useCallback(() => {
       ) : null}
 
       <PageHeader
-        eyebrow="Parent Dashboard"
-        title={`Welcome, ${parentProfile.name}`}
-        description={
-          hasChildAccount
-            ? `A calm control center for managing ${childProfile.name}'s tasks, progress, rewards, and support insights.`
-            : "Create a child account first to start managing tasks, rewards, and support insights."
-        }
+        eyebrow={sectionHeader.eyebrow}
+        title={sectionHeader.title}
+        description={sectionHeader.description}
       />
 
+      {isTasksPage ? (
+        <>
       <div className="parent-dashboard__hero-grid">
         <Card className="parent-dashboard__hero-card" variant="glow">
           <div className="parent-dashboard__hero-top">
@@ -1106,48 +1142,53 @@ const checkRoutineReminders = useCallback(() => {
           <p>Tasks are broken into small steps after creation</p>
         </Card>
       </div>
-
-      <Card className="parent-dashboard__tabs-card" variant="default">
-        <div className="parent-dashboard__tabs">
-          {[
-            { id: "tasks", label: "Tasks", note: "Create, edit, reset, and review" },
-            { id: "rewards", label: "Rewards", note: "Control the reward catalog" },
-            { id: "insights", label: "Insights", note: "Triggers and personalised suggestions" },
-            { id: "support", label: "Support", note: "Routines, prompts, and resources" },
-          ].map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => {
-                setActiveSection(section.id);
-                if (section.id === "insights" && !riskForecast) {
-                  loadInsights();
-                }
-                if (
-                  (section.id === "insights" || section.id === "support") &&
-                  !hasLoadedSupport &&
-                  !isLoadingCore
-                ) {
-                  loadSupportData(childProfile?.user_id);
-                }
-              }}
-              className={[
-                "parent-dashboard__tab",
-                activeSection === section.id ? "is-active" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <strong>{section.label}</strong>
-              <span>{section.note}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
+        </>
+      ) : null}
 
       {activeSection === "tasks" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
+            <Card
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature parent-dashboard__quick-create"
+              variant="glow"
+            >
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Main Action</p>
+                  <h3>Create a task in one step</h3>
+                  <p className="page-text">
+                    Start with a clear task title. NeuroFlake will turn it into smaller steps automatically.
+                  </p>
+                </div>
+                <Badge tone="warm">Quick create</Badge>
+              </div>
+
+              <div className="parent-dashboard__quick-create-grid">
+                <input
+                  type="text"
+                  placeholder="Task title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+                <textarea
+                  placeholder="Helpful note for your child (optional)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                />
+                {createMessage ? (
+                  <p className="parent-dashboard__message">{createMessage}</p>
+                ) : (
+                  <p className="parent-dashboard__helper-text">
+                    Example: Pack the school bag, Brush teeth, or Put toys away.
+                  </p>
+                )}
+                <Button onClick={handleCreateTask} disabled={isCreatingTask || !hasChildAccount}>
+                  {isCreatingTask ? "Creating Steps..." : "Create Task"}
+                </Button>
+              </div>
+            </Card>
+
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
@@ -1299,56 +1340,6 @@ const checkRoutineReminders = useCallback(() => {
               </div>
             </Card>
 
-            <Card
-              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
-              variant="glow"
-            >
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Create Task</p>
-                  <h3>Plan a calm next step</h3>
-                </div>
-                <Badge tone="warm">2 to 5 steps added</Badge>
-              </div>
-
-              <div className="parent-dashboard__form-grid">
-                <input
-                  type="text"
-                  placeholder="Task title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-                <textarea
-                  placeholder="Task description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                />
-                <select value={priorityType} onChange={(e) => setPriorityType(e.target.value)}>
-                  <option value="">Select priority type</option>
-                  {priorityTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <select value={priorityRank} onChange={(e) => setPriorityRank(e.target.value)}>
-                  <option value="">Select priority rank</option>
-                  {priorityRankOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {createMessage ? (
-                  <p className="parent-dashboard__message">{createMessage}</p>
-                ) : null}
-                <Button onClick={handleCreateTask} disabled={isCreatingTask || !hasChildAccount}>
-                  {isCreatingTask ? "Creating Steps..." : "Create Task With Steps"}
-                </Button>
-              </div>
-            </Card>
-
             <Card className="parent-dashboard__form-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
@@ -1373,33 +1364,11 @@ const checkRoutineReminders = useCallback(() => {
                   onChange={(e) => setEditTitle(e.target.value)}
                 />
                 <textarea
-                  placeholder="Edit task description"
+                  placeholder="Helpful note (optional)"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   rows={4}
                 />
-                <select
-                  value={editPriorityType}
-                  onChange={(e) => setEditPriorityType(e.target.value)}
-                >
-                  <option value="">Select priority type</option>
-                  {priorityTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={editPriorityRank}
-                  onChange={(e) => setEditPriorityRank(e.target.value)}
-                >
-                  <option value="">Select priority rank</option>
-                  {priorityRankOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
                 {editMessage ? (
                   <p className="parent-dashboard__message">{editMessage}</p>
                 ) : null}
@@ -1427,17 +1396,16 @@ const checkRoutineReminders = useCallback(() => {
                   {rewards.map((reward) => (
                     <div key={reward.id} className="parent-dashboard__reward-item">
                       <div className="parent-dashboard__reward-top">
-                        <div className="parent-dashboard__reward-icon" aria-hidden="true">
-                          {reward.emoji || "\u{1F381}"}
+                        <div>
+                          <h4>{reward.title}</h4>
+                          <p>{reward.cost} points</p>
                         </div>
                         <Badge tone={reward.approved ? "mint" : "default"}>
-                          {reward.approved ? "Approved" : "Hidden"}
+                          {reward.approved ? "Active" : "Hidden"}
                         </Badge>
                       </div>
-                      <h4>{reward.title}</h4>
-                      <p>{reward.theme || "Custom reward"}</p>
                       <div className="parent-dashboard__reward-meta">
-                        <span>{reward.cost} points</span>
+                        <span>Parent-managed reward</span>
                       </div>
                     </div>
                   ))}
@@ -1499,7 +1467,7 @@ const checkRoutineReminders = useCallback(() => {
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Create Reward</p>
-                  <h3>Add a clear motivation</h3>
+                  <h3>Add a simple reward</h3>
                 </div>
               </div>
 
@@ -1511,33 +1479,18 @@ const checkRoutineReminders = useCallback(() => {
                   onChange={(e) => setRewardTitle(e.target.value)}
                 />
                 <input
-                  type="text"
-                  placeholder="Emoji"
-                  value={rewardEmoji}
-                  onChange={(e) => setRewardEmoji(e.target.value)}
-                />
-                <input
                   type="number"
                   placeholder="Points cost"
                   value={rewardCost}
                   onChange={(e) => setRewardCost(e.target.value)}
                 />
-                <input
-                  type="text"
-                  placeholder="Theme"
-                  value={rewardTheme}
-                  onChange={(e) => setRewardTheme(e.target.value)}
-                />
-                <select
-                  value={rewardApproved ? "true" : "false"}
-                  onChange={(e) => setRewardApproved(e.target.value === "true")}
-                >
-                  <option value="true">Approved</option>
-                  <option value="false">Not approved</option>
-                </select>
                 {rewardMessage ? (
                   <p className="parent-dashboard__message">{rewardMessage}</p>
-                ) : null}
+                ) : (
+                  <p className="parent-dashboard__helper-text">
+                    Example: Extra story time, Choose dessert, or Park visit
+                  </p>
+                )}
                 <Button onClick={handleCreateReward}>Create Reward</Button>
               </div>
             </Card>
@@ -1569,30 +1522,11 @@ const checkRoutineReminders = useCallback(() => {
                   onChange={(e) => setEditRewardTitle(e.target.value)}
                 />
                 <input
-                  type="text"
-                  placeholder="Edit emoji"
-                  value={editRewardEmoji}
-                  onChange={(e) => setEditRewardEmoji(e.target.value)}
-                />
-                <input
                   type="number"
                   placeholder="Edit points cost"
                   value={editRewardCost}
                   onChange={(e) => setEditRewardCost(e.target.value)}
                 />
-                <input
-                  type="text"
-                  placeholder="Edit theme"
-                  value={editRewardTheme}
-                  onChange={(e) => setEditRewardTheme(e.target.value)}
-                />
-                <select
-                  value={editRewardApproved ? "true" : "false"}
-                  onChange={(e) => setEditRewardApproved(e.target.value === "true")}
-                >
-                  <option value="true">Approved</option>
-                  <option value="false">Not approved</option>
-                </select>
                 {editRewardMessage ? (
                   <p className="parent-dashboard__message">{editRewardMessage}</p>
                 ) : null}

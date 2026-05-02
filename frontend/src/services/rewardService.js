@@ -159,6 +159,16 @@ export async function createRewardTransaction({
   });
 }
 
+export async function claimReward({ child_id, reward_id }) {
+  return apiRequest("/api/rewards/claim", {
+    method: "POST",
+    body: JSON.stringify({
+      child_id,
+      reward_id,
+    }),
+  });
+}
+
 export async function updatePointsBalance(childId, newPointsBalance) {
   const normalizedChildId = String(childId);
 

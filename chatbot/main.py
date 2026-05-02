@@ -1783,6 +1783,11 @@ class CreateRewardTransactionRequest(BaseModel):
     transaction_type: str = "earn"
 
 
+class ClaimRewardRequest(BaseModel):
+    child_id: str
+    reward_id: str
+
+
 class CreateRewardRequest(BaseModel):
     title: str
     emoji: str = "🎁"
@@ -2581,7 +2586,13 @@ async def get_reward_transactions(child_id: str):
             """
             SELECT
                 rt.*,
-                t.title AS task_title
+                COALESCE(
+                    t.title,
+                    CASE
+                        WHEN rt.transaction_type = 'claim' THEN 'Reward claimed'
+                        ELSE 'Task reward'
+                    END
+                ) AS task_title
             FROM reward_transactions rt
             LEFT JOIN tasks t ON t.task_id = rt.task_id
             WHERE rt.child_id = %s
@@ -2645,6 +2656,138 @@ async def create_reward_transaction(request: CreateRewardTransactionRequest):
     except Exception as e:
         print(f"Create reward transaction error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not create reward transaction.")
+
+
+@app.post("/api/rewards/claim")
+async def claim_reward(request: ClaimRewardRequest):
+    if not request.child_id or not request.reward_id:
+        raise HTTPException(status_code=400, detail="A child and reward are required.")
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            SELECT *
+            FROM rewards_catalog
+            WHERE reward_id = %s
+            LIMIT 1
+            """,
+            (request.reward_id,),
+        )
+        reward = cur.fetchone()
+
+        if not reward:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Reward not found.")
+
+        if not reward.get("approved"):
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="This reward is not available right now.")
+
+        reward_cost = int(reward.get("points_cost") or 0)
+        if reward_cost <= 0:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="This reward cannot be claimed yet.")
+
+        cur.execute(
+            """
+            SELECT *
+            FROM user_points
+            WHERE child_id = %s
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (request.child_id,),
+        )
+        points_row = cur.fetchone()
+        current_balance = int(points_row.get("points_balance") or 0) if points_row else 0
+
+        if current_balance < reward_cost:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="Not enough points to claim this reward.")
+
+        updated_balance = current_balance - reward_cost
+
+        if points_row:
+            cur.execute(
+                """
+                UPDATE user_points
+                SET
+                    points_balance = %s,
+                    updated_at = NOW()
+                WHERE child_id = %s
+                RETURNING *
+                """,
+                (updated_balance, request.child_id),
+            )
+        else:
+            cur.execute(
+                """
+                INSERT INTO user_points (
+                    child_id,
+                    points_balance,
+                    updated_at
+                )
+                VALUES (%s, %s, NOW())
+                RETURNING *
+                """,
+                (request.child_id, updated_balance),
+            )
+
+        updated_points = cur.fetchone()
+
+        transaction_id = str(uuid.uuid4())
+        cur.execute(
+            """
+            INSERT INTO reward_transactions (
+                transaction_id,
+                child_id,
+                task_id,
+                points_earned,
+                steps_completed,
+                transaction_type,
+                created_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            RETURNING *
+            """,
+            (
+                transaction_id,
+                request.child_id,
+                None,
+                -reward_cost,
+                0,
+                "claim",
+            ),
+        )
+        transaction = cur.fetchone()
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return {
+            "reward": reward_row_to_dict(reward),
+            "points": points_row_to_dict(updated_points, request.child_id),
+            "transaction": {
+                **reward_transaction_row_to_dict(transaction),
+                "reward_title": reward.get("title"),
+            },
+            "message": f"You claimed {reward.get('title')}.",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Claim reward error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not claim the reward.")
 
 
 @app.get("/api/rewards")

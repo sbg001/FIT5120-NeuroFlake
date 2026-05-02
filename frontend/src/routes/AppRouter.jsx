@@ -42,6 +42,9 @@ function AppRouter() {
           <Route path="/focus" element={<FocusMode />} />
           <Route path="/rewards" element={<Rewards />} />
           <Route path="/parent" element={<ParentDashboard />} />
+          <Route path="/parent/rewards" element={<ParentDashboard />} />
+          <Route path="/parent/insights" element={<ParentDashboard />} />
+          <Route path="/parent/support" element={<ParentDashboard />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

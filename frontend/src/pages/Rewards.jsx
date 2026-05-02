@@ -5,16 +5,15 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import {
+  claimReward,
   getPointsBalance,
   getLatestRewardSummary,
   getRewardTransactions,
   getRewardMilestoneMessage,
   getEncouragingMessage,
-  getSuggestedRewards,
   getParentApprovedRewards,
   getTasks,
   getChildProfile,
-  getChildPreferences,
 } from "../services";
 
 function Rewards() {
@@ -28,49 +27,43 @@ function Rewards() {
     "Your focus is growing!",
   ];
 
+  const [childId, setChildId] = useState("");
   const [pointsData, setPointsData] = useState(null);
   const [latestRewardSummary, setLatestRewardSummary] = useState(null);
   const [rewardTransactions, setRewardTransactions] = useState([]);
-  const [suggestedRewards, setSuggestedRewards] = useState([]);
   const [parentRewards, setParentRewards] = useState([]);
   const [nextTaskId, setNextTaskId] = useState(null);
-  const [childPreferences, setChildPreferences] = useState(null);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+  const [claimMessage, setClaimMessage] = useState("");
+  const [claimError, setClaimError] = useState("");
+  const [claimingRewardId, setClaimingRewardId] = useState("");
 
   useEffect(() => {
     async function loadRewardsData() {
       const childResult = await getChildProfile();
       const childData = childResult.data;
-      const pointsResult = await getPointsBalance(childData?.user_id);
-      const latestSummaryResult = await getLatestRewardSummary(childData?.user_id);
-      const transactionsResult = await getRewardTransactions(childData?.user_id);
+      const resolvedChildId = String(childData?.user_id || "");
+
+      setChildId(resolvedChildId);
+
+      const pointsResult = await getPointsBalance(resolvedChildId);
+      const latestSummaryResult = await getLatestRewardSummary(resolvedChildId);
+      const transactionsResult = await getRewardTransactions(resolvedChildId);
       const parentRewardsResult = await getParentApprovedRewards();
-      const preferencesResult = await getChildPreferences();
-      const tasksResult = await getTasks();
+      const tasksResult = await getTasks(resolvedChildId);
 
-      const allTasks = tasksResult.data || [];
-      const latestTaskId = latestSummaryResult.data?.task_id;
-
-      const childTasks = allTasks
-        .filter((task) => String(task.child_id) === String(childData?.user_id))
-        .filter((task) => String(task.task_id) !== String(latestTaskId))
+      const childTasks = (tasksResult.data || [])
+        .filter((task) => String(task.task_id) !== String(latestSummaryResult.data?.task_id))
         .filter(
           (task) =>
             task.status !== "completed" &&
             Number(task.completed_steps || 0) < Number(task.total_steps || 0)
-        )
-        .sort((a, b) => {
-          const rankDiff = (b.priority_rank || 0) - (a.priority_rank || 0);
-          if (rankDiff !== 0) return rankDiff;
-          return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-        });
+        );
 
       setPointsData(pointsResult.data);
       setLatestRewardSummary(latestSummaryResult.data);
       setRewardTransactions(transactionsResult.data || []);
-      setSuggestedRewards(getSuggestedRewards());
       setParentRewards(parentRewardsResult.data || []);
-      setChildPreferences(preferencesResult.data || null);
       setNextTaskId(childTasks[0]?.task_id || null);
     }
 
@@ -108,119 +101,57 @@ function Rewards() {
     pointsBalance,
     rewardTransactions.length
   );
-  const recentTransactions = rewardTransactions.slice(0, 3);
-
-  const theme = childPreferences?.theme || "fun";
-  const characterStyle = childPreferences?.character_style || "star";
-  const rewardInterest = childPreferences?.reward_interest || "games";
-
-  const characterMap = {
-    star: "⭐",
-    rocket: "🚀",
-    bear: "🧸",
-    cat: "🐱",
-  };
-
-  const themeLabelMap = {
-    fun: "Fun",
-    space: "Space",
-    animals: "Animals",
-    food: "Food",
-  };
-
-  const rewardInterestLabelMap = {
-    games: "Games",
-    food: "Food",
-    toys: "Toys",
-    "screen-time": "Screen Time",
-  };
-
-  const currentCharacter = characterMap[characterStyle] || "⭐";
-  const currentThemeLabel = themeLabelMap[theme] || theme;
-  const currentRewardInterestLabel =
-    rewardInterestLabelMap[rewardInterest] || rewardInterest;
+  const recentTransactions = rewardTransactions.slice(0, 5);
   const latestPointsEarned = latestRewardSummary?.points_earned ?? 0;
-  const latestStepsCompleted = latestRewardSummary?.steps_completed ?? 0;
   const updatedPointsBalance =
     latestRewardSummary?.updated_points_balance ?? pointsBalance;
   const nextMilestoneTarget =
     pointsBalance >= 300 ? 400 : pointsBalance >= 200 ? 300 : pointsBalance >= 100 ? 200 : 100;
   const pointsToNextMilestone = Math.max(nextMilestoneTarget - pointsBalance, 0);
 
-  const achievementBadges = [
-    {
-      id: "spark-points",
-      emoji: "⭐",
-      title: "Spark Points",
-      text: `${pointsBalance} points shining in your jar`,
-      tone: "warm",
-    },
-    {
-      id: "step-finisher",
-      emoji: "🏅",
-      title: "Step Finisher",
-      text:
-        latestStepsCompleted > 0
-          ? `${latestStepsCompleted} calm step${latestStepsCompleted === 1 ? "" : "s"} completed`
-          : "Each finished step adds to your progress",
-      tone: "mint",
-    },
-    {
-      id: "focus-grower",
-      emoji: currentCharacter,
-      title: "Focus Grower",
-      text:
-        pointsToNextMilestone > 0
-          ? `${pointsToNextMilestone} more points to your next milestone`
-          : "A new milestone is ready to celebrate",
-      tone: "sky",
-    },
-  ];
+  const handleClaimReward = async (reward) => {
+    setClaimMessage("");
+    setClaimError("");
 
-  const getRewardMatchScore = (reward) => {
-    let score = 0;
-
-    if (String(reward.theme || "").toLowerCase() === String(theme).toLowerCase()) {
-      score += 3;
+    if (!childId) {
+      setClaimError("Your reward profile is not ready yet. Please try again.");
+      return;
     }
 
-    const rewardText = `${reward.title || ""} ${reward.theme || ""}`.toLowerCase();
-
-    if (
-      rewardInterest === "food" &&
-      /food|dessert|pizza|snack|treat|ice cream|cake/.test(rewardText)
-    ) {
-      score += 2;
+    if (!reward?.id) {
+      setClaimError("This reward is not available right now.");
+      return;
     }
 
-    if (rewardInterest === "games" && /game|play|fun/.test(rewardText)) {
-      score += 2;
+    if (pointsBalance < Number(reward.cost || 0)) {
+      setClaimError("You do not have enough points for this reward yet.");
+      return;
     }
 
-    if (
-      rewardInterest === "toys" &&
-      /toy|sticker|surprise|plush|small toy/.test(rewardText)
-    ) {
-      score += 2;
+    setClaimingRewardId(String(reward.id));
+
+    const result = await claimReward({
+      child_id: childId,
+      reward_id: reward.id,
+    });
+
+    if (result.error) {
+      setClaimError(result.error);
+      setClaimingRewardId("");
+      return;
     }
 
-    if (
-      rewardInterest === "screen-time" &&
-      /screen|ipad|tablet|movie|video/.test(rewardText)
-    ) {
-      score += 2;
+    if (result.data?.points) {
+      setPointsData(result.data.points);
     }
 
-    return score;
+    if (result.data?.transaction) {
+      setRewardTransactions((prev) => [result.data.transaction, ...prev]);
+    }
+
+    setClaimMessage(result.data?.message || "Reward claimed successfully.");
+    setClaimingRewardId("");
   };
-
-  const personalizedSuggestedRewards = [...suggestedRewards].sort(
-    (a, b) => getRewardMatchScore(b) - getRewardMatchScore(a)
-  );
-
-  const personalizedParentRewards = [...parentRewards].sort(
-    (a, b) => getRewardMatchScore(b) - getRewardMatchScore(a)
-  );
 
   return (
     <section className="page-section rewards-experience">
@@ -230,20 +161,20 @@ function Rewards() {
         description={
           showCelebration
             ? "Every completed task is a step forward. Let's celebrate your progress."
-            : "See your points, rewards, and encouraging progress all in one place."
+            : "See your points, available rewards, and recent progress in one place."
         }
       />
 
-      {showCelebration && (
+      {showCelebration ? (
         <Card className="reward-celebration-banner" variant="glow">
           <div className="reward-celebration-banner__stars" aria-hidden="true">
-            <span>⭐</span>
-            <span>✨</span>
-            <span>⭐</span>
+            <span>★</span>
+            <span>✦</span>
+            <span>★</span>
           </div>
           <div className="reward-celebration-banner__copy">
-            <Badge tone="warm">Mission complete</Badge>
-            <h3>Great job, superstar!</h3>
+            <Badge tone="warm">Well done</Badge>
+            <h3>Great job!</h3>
             <p className="page-text">
               {latestRewardSummary.celebration_message ||
                 "Amazing work! You completed your task."}
@@ -254,18 +185,18 @@ function Rewards() {
             <span>points earned</span>
           </div>
         </Card>
-      )}
+      ) : null}
 
-      <div className="reward-overview-grid">
+      <div className="reward-overview-grid reward-overview-grid--simple">
         <Card className="reward-points-card" variant="glow">
           <div className="reward-points-card__content">
             <div>
               <p className="eyebrow">Reward Points</p>
-              <h3>My point jar</h3>
+              <h3>My points</h3>
             </div>
             <div className="reward-points-card__count">{pointsBalance}</div>
             <p className="page-text">
-              Every finished step adds something good to your day.
+              Each completed task adds points you can use for rewards.
             </p>
             <div className="reward-points-card__footer">
               <Badge tone="warm">+{latestPointsEarned} latest points</Badge>
@@ -273,20 +204,9 @@ function Rewards() {
             </div>
           </div>
           <div className="reward-points-card__sparkles" aria-hidden="true">
-            <span>⭐</span>
-            <span>✨</span>
-            <span>🌟</span>
-          </div>
-        </Card>
-
-        <Card className="reward-style-card" variant="soft">
-          <div className="reward-style-card__icon" aria-hidden="true">
-            {currentCharacter}
-          </div>
-          <div className="reward-style-card__copy">
-            <p className="eyebrow">My Style</p>
-            <h3>{currentThemeLabel} world</h3>
-            <p className="page-text">Reward style: {currentRewardInterestLabel}</p>
+            <span>★</span>
+            <span>✦</span>
+            <span>★</span>
           </div>
         </Card>
 
@@ -302,25 +222,48 @@ function Rewards() {
         </Card>
       </div>
 
-      <Card className="reward-badges-card" variant="default">
+      <Card className="reward-shelf-card" variant="default">
         <div className="reward-section-heading">
           <div>
-            <p className="eyebrow">Achievement Badges</p>
-            <h3>Small wins worth noticing</h3>
+            <p className="eyebrow">Available Rewards</p>
+            <h3>Rewards you can choose from</h3>
           </div>
-          <Badge tone="mint">Progress celebration</Badge>
+          <Badge tone="mint">{parentRewards.length} options</Badge>
         </div>
-        <div className="reward-badges-grid">
-          {achievementBadges.map((badge) => (
-            <div key={badge.id} className="reward-badge-tile">
-              <Badge tone={badge.tone}>{badge.title}</Badge>
-              <div className="reward-badge-tile__icon" aria-hidden="true">
-                {badge.emoji}
-              </div>
-              <p>{badge.text}</p>
-            </div>
-          ))}
-        </div>
+        {parentRewards.length > 0 ? (
+          <div className="reward-shelf-grid">
+            {parentRewards.map((reward) => (
+              <Card
+                key={reward.id}
+                className="reward-item-card reward-item-card--simple"
+                variant="soft"
+              >
+                <h4>{reward.title}</h4>
+                <div className="reward-item-card__meta">
+                  <span>{reward.cost} points</span>
+                </div>
+                <Button
+                  onClick={() => handleClaimReward(reward)}
+                  disabled={
+                    Boolean(claimingRewardId) ||
+                    pointsBalance < Number(reward.cost || 0)
+                  }
+                >
+                  {claimingRewardId === String(reward.id) ? "Claiming..." : "Claim Reward"}
+                </Button>
+                {pointsBalance < Number(reward.cost || 0) ? (
+                  <p className="reward-helper-text">
+                    You need {Number(reward.cost || 0) - pointsBalance} more points.
+                  </p>
+                ) : null}
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="page-text">No rewards have been added yet.</p>
+        )}
+        {claimError ? <p className="parent-dashboard__message">{claimError}</p> : null}
+        {claimMessage ? <p className="reward-success-message">{claimMessage}</p> : null}
       </Card>
 
       <Card className="reward-activity-card" variant="default">
@@ -340,85 +283,30 @@ function Rewards() {
               className="reward-activity-item"
             >
               <div className="reward-activity-item__icon" aria-hidden="true">
-                🎁
+                {transaction.transaction_type === "claim" ? "🎁" : "✓"}
               </div>
               <p>
-                <strong>+{transaction.points_earned} points</strong>
-                {transaction.task_title
-                  ? ` from ${transaction.task_title}`
-                  : " from a completed task"}
+                {transaction.transaction_type === "claim" ? (
+                  <>
+                    <strong>{Math.abs(transaction.points_earned)} points used</strong>
+                    {transaction.reward_title
+                      ? ` for ${transaction.reward_title}`
+                      : " for a reward"}
+                  </>
+                ) : (
+                  <>
+                    <strong>+{transaction.points_earned} points</strong>
+                    {transaction.task_title
+                      ? ` from ${transaction.task_title}`
+                      : " from a completed task"}
+                  </>
+                )}
               </p>
             </div>
           ))
         ) : (
-          <p>No reward activity yet.</p>
+          <p className="page-text">No reward activity yet.</p>
         )}
-      </Card>
-
-      <Card className="reward-shelf-card" variant="default">
-        <div className="reward-section-heading">
-          <div>
-            <p className="eyebrow">Reward Ideas</p>
-            <h3>Picked for your style</h3>
-          </div>
-        </div>
-        <div className="reward-shelf-grid">
-          {personalizedSuggestedRewards.map((reward) => {
-            const isBestMatch = getRewardMatchScore(reward) > 0;
-
-            return (
-              <Card key={reward.id} className="reward-item-card" variant="soft">
-                {isBestMatch ? (
-                  <p className="reward-item-card__match">
-                    {currentCharacter} Best match for you
-                  </p>
-                ) : null}
-
-                <div className="reward-item-card__emoji" aria-hidden="true">
-                  {reward.emoji}
-                </div>
-                <h4>{reward.title}</h4>
-                <div className="reward-item-card__meta">
-                  <span>{reward.cost} points</span>
-                  <span>{reward.theme}</span>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      </Card>
-
-      <Card className="reward-shelf-card" variant="default">
-        <div className="reward-section-heading">
-          <div>
-            <p className="eyebrow">Parent Picks</p>
-            <h3>Rewards chosen with care</h3>
-          </div>
-        </div>
-        <div className="reward-shelf-grid">
-          {personalizedParentRewards.map((reward) => {
-            const isBestMatch = getRewardMatchScore(reward) > 0;
-
-            return (
-              <Card key={reward.id} className="reward-item-card" variant="soft">
-                {isBestMatch ? (
-                  <p className="reward-item-card__match">
-                    {currentCharacter} Best match for you
-                  </p>
-                ) : null}
-
-                <div className="reward-item-card__emoji" aria-hidden="true">
-                  {reward.emoji}
-                </div>
-                <h4>{reward.title}</h4>
-                <div className="reward-item-card__meta">
-                  <span>{reward.cost} points</span>
-                  <span>{reward.theme}</span>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
       </Card>
 
       <Card className="reward-encouragement-card" variant="soft">
@@ -461,19 +349,19 @@ function Rewards() {
 
             <div className="reward-celebration-modal__confetti" aria-hidden="true">
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--1">
-                ⭐
+                ★
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--2">
-                ✨
+                ✦
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--3">
-                ⭐
+                ★
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--4">
-                ✨
+                ✦
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--5">
-                🌟
+                ★
               </span>
             </div>
 
@@ -501,7 +389,7 @@ function Rewards() {
                 </div>
                 <div>
                   <strong>{updatedPointsBalance}</strong>
-                  <span>points in your jar</span>
+                  <span>points available</span>
                 </div>
               </div>
 

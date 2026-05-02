@@ -5,6 +5,7 @@ import {
 } from "../data/mockUsers";
 
 const MOCK_USERS_STORAGE_KEY = "neuroflake_mock_users";
+const CHILD_PREFERENCES_STORAGE_KEY = "neuroflake_child_preferences";
 
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "http://127.0.0.1:8000";
@@ -59,6 +60,27 @@ function readMockUsers() {
 
 function getCurrentUserId() {
   return localStorage.getItem("current_user_id");
+}
+
+function readChildPreferencesStore() {
+  const storedPreferences = localStorage.getItem(CHILD_PREFERENCES_STORAGE_KEY);
+
+  if (!storedPreferences) {
+    return {};
+  }
+
+  try {
+    const parsedPreferences = JSON.parse(storedPreferences);
+    return parsedPreferences && typeof parsedPreferences === "object"
+      ? parsedPreferences
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeChildPreferencesStore(store) {
+  localStorage.setItem(CHILD_PREFERENCES_STORAGE_KEY, JSON.stringify(store));
 }
 
 function toLoginProfile(user) {
@@ -334,6 +356,24 @@ export async function getChildPreferences() {
     reward_interest: "games",
   };
 
+  if (!childId) {
+    return { data: fallbackPreferences, error: null };
+  }
+
+  const preferenceStore = readChildPreferencesStore();
+  const storedPreference = preferenceStore[String(childId)];
+
+  if (storedPreference) {
+    return {
+      data: {
+        ...fallbackPreferences,
+        ...storedPreference,
+        child_id: childId,
+      },
+      error: null,
+    };
+  }
+
   return { data: fallbackPreferences, error: null };
 }
 
@@ -358,6 +398,14 @@ export async function upsertChildPreferences(payload) {
     reward_interest: payload.reward_interest || "games",
     updated_at: new Date().toISOString(),
   };
+
+  if (!childId) {
+    return { data: null, error: "Child preferences could not be saved." };
+  }
+
+  const preferenceStore = readChildPreferencesStore();
+  preferenceStore[String(childId)] = preferencePayload;
+  writeChildPreferencesStore(preferenceStore);
 
   return { data: preferencePayload, error: null };
 }

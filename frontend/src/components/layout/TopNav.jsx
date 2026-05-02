@@ -1,9 +1,10 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 
 function TopNav() {
   const navigate = useNavigate();
+  const location = useLocation();
   const isLoggedIn = !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
   const currentName = localStorage.getItem("current_user_name");
@@ -16,6 +17,9 @@ function TopNav() {
 
   const parentNavItems = [
     { to: "/parent", label: "Parent Dashboard" },
+    { to: "/parent/rewards", label: "Rewards" },
+    { to: "/parent/insights", label: "Insights" },
+    { to: "/parent/support", label: "Support" },
   ];
 
   const guestNavItems = [{ to: "/", label: "Home" }];
@@ -55,9 +59,15 @@ function TopNav() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>
-                isActive ? "nav-link active-link" : "nav-link"
-              }
+              className={({ isActive }) => {
+                const isParentSectionLink =
+                  currentRole === "parent" &&
+                  location.pathname === item.to;
+
+                return isActive || isParentSectionLink
+                  ? "nav-link active-link"
+                  : "nav-link";
+              }}
             >
               {item.label}
             </NavLink>

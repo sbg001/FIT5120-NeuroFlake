@@ -178,6 +178,37 @@ function Home() {
         </Card>
       </div>
 
+      <Card as="article" className="home-companion-panel" variant="glow">
+        <div className="home-companion-copy">
+          <p className="eyebrow">AI Companion</p>
+          <h3>A built-in chat helper for children and parents</h3>
+          <p>
+            NeuroFlake includes an AI companion that can give gentle prompts,
+            answer questions, and support the next step once you are signed in.
+          </p>
+          <div className="home-companion-pills">
+            <span>Child-friendly encouragement</span>
+            <span>Parent support guidance</span>
+            <span>Available after login</span>
+          </div>
+          <Button as={Link} to="/login" variant="secondary">
+            Explore In App
+          </Button>
+        </div>
+
+        <div className="home-companion-preview" aria-hidden="true">
+          <div className="home-companion-bubble home-companion-bubble--bot">
+            Let&apos;s take the next step together.
+          </div>
+          <div className="home-companion-bubble home-companion-bubble--user">
+            What should I do first?
+          </div>
+          <div className="home-companion-avatar">
+            <img src="/logo.png" alt="" />
+          </div>
+        </div>
+      </Card>
+
       <div className="home-values">
         <Card as="article" className="feature-card" variant="soft">
           <h3>For Children</h3>

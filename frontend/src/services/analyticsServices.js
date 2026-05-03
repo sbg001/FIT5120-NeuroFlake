@@ -1,8 +1,10 @@
+const API_BASE_URL = import.meta.env.VITE_CHATBOT_API_URL || "";
+
 // services/mlService.js
 
 export const getSensoryRiskPrediction = async (telemetryData) => {
   try {
-    const response = await fetch("http://localhost:8000/api/predict-risk", {
+    const response = await fetch(`${API_BASE_URL}/api/predict-risk`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { getChildPreferences, getTasks } from "../../services";
 import "./FloatingCompanion.css";
 
+const CHAT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || ""}/api/chat`;
+
 const petExpressions = {
   cat: { idle: "\u{1F431}", success: "\u{1F63B}", struggle: "\u{1F63F}" },
   dog: { idle: "\u{1F436}", success: "\u{1F415}\u{1F389}", struggle: "\u{1F97A}" },
@@ -17,6 +19,7 @@ function FloatingCompanion() {
   const [inputValue, setInputValue] = useState("");
   const [emotionState, setEmotionState] = useState("idle");
   const messagesEndRef = useRef(null);
+  const tasksContextRef = useRef("");
   const userRole = localStorage.getItem("current_user_role") || "child";
   const isParent = userRole === "parent";
 
@@ -72,6 +75,33 @@ function FloatingCompanion() {
     };
   }, [loadPet]);
 
+  const loadTasksContext = useCallback(async () => {
+    if (isParent) {
+      tasksContextRef.current = "";
+      return;
+    }
+
+    try {
+      const tasksRes = await getTasks();
+      const pendingTasks = (tasksRes.data || []).filter(
+        (task) => task.status !== "completed"
+      );
+
+      tasksContextRef.current =
+        pendingTasks.length > 0
+          ? pendingTasks.map((task, index) => `${index + 1}. ${task.title}`).join("\n")
+          : "All tasks completed! They have free time.";
+    } catch {
+      tasksContextRef.current = "";
+    }
+  }, [isParent]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadTasksContext();
+    }
+  }, [isOpen, loadTasksContext]);
+
   const handleSendMessage = async (event) => {
     event.preventDefault();
     if (!inputValue.trim()) return;
@@ -88,24 +118,7 @@ function FloatingCompanion() {
         content: msg.text,
       }));
 
-      // tasks context for AI prompt
-      let tasksString = "";
-      if (!isParent) {
-        try {
-          const tasksRes = await getTasks();
-          const pendingTasks = (tasksRes.data || []).filter(t => t.status !== "completed");
-          
-          if (pendingTasks.length > 0) {
-            tasksString = pendingTasks.map((t, index) => `${index + 1}. ${t.title}`).join("\n");
-          } else {
-            tasksString = "All tasks completed! They have free time.";
-          }
-        } catch (e) {
-          console.error("Could not fetch tasks for context.");
-        }
-      }
-
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch(CHAT_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -113,7 +126,7 @@ function FloatingCompanion() {
           pet_type: petData.type,
           history: formattedHistory,
           user_role: userRole,
-          tasks_context: tasksString,
+          tasks_context: tasksContextRef.current,
         }),
       });
 
@@ -125,7 +138,7 @@ function FloatingCompanion() {
         const rawSentences = data.reply.match(/[^.!?]+[.!?]*/g) || [data.reply];
 
         // Clean up any weird blank spaces
-        const sentences = rawSentences.map(s => s.trim()).filter(s => s.length > 0);
+        const sentences = rawSentences.map((sentence) => sentence.trim()).filter((sentence) => sentence.length > 0);
 
         // 2. Add each sentence as its own chat bubble with a staggered delay!
         sentences.forEach((sentence, index) => {
@@ -140,7 +153,7 @@ function FloatingCompanion() {
       } else {
         throw new Error("Invalid response");
       }
-    } catch (error) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {

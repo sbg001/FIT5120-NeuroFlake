@@ -4,7 +4,5 @@ import App from "./App";
 import "./styles/globals.css";
 
 ReactDOM.createRoot(document.getElementById("app")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );

@@ -8,7 +8,7 @@ const MOCK_USERS_STORAGE_KEY = "neuroflake_mock_users";
 const CHILD_PREFERENCES_STORAGE_KEY = "neuroflake_child_preferences";
 
 const API_BASE_URL =
-  import.meta.env.VITE_CHATBOT_API_URL || "http://127.0.0.1:8000";
+  import.meta.env.VITE_CHATBOT_API_URL || "";
 
 const defaultMockUsers = [
   {

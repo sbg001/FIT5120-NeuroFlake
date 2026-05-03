@@ -7,7 +7,6 @@ import PageHeader from "../components/ui/PageHeader";
 import {
   claimReward,
   getPointsBalance,
-  getLatestRewardSummary,
   getRewardTransactions,
   getRewardMilestoneMessage,
   getEncouragingMessage,
@@ -38,6 +37,38 @@ function Rewards() {
   const [claimError, setClaimError] = useState("");
   const [claimingRewardId, setClaimingRewardId] = useState("");
 
+  const buildLatestRewardSummary = (pointsBalance, transactions) => {
+    const safePointsBalance = pointsBalance ?? 0;
+    const latestTransaction = (transactions || [])[0];
+
+    if (!latestTransaction) {
+      return {
+        task_id: null,
+        task_title: "No reward activity yet",
+        points_earned: 0,
+        steps_completed: 0,
+        updated_points_balance: safePointsBalance,
+        celebration_message: "Complete a task to start earning points.",
+      };
+    }
+
+    const isClaim = latestTransaction.transaction_type === "claim";
+
+    return {
+      task_id: latestTransaction.task_id,
+      task_title:
+        latestTransaction.reward_title ||
+        latestTransaction.task_title ||
+        (isClaim ? "Reward claimed" : "Task reward"),
+      points_earned: latestTransaction.points_earned || 0,
+      steps_completed: latestTransaction.steps_completed || 0,
+      updated_points_balance: safePointsBalance,
+      celebration_message: isClaim
+        ? "You used your points for a reward."
+        : "Amazing work! You earned more points today.",
+    };
+  };
+
   useEffect(() => {
     async function loadRewardsData() {
       const childResult = await getChildProfile();
@@ -46,14 +77,20 @@ function Rewards() {
 
       setChildId(resolvedChildId);
 
-      const pointsResult = await getPointsBalance(resolvedChildId);
-      const latestSummaryResult = await getLatestRewardSummary(resolvedChildId);
-      const transactionsResult = await getRewardTransactions(resolvedChildId);
-      const parentRewardsResult = await getParentApprovedRewards();
-      const tasksResult = await getTasks(resolvedChildId);
+      const [pointsResult, transactionsResult, parentRewardsResult, tasksResult] =
+        await Promise.all([
+          getPointsBalance(resolvedChildId),
+          getRewardTransactions(resolvedChildId),
+          getParentApprovedRewards(),
+          getTasks(resolvedChildId),
+        ]);
+
+      const pointsBalance = pointsResult.data?.points_balance ?? 0;
+      const transactions = transactionsResult.data || [];
+      const latestSummary = buildLatestRewardSummary(pointsBalance, transactions);
 
       const childTasks = (tasksResult.data || [])
-        .filter((task) => String(task.task_id) !== String(latestSummaryResult.data?.task_id))
+        .filter((task) => String(task.task_id) !== String(latestSummary.task_id))
         .filter(
           (task) =>
             task.status !== "completed" &&
@@ -61,8 +98,8 @@ function Rewards() {
         );
 
       setPointsData(pointsResult.data);
-      setLatestRewardSummary(latestSummaryResult.data);
-      setRewardTransactions(transactionsResult.data || []);
+      setLatestRewardSummary(latestSummary);
+      setRewardTransactions(transactions);
       setParentRewards(parentRewardsResult.data || []);
       setNextTaskId(childTasks[0]?.task_id || null);
     }
@@ -146,7 +183,20 @@ function Rewards() {
     }
 
     if (result.data?.transaction) {
-      setRewardTransactions((prev) => [result.data.transaction, ...prev]);
+      setRewardTransactions((prev) => {
+        const updatedTransactions = [result.data.transaction, ...prev];
+        const updatedPointsBalance =
+          result.data?.points?.points_balance ?? pointsBalance;
+        setLatestRewardSummary(
+          buildLatestRewardSummary(updatedPointsBalance, updatedTransactions)
+        );
+        return updatedTransactions;
+      });
+    } else if (result.data?.points) {
+      setLatestRewardSummary((prev) => ({
+        ...(prev || buildLatestRewardSummary(result.data.points.points_balance, [])),
+        updated_points_balance: result.data.points.points_balance,
+      }));
     }
 
     setClaimMessage(result.data?.message || "Reward claimed successfully.");

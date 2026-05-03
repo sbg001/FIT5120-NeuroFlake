@@ -1,6 +1,6 @@
 const TASK_BREAKDOWN_API_URL =
   import.meta.env.VITE_TASK_BREAKDOWN_API_URL ||
-  "http://localhost:8000/api/breakdown-task";
+  "/api/breakdown-task";
 
 export async function requestTaskBreakdown(taskName) {
   const response = await fetch(TASK_BREAKDOWN_API_URL, {

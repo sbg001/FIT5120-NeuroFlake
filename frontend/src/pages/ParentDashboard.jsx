@@ -38,6 +38,33 @@ import {
 } from "../services";
 
 function ParentDashboard() {
+  const starterRewardOptions = [
+    {
+      id: "story-time",
+      title: "Extra story time",
+      cost: 20,
+      note: "A quick, easy reward for steady effort.",
+    },
+    {
+      id: "choose-snack",
+      title: "Choose a special snack",
+      cost: 35,
+      note: "Good for a mid-level milestone.",
+    },
+    {
+      id: "park-visit",
+      title: "Choose the next park visit",
+      cost: 60,
+      note: "Works well as a bigger weekly reward.",
+    },
+    {
+      id: "movie-night",
+      title: "Family movie night pick",
+      cost: 80,
+      note: "A meaningful reward for strong consistency.",
+    },
+  ];
+
   const location = useLocation();
   const [parentProfile, setParentProfile] = useState(null);
   const [childProfile, setChildProfile] = useState(null);
@@ -566,6 +593,31 @@ const checkRoutineReminders = useCallback(() => {
     setRewardTitle("");
     setRewardCost("");
     setRewardMessage("Reward created successfully.");
+  };
+
+  const handleUseRewardSuggestion = (rewardOption) => {
+    setRewardTitle(rewardOption.title);
+    setRewardCost(String(rewardOption.cost));
+    setRewardMessage("");
+  };
+
+  const handleQuickCreateReward = async (rewardOption) => {
+    setRewardMessage("");
+
+    const result = await createParentReward({
+      title: rewardOption.title,
+      cost: rewardOption.cost,
+    });
+
+    if (result.error) {
+      setRewardMessage("The suggested reward could not be added yet.");
+      return;
+    }
+
+    await refreshRewards();
+    setRewardTitle("");
+    setRewardCost("");
+    setRewardMessage(`${rewardOption.title} added to rewards.`);
   };
 
   const handleCreateChildAccount = async () => {
@@ -1496,6 +1548,47 @@ const checkRoutineReminders = useCallback(() => {
                 </div>
               </div>
 
+              <div className="parent-dashboard__reward-suggestions">
+                <div className="parent-dashboard__reward-suggestions-copy">
+                  <h4>Starter ideas</h4>
+                  <p className="page-text">
+                    Start with a few realistic rewards that match small, medium, and bigger point goals.
+                  </p>
+                </div>
+
+                <div className="parent-dashboard__reward-suggestion-grid">
+                  {starterRewardOptions.map((rewardOption) => (
+                    <div
+                      key={rewardOption.id}
+                      className="parent-dashboard__reward-suggestion"
+                    >
+                      <div>
+                        <strong>{rewardOption.title}</strong>
+                        <p>{rewardOption.note}</p>
+                      </div>
+                      <div className="parent-dashboard__reward-suggestion-meta">
+                        <Badge tone="warm">{rewardOption.cost} points</Badge>
+                        <div className="parent-dashboard__reward-suggestion-actions">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUseRewardSuggestion(rewardOption)}
+                          >
+                            Use
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleQuickCreateReward(rewardOption)}
+                          >
+                            Quick Add
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="parent-dashboard__form-grid">
                 <input
                   type="text"
@@ -1513,7 +1606,7 @@ const checkRoutineReminders = useCallback(() => {
                   <p className="parent-dashboard__message">{rewardMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    Example: Extra story time, Choose dessert, or Park visit
+                    Tip: 20 to 40 points works well for smaller rewards. 60+ points suits bigger treats.
                   </p>
                 )}
                 <Button onClick={handleCreateReward}>Create Reward</Button>

@@ -1658,6 +1658,47 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.parent-dashboard__reward-suggestions,
+.parent-dashboard__reward-suggestion-grid,
+.parent-dashboard__reward-suggestion {
+  display: grid;
+  gap: 12px;
+}
+
+.parent-dashboard__reward-suggestions {
+  padding: 16px;
+  border: 1px solid rgba(126, 158, 202, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.parent-dashboard__reward-suggestions-copy h4,
+.parent-dashboard__reward-suggestion strong {
+  margin-bottom: 0.25rem;
+}
+
+.parent-dashboard__reward-suggestion {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(126, 158, 202, 0.14);
+  background: rgba(250, 252, 255, 0.96);
+}
+
+.parent-dashboard__reward-suggestion p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.94rem;
+}
+
+.parent-dashboard__reward-suggestion-meta,
+.parent-dashboard__reward-suggestion-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
 .parent-dashboard__form-card {
   align-content: start;
 }

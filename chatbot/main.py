@@ -2744,7 +2744,7 @@ async def get_reward_transactions(child_id: str):
                 COALESCE(
                     t.title,
                     CASE
-                        WHEN rt.transaction_type = 'claim' THEN 'Reward claimed'
+                        WHEN rt.transaction_type IN ('claim', 'redeem') THEN 'Reward claimed'
                         ELSE 'Task reward'
                     END
                 ) AS task_title
@@ -2903,6 +2903,17 @@ async def claim_reward(request: ClaimRewardRequest):
 
         updated_points = cur.fetchone()
 
+        cur.execute(
+            """
+            UPDATE rewards_catalog
+            SET approved = false
+            WHERE reward_id = %s
+            RETURNING *
+            """,
+            (request.reward_id,),
+        )
+        claimed_reward = cur.fetchone()
+
         transaction_id = str(uuid.uuid4())
         cur.execute(
             """
@@ -2924,7 +2935,7 @@ async def claim_reward(request: ClaimRewardRequest):
                 None,
                 -reward_cost,
                 0,
-                "claim",
+                "redeem",
             ),
         )
         transaction = cur.fetchone()
@@ -2935,7 +2946,7 @@ async def claim_reward(request: ClaimRewardRequest):
         conn.close()
 
         return {
-            "reward": reward_row_to_dict(reward),
+            "reward": reward_row_to_dict(claimed_reward or reward),
             "points": points_row_to_dict(updated_points, request.child_id),
             "transaction": {
                 **reward_transaction_row_to_dict(transaction),

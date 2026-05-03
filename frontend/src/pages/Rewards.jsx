@@ -54,7 +54,9 @@ function Rewards() {
       };
     }
 
-    const isClaim = latestTransaction.transaction_type === "claim";
+    const isClaim =
+      latestTransaction.transaction_type === "claim" ||
+      latestTransaction.transaction_type === "redeem";
 
     return {
       task_id: latestTransaction.task_id,
@@ -207,6 +209,10 @@ function Rewards() {
     if (result.data?.points) {
       setPointsData(result.data.points);
     }
+
+    setParentRewards((prevRewards) =>
+      prevRewards.filter((availableReward) => String(availableReward.id) !== String(reward.id))
+    );
 
     if (result.data?.transaction) {
       setRewardTransactions((prev) => {
@@ -365,10 +371,14 @@ function Rewards() {
               className="reward-activity-item"
             >
               <div className="reward-activity-item__icon" aria-hidden="true">
-                {transaction.transaction_type === "claim" ? "🎁" : "✓"}
+                {transaction.transaction_type === "claim" ||
+                transaction.transaction_type === "redeem"
+                  ? "🎁"
+                  : "✓"}
               </div>
               <p>
-                {transaction.transaction_type === "claim" ? (
+                {transaction.transaction_type === "claim" ||
+                transaction.transaction_type === "redeem" ? (
                   <>
                     <strong>{Math.abs(transaction.points_earned)} points used</strong>
                     {transaction.reward_title

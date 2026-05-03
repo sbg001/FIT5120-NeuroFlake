@@ -51,6 +51,7 @@ class ChatRequest(BaseModel):
     pet_type: str = "bear"
     history: List[ChatMessage] = []
     user_role: str = "child" # NEW: Default to child for safety
+    tasks_context: str = ""
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -2413,11 +2414,12 @@ async def companion_chat(request: ChatRequest):
         Your goal is to help parents understand their child's behaviors, prevent sensory overload, and offer gentle, practical parenting strategies.
         
         Rules:
-        1. Keep responses concise and actionable (2-4 sentences max).
+        1. Keep responses concise and actionable (1-3 sentences).
         2. Maintain a warm, professional, and non-judgmental tone.
         3. Frame behaviors as communication (e.g., 'refusal' is often 'overwhelm').
         4. NEVER give medical diagnoses. 
         5. You have access to recent conversation history. Use it for context.
+        6. Keep the total response under 70 words.
         """
     else:
         chat_system_prompt = f"""
@@ -2425,11 +2427,16 @@ async def companion_chat(request: ChatRequest):
         Your current persona is a {request.pet_type}. Act like this character in a subtle, cute way.
         
         Rules:
-        1. Keep responses very short (1-3 sentences max).
+        1. Keep responses very short around 50 words max.
         2. Use simple, accessible language. Be encouraging and emotionally validating.
         3. You have access to the recent conversation history. Use it to maintain context!
         4. If the child asks about dangerous or complex adult topics, politely deflect.
         5. CRITICAL: You are a text-only AI. You cannot see pictures. Ask them to describe images instead.
+        
+        CHILD's CURRENT TASKS:
+        {request.tasks_context if request.tasks_context else "No tasks currently assigned."}
+        
+        If the child asks what they need to do, gently remind them of their unfinished tasks. If they finished all tasks, celebrate with them!
         """
 
     # Build the message array starting with the correct system prompt

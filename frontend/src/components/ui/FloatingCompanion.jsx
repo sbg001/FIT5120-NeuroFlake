@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getChildPreferences } from "../../services";
+import { getChildPreferences, getTasks } from "../../services";
 import "./FloatingCompanion.css";
 
 const petExpressions = {
@@ -88,6 +88,23 @@ function FloatingCompanion() {
         content: msg.text,
       }));
 
+      // tasks context for AI prompt
+      let tasksString = "";
+      if (!isParent) {
+        try {
+          const tasksRes = await getTasks();
+          const pendingTasks = (tasksRes.data || []).filter(t => t.status !== "completed");
+          
+          if (pendingTasks.length > 0) {
+            tasksString = pendingTasks.map((t, index) => `${index + 1}. ${t.title}`).join("\n");
+          } else {
+            tasksString = "All tasks completed! They have free time.";
+          }
+        } catch (e) {
+          console.error("Could not fetch tasks for context.");
+        }
+      }
+
       const response = await fetch("http://localhost:8000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,20 +113,34 @@ function FloatingCompanion() {
           pet_type: petData.type,
           history: formattedHistory,
           user_role: userRole,
+          tasks_context: tasksString,
         }),
       });
 
       const data = await response.json();
 
       if (data && data.reply) {
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now() + 1, sender: "bot", text: data.reply },
-        ]);
+        // 1. Split the AI's response into individual sentences.
+        // This Regex looks for chunks of text ending in a period, exclamation, or question mark.
+        const rawSentences = data.reply.match(/[^.!?]+[.!?]*/g) || [data.reply];
+
+        // Clean up any weird blank spaces
+        const sentences = rawSentences.map(s => s.trim()).filter(s => s.length > 0);
+
+        // 2. Add each sentence as its own chat bubble with a staggered delay!
+        sentences.forEach((sentence, index) => {
+          setTimeout(() => {
+            setMessages((prev) => [
+              ...prev,
+              { id: Date.now() + index, sender: "bot", text: sentence },
+            ]);
+          }, index * 800); // 800 millisecond delay between each bubble
+        });
+        
       } else {
         throw new Error("Invalid response");
       }
-    } catch {
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
         {

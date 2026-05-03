@@ -1,3 +1,5 @@
+import { getCachedResource, invalidateCachePrefix } from "./requestCache";
+
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
 
@@ -32,12 +34,17 @@ async function apiRequest(path, options = {}) {
 export async function getTriggers(childId) {
   const query = childId ? `?child_id=${encodeURIComponent(childId)}` : "";
 
-  const result = await apiRequest(`/api/triggers${query}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `triggers:${childId || "all"}`,
+    () =>
+      apiRequest(`/api/triggers${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -53,7 +60,7 @@ export async function createTrigger({
     return { data: null, error: "Please complete all trigger fields." };
   }
 
-  return apiRequest("/api/triggers", {
+  const result = await apiRequest("/api/triggers", {
     method: "POST",
     body: JSON.stringify({
       child_id,
@@ -62,6 +69,13 @@ export async function createTrigger({
       notes: notes || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("triggers:");
+    invalidateCachePrefix("suggestions:");
+  }
+
+  return result;
 }
 
 export async function getPersonalisedSuggestions(childId) {
@@ -69,12 +83,17 @@ export async function getPersonalisedSuggestions(childId) {
     return { data: [], error: null };
   }
 
-  const result = await apiRequest(`/api/suggestions/${childId}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `suggestions:${childId}`,
+    () =>
+      apiRequest(`/api/suggestions/${childId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };

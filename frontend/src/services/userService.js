@@ -3,6 +3,11 @@ import {
   mockParentProfile,
   mockParentChildRelation,
 } from "../data/mockUsers";
+import {
+  clearRequestCache,
+  getCachedResource,
+  invalidateCachePrefix,
+} from "./requestCache";
 
 const MOCK_USERS_STORAGE_KEY = "neuroflake_mock_users";
 const CHILD_PREFERENCES_STORAGE_KEY = "neuroflake_child_preferences";
@@ -128,43 +133,51 @@ export async function getChildProfile() {
     localStorage.getItem("current_user_role") || ""
   ).toLowerCase();
   const currentUserName = localStorage.getItem("current_user_name");
+  const activeChildId = localStorage.getItem("current_child_id") || "";
+  const cacheKey = `child-profile:${currentUserRole}:${currentUserId || ""}:${activeChildId}`;
 
-  if (currentUserId && currentUserRole === "parent") {
-    const childrenResult = await getChildrenByParent(currentUserId);
-    const firstChild = childrenResult.data?.[0];
+  return getCachedResource(
+    cacheKey,
+    async () => {
+      if (currentUserId && currentUserRole === "parent") {
+        const childrenResult = await getChildrenByParent(currentUserId);
+        const firstChild = childrenResult.data?.[0];
 
-    if (firstChild) {
+        if (firstChild) {
+          return {
+            data: {
+              ...mockChildProfile,
+              ...firstChild,
+            },
+            error: childrenResult.error,
+          };
+        }
+
+        return {
+          data: null,
+          error: childrenResult.error || null,
+        };
+      }
+
+      if (currentUserId && currentUserRole === "child") {
+        return {
+          data: {
+            ...mockChildProfile,
+            user_id: currentUserId,
+            role: "child",
+            name: currentUserName || mockChildProfile.name,
+          },
+          error: null,
+        };
+      }
+
       return {
-        data: {
-          ...mockChildProfile,
-          ...firstChild,
-        },
+        data: null,
         error: null,
       };
-    }
-
-    return {
-      data: null,
-      error: null,
-    };
-  }
-
-  if (currentUserId && currentUserRole === "child") {
-    return {
-      data: {
-        ...mockChildProfile,
-        user_id: currentUserId,
-        role: "child",
-        name: currentUserName || mockChildProfile.name,
-      },
-      error: null,
-    };
-  }
-
-  return {
-    data: null,
-    error: null,
-  };
+    },
+    { ttlMs: 30000 }
+  );
 }
 // =======================
 // GET PARENT PROFILE
@@ -258,20 +271,26 @@ export async function loginWithPin(userId, pinCode) {
 // Child: username + password
 // =======================
 export async function signInUser({ identifier, password }) {
-  return apiRequest("/api/auth/sign-in", {
+  const result = await apiRequest("/api/auth/sign-in", {
     method: "POST",
     body: JSON.stringify({
       identifier,
       password,
     }),
   });
+
+  if (!result.error) {
+    clearRequestCache();
+  }
+
+  return result;
 }
 
 // =======================
 // REGISTER PARENT
 // =======================
 export async function registerParent({ name, email, password }) {
-  return apiRequest("/api/auth/register-parent", {
+  const result = await apiRequest("/api/auth/register-parent", {
     method: "POST",
     body: JSON.stringify({
       name,
@@ -279,6 +298,12 @@ export async function registerParent({ name, email, password }) {
       password,
     }),
   });
+
+  if (!result.error) {
+    clearRequestCache();
+  }
+
+  return result;
 }
 
 // =======================
@@ -292,7 +317,7 @@ export async function createChildAccount({
   password,
   age,
 }) {
-  return apiRequest("/api/auth/create-child", {
+  const result = await apiRequest("/api/auth/create-child", {
     method: "POST",
     body: JSON.stringify({
       parentId,
@@ -302,6 +327,13 @@ export async function createChildAccount({
       age: Number(age),
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("children-by-parent:");
+    invalidateCachePrefix("child-profile:");
+  }
+
+  return result;
 }
 
 export async function updateChildPassword({ parentId, childId, password }) {
@@ -323,9 +355,14 @@ export async function getChildrenByParent(parentId) {
     return { data: [], error: null };
   }
 
-  return apiRequest(`/api/auth/children/${parentId}`, {
-    method: "GET",
-  });
+  return getCachedResource(
+    `children-by-parent:${parentId}`,
+    () =>
+      apiRequest(`/api/auth/children/${parentId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 30000 }
+  );
 }
 
 // =======================

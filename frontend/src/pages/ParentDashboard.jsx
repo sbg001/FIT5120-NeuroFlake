@@ -46,6 +46,7 @@ function ParentDashboard() {
   const [isLoadingCore, setIsLoadingCore] = useState(true);
   const [isLoadingSupport, setIsLoadingSupport] = useState(false);
   const [hasLoadedSupport, setHasLoadedSupport] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -222,6 +223,7 @@ const checkRoutineReminders = useCallback(() => {
   useEffect(() => {
     async function loadCoreDashboardData() {
       setIsLoadingCore(true);
+      setDashboardError("");
 
       const [parentResult, childResult] = await Promise.all([
         getParentProfile(),
@@ -244,6 +246,14 @@ const checkRoutineReminders = useCallback(() => {
       setTasks(tasksResult.data || []);
       setPointsData(pointsResult.data || { points_balance: 0 });
       setRewards(rewardsResult.data || []);
+      setDashboardError(
+        parentResult.error ||
+          childResult.error ||
+          tasksResult.error ||
+          pointsResult.error ||
+          rewardsResult.error ||
+          ""
+      );
       setIsLoadingCore(false);
     }
 
@@ -286,6 +296,15 @@ const checkRoutineReminders = useCallback(() => {
     setCommunicationPrompts(promptsResult.data || []);
     setSupportResources(resourcesResult.data || []);
     setEmotionLogs(emotionLogsResult.data || []);
+    setDashboardError(
+      triggersResult.error ||
+        suggestionsResult.error ||
+        routinesResult.error ||
+        promptsResult.error ||
+        resourcesResult.error ||
+        emotionLogsResult.error ||
+        ""
+    );
     setHasLoadedSupport(true);
     setIsLoadingSupport(false);
   }, []);
@@ -1056,6 +1075,12 @@ const checkRoutineReminders = useCallback(() => {
         title={sectionHeader.title}
         description={sectionHeader.description}
       />
+
+      {dashboardError ? (
+        <Card className="content-card" variant="soft">
+          <p className="page-text">{dashboardError}</p>
+        </Card>
+      ) : null}
 
       {isTasksPage ? (
         <>

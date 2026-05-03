@@ -18,6 +18,7 @@ function ChildDashboard() {
   const [tasks, setTasks] = useState([]);
   const [points, setPoints] = useState(null);
   const [isLoadingBoard, setIsLoadingBoard] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [theme, setTheme] = useState("fun");
   const [characterStyle, setCharacterStyle] = useState("star");
@@ -27,9 +28,21 @@ function ChildDashboard() {
   useEffect(() => {
     async function loadData() {
       setIsLoadingBoard(true);
-      const { data: childData } = await getChildProfile();
+      setLoadError("");
+      const childResult = await getChildProfile();
+      const childData = childResult.data;
 
       setChild(childData);
+
+      if (!childData?.user_id) {
+        setTasks([]);
+        setPoints({ points_balance: 0 });
+        setLoadError(
+          childResult.error || "We could not load the child dashboard right now."
+        );
+        setIsLoadingBoard(false);
+        return;
+      }
 
       const [tasksResult, pointsResult, preferenceResult] = await Promise.all([
         getTasks(childData?.user_id),
@@ -45,6 +58,14 @@ function ChildDashboard() {
         setCharacterStyle(preferenceResult.data.character_style || "star");
         setRewardInterest(preferenceResult.data.reward_interest || "games");
       }
+
+      setLoadError(
+        childResult.error ||
+          tasksResult.error ||
+          pointsResult.error ||
+          preferenceResult.error ||
+          ""
+      );
 
       setIsLoadingBoard(false);
     }
@@ -71,8 +92,20 @@ function ChildDashboard() {
     window.dispatchEvent(new Event("preferencesUpdated"));
   };
 
-  if (!child || isLoadingBoard) {
+  if (isLoadingBoard) {
     return <p className="page-text">Loading dashboard...</p>;
+  }
+
+  if (!child) {
+    return (
+      <section className="page-section child-dashboard">
+        <Card className="content-card" variant="soft">
+          <p className="page-text">
+            {loadError || "The child dashboard is not ready right now."}
+          </p>
+        </Card>
+      </section>
+    );
   }
 
   const displayName = String(child.name || "").replace(/\s*\([^)]*\)\s*$/, "");
@@ -181,6 +214,12 @@ function ChildDashboard() {
         title={`Hi ${displayName}, ready for your next small win?`}
         description="This is your calm mission board. You can see your next step, your progress, and the good things you have already earned."
       />
+
+      {loadError ? (
+        <Card className="content-card" variant="soft">
+          <p className="page-text">{loadError}</p>
+        </Card>
+      ) : null}
 
       <div className="child-dashboard__hero-grid">
         <Card className="child-dashboard__welcome nf-enter-card nf-enter-card--1" variant="glow">

@@ -1,3 +1,5 @@
+import { getCachedResource, invalidateCachePrefix } from "./requestCache";
+
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
 
@@ -44,12 +46,17 @@ export async function getRoutines(childId) {
   const resolvedChildId = childId || getCurrentChildId();
   const query = resolvedChildId ? `?child_id=${encodeURIComponent(resolvedChildId)}` : "";
 
-  const result = await apiRequest(`/api/routines${query}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `routines:${resolvedChildId || "all"}`,
+    () =>
+      apiRequest(`/api/routines${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -60,37 +67,42 @@ export async function getRoutineItems(routineId) {
     return { data: [], error: null };
   }
 
-  const result = await apiRequest(`/api/routines/${routineId}/items`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `routine-items:${routineId}`,
+    () =>
+      apiRequest(`/api/routines/${routineId}/items`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
 }
 
 export async function getRoutineBlocksWithItems(childId) {
-  const routinesResult = await getRoutines(childId);
-  const routines = routinesResult.data || [];
+  const resolvedChildId = childId || getCurrentChildId();
+  const query = resolvedChildId
+    ? `?child_id=${encodeURIComponent(resolvedChildId)}`
+    : "";
 
-  const blocks = await Promise.all(
-    routines.map(async (routine) => {
-      const itemsResult = await getRoutineItems(routine.routine_id);
-      const items = itemsResult.data || [];
-      const completed_count = items.filter((item) => item.is_completed).length;
-
-      return {
-        ...routine,
-        completed_count,
-        total_count: items.length,
-        items,
-      };
-    })
+  const result = await getCachedResource(
+    `routine-blocks:${resolvedChildId || "all"}`,
+    () =>
+      apiRequest(`/api/routines-with-items${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
   );
 
-  return { data: blocks, error: null };
+  if (result.error || !Array.isArray(result.data)) {
+    return { data: [], error: result.error || null };
+  }
+
+  return { data: result.data, error: null };
 }
 
 export async function createRoutine({
@@ -103,7 +115,7 @@ export async function createRoutine({
     return { data: null, error: "Please complete routine title." };
   }
 
-  return apiRequest("/api/routines", {
+  const result = await apiRequest("/api/routines", {
     method: "POST",
     body: JSON.stringify({
       child_id,
@@ -112,6 +124,13 @@ export async function createRoutine({
       display_order: Number(display_order || 0),
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("routines:");
+    invalidateCachePrefix("routine-blocks:");
+  }
+
+  return result;
 }
 
 export async function createRoutineItem({
@@ -125,7 +144,7 @@ export async function createRoutineItem({
     return { data: null, error: "Please complete routine item title." };
   }
 
-  return apiRequest("/api/routine-items", {
+  const result = await apiRequest("/api/routine-items", {
     method: "POST",
     body: JSON.stringify({
       routine_id,
@@ -135,6 +154,14 @@ export async function createRoutineItem({
       reminder_time: reminder_time || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`routine-items:${routine_id}`);
+    invalidateCachePrefix("routines:");
+    invalidateCachePrefix("routine-blocks:");
+  }
+
+  return result;
 }
 
 export async function updateRoutineItem(itemId, isCompleted) {
@@ -142,10 +169,18 @@ export async function updateRoutineItem(itemId, isCompleted) {
     return { data: null, error: "Routine item not found." };
   }
 
-  return apiRequest(`/api/routine-items/${itemId}`, {
+  const result = await apiRequest(`/api/routine-items/${itemId}`, {
     method: "PATCH",
     body: JSON.stringify({
       is_completed: Boolean(isCompleted),
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("routine-items:");
+    invalidateCachePrefix("routines:");
+    invalidateCachePrefix("routine-blocks:");
+  }
+
+  return result;
 }

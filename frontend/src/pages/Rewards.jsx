@@ -36,6 +36,7 @@ function Rewards() {
   const [claimMessage, setClaimMessage] = useState("");
   const [claimError, setClaimError] = useState("");
   const [claimingRewardId, setClaimingRewardId] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const buildLatestRewardSummary = (pointsBalance, transactions) => {
     const safePointsBalance = pointsBalance ?? 0;
@@ -71,11 +72,25 @@ function Rewards() {
 
   useEffect(() => {
     async function loadRewardsData() {
+      setLoadError("");
       const childResult = await getChildProfile();
       const childData = childResult.data;
       const resolvedChildId = String(childData?.user_id || "");
 
       setChildId(resolvedChildId);
+
+      if (!resolvedChildId) {
+        const fallbackSummary = buildLatestRewardSummary(0, []);
+        setPointsData({ child_id: null, points_balance: 0, updated_at: null });
+        setLatestRewardSummary(fallbackSummary);
+        setRewardTransactions([]);
+        setParentRewards([]);
+        setNextTaskId(null);
+        setLoadError(
+          childResult.error || "We could not load the rewards page right now."
+        );
+        return;
+      }
 
       const [pointsResult, transactionsResult, parentRewardsResult, tasksResult] =
         await Promise.all([
@@ -102,6 +117,14 @@ function Rewards() {
       setRewardTransactions(transactions);
       setParentRewards(parentRewardsResult.data || []);
       setNextTaskId(childTasks[0]?.task_id || null);
+      setLoadError(
+        childResult.error ||
+          pointsResult.error ||
+          transactionsResult.error ||
+          parentRewardsResult.error ||
+          tasksResult.error ||
+          ""
+      );
     }
 
     loadRewardsData();
@@ -214,6 +237,12 @@ function Rewards() {
             : "See your points, available rewards, and recent progress in one place."
         }
       />
+
+      {loadError ? (
+        <Card className="content-card" variant="soft">
+          <p className="page-text">{loadError}</p>
+        </Card>
+      ) : null}
 
       {showCelebration ? (
         <Card className="reward-celebration-banner" variant="glow">

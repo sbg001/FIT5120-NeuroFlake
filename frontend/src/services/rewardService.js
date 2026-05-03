@@ -1,3 +1,5 @@
+import { getCachedResource, invalidateCachePrefix } from "./requestCache";
+
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
 
@@ -59,12 +61,17 @@ export async function getPointsBalance(childId) {
     return { data: emptyPoints(null), error: null };
   }
 
-  const result = await apiRequest(`/api/points/${resolvedChildId}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `points:${resolvedChildId}`,
+    () =>
+      apiRequest(`/api/points/${resolvedChildId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !result.data) {
-    return { data: emptyPoints(resolvedChildId), error: null };
+    return { data: emptyPoints(resolvedChildId), error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -77,12 +84,17 @@ export async function getRewardTransactions(childId) {
     return { data: [], error: null };
   }
 
-  const result = await apiRequest(`/api/reward-transactions/${resolvedChildId}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `reward-transactions:${resolvedChildId}`,
+    () =>
+      apiRequest(`/api/reward-transactions/${resolvedChildId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -147,7 +159,7 @@ export async function createRewardTransaction({
   steps_completed,
   transaction_type = "earn",
 }) {
-  return apiRequest("/api/reward-transactions", {
+  const result = await apiRequest("/api/reward-transactions", {
     method: "POST",
     body: JSON.stringify({
       child_id,
@@ -157,27 +169,47 @@ export async function createRewardTransaction({
       transaction_type,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`reward-transactions:${child_id}`);
+  }
+
+  return result;
 }
 
 export async function claimReward({ child_id, reward_id }) {
-  return apiRequest("/api/rewards/claim", {
+  const result = await apiRequest("/api/rewards/claim", {
     method: "POST",
     body: JSON.stringify({
       child_id,
       reward_id,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`points:${child_id}`);
+    invalidateCachePrefix(`reward-transactions:${child_id}`);
+    invalidateCachePrefix("rewards:");
+  }
+
+  return result;
 }
 
 export async function updatePointsBalance(childId, newPointsBalance) {
   const normalizedChildId = String(childId);
 
-  return apiRequest(`/api/points/${normalizedChildId}`, {
+  const result = await apiRequest(`/api/points/${normalizedChildId}`, {
     method: "PATCH",
     body: JSON.stringify({
       points_balance: Number(newPointsBalance),
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`points:${normalizedChildId}`);
+  }
+
+  return result;
 }
 
 export function getRewardMilestoneMessage(pointsBalance) {
@@ -236,31 +268,41 @@ export function getSuggestedRewards() {
 }
 
 export async function getParentApprovedRewards() {
-  const result = await apiRequest("/api/rewards?approved=true", {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    "rewards:approved",
+    () =>
+      apiRequest("/api/rewards?approved=true", {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
 }
 
 export async function getAllRewardsForParent() {
-  const result = await apiRequest("/api/rewards", {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    "rewards:all",
+    () =>
+      apiRequest("/api/rewards", {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
 }
 
 export async function createParentReward(payload) {
-  return apiRequest("/api/rewards", {
+  const result = await apiRequest("/api/rewards", {
     method: "POST",
     body: JSON.stringify({
       title: payload.title,
@@ -270,12 +312,18 @@ export async function createParentReward(payload) {
       theme: payload.theme || "custom",
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("rewards:");
+  }
+
+  return result;
 }
 
 export async function updateParentReward(rewardId, payload) {
   const normalizedRewardId = String(rewardId);
 
-  return apiRequest(`/api/rewards/${normalizedRewardId}`, {
+  const result = await apiRequest(`/api/rewards/${normalizedRewardId}`, {
     method: "PATCH",
     body: JSON.stringify({
       title: payload.title,
@@ -285,12 +333,24 @@ export async function updateParentReward(rewardId, payload) {
       theme: payload.theme || "custom",
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("rewards:");
+  }
+
+  return result;
 }
 
 export async function deleteParentReward(rewardId) {
   const normalizedRewardId = String(rewardId);
 
-  return apiRequest(`/api/rewards/${normalizedRewardId}`, {
+  const result = await apiRequest(`/api/rewards/${normalizedRewardId}`, {
     method: "DELETE",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("rewards:");
+  }
+
+  return result;
 }

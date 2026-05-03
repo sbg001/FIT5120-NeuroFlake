@@ -1,4 +1,5 @@
 import { mockEmotionOptions } from "../data/mockEmotion";
+import { getCachedResource, invalidateCachePrefix } from "./requestCache";
 
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
@@ -50,12 +51,17 @@ export async function getEmotionLogs(childId) {
   const resolvedChildId = childId || getCurrentChildId();
   const query = resolvedChildId ? `?child_id=${encodeURIComponent(resolvedChildId)}` : "";
 
-  const result = await apiRequest(`/api/emotions${query}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `emotion-logs:${resolvedChildId || "all"}`,
+    () =>
+      apiRequest(`/api/emotions${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -71,7 +77,7 @@ export async function saveEmotionSelection({
     return { data: null, error: "Missing child or emotion type." };
   }
 
-  return apiRequest("/api/emotions", {
+  const result = await apiRequest("/api/emotions", {
     method: "POST",
     body: JSON.stringify({
       child_id,
@@ -80,6 +86,12 @@ export async function saveEmotionSelection({
       notes,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`emotion-logs:${child_id}`);
+  }
+
+  return result;
 }
 
 export async function skipEmotionCheckIn(child_id, linked_task_id) {
@@ -87,7 +99,7 @@ export async function skipEmotionCheckIn(child_id, linked_task_id) {
     return { data: null, error: "Missing child id." };
   }
 
-  return apiRequest("/api/emotions", {
+  const result = await apiRequest("/api/emotions", {
     method: "POST",
     body: JSON.stringify({
       child_id,
@@ -96,4 +108,10 @@ export async function skipEmotionCheckIn(child_id, linked_task_id) {
       notes: null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`emotion-logs:${child_id}`);
+  }
+
+  return result;
 }

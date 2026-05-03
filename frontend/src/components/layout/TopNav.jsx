@@ -1,11 +1,13 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
+import { clearRequestCache } from "../../services/requestCache";
 
 function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isLoggedIn = !!localStorage.getItem("current_user_id");
+  const isPublicGuestPath = location.pathname === "/" || location.pathname === "/login";
+  const isLoggedIn = !isPublicGuestPath && !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
   const currentName = localStorage.getItem("current_user_name");
 
@@ -31,9 +33,11 @@ function TopNav() {
     : childNavItems;
 
   const handleLogout = () => {
+    clearRequestCache();
     localStorage.removeItem("current_user_id");
     localStorage.removeItem("current_user_role");
     localStorage.removeItem("current_user_name");
+    localStorage.removeItem("current_child_id");
     navigate("/");
   };
 

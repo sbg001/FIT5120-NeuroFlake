@@ -39,6 +39,7 @@ function TaskFlow() {
   const [saveStepsMessage, setSaveStepsMessage] = useState("");
   const [emotion, setEmotion] = useState(null);
   const [petPreference, setPetPreference] = useState("\u{1F9F8}");
+  const [loadError, setLoadError] = useState("");
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -46,10 +47,16 @@ function TaskFlow() {
   useEffect(() => {
     async function loadTask() {
       setLoading(true);
+      setLoadError("");
 
-      const { data: taskData } = await getTaskById(taskId);
-      const { data: stepsData } = await getTaskSteps(taskId);
-      const { data: prefData } = await getChildPreferences();
+      const [taskResult, stepsResult, preferenceResult] = await Promise.all([
+        getTaskById(taskId),
+        getTaskSteps(taskId),
+        getChildPreferences(),
+      ]);
+      const taskData = taskResult.data;
+      const stepsData = stepsResult.data;
+      const prefData = preferenceResult.data;
 
       const orderedSteps = stepsData || [];
       const validStepCount = orderedSteps.length >= 2 && orderedSteps.length <= 5;
@@ -81,6 +88,9 @@ function TaskFlow() {
       setStepCelebration(null);
       setSaveStepsMessage("");
       setEmotion(null);
+      setLoadError(
+        taskResult.error || stepsResult.error || preferenceResult.error || ""
+      );
       setLoading(false);
 
       if (orderedSteps.length < 1) {
@@ -126,6 +136,10 @@ function TaskFlow() {
     }
 
     const pointsResult = await getPointsBalance(task.child_id);
+    if (pointsResult.error) {
+      setSupportMessage("The task is done, but the points balance could not be loaded.");
+      return;
+    }
     const currentPoints = Number(pointsResult.data?.points_balance || 0);
 
     const completedStepCount = Math.max(steps.length, 1);
@@ -184,7 +198,11 @@ function TaskFlow() {
       return;
     }
 
-    await completeStep(taskId, currentStep.step_id);
+    const completeStepResult = await completeStep(taskId, currentStep.step_id);
+    if (completeStepResult.error) {
+      setSupportMessage("This step could not be marked done yet. Please try again.");
+      return;
+    }
     triggerCompanionEmotion("success");
 
     setSteps((prevSteps) =>
@@ -229,8 +247,12 @@ function TaskFlow() {
       await updateTaskStepCount(taskId);
       setSaveStepsMessage("Nova's steps are ready. Your mission can begin now.");
 
-      const { data: taskData } = await getTaskById(taskId);
-      const { data: stepsData } = await getTaskSteps(taskId);
+      const [taskResult, stepsResult] = await Promise.all([
+        getTaskById(taskId),
+        getTaskSteps(taskId),
+      ]);
+      const taskData = taskResult.data;
+      const stepsData = stepsResult.data;
       const orderedSteps = stepsData || [];
       const firstIncompleteIndex = orderedSteps.findIndex((step) => !step.is_completed);
       const nextIndex = firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
@@ -241,6 +263,7 @@ function TaskFlow() {
       setCurrentStepIndex(nextIndex);
       setCurrentStepDone(Boolean(orderedSteps[nextIndex]?.is_completed));
       setIsNovaOpen(false);
+      setLoadError(taskResult.error || stepsResult.error || "");
     } catch {
       setSaveStepsMessage("The task was saved, but the new steps could not be loaded yet.");
     }
@@ -260,6 +283,8 @@ function TaskFlow() {
               title={task.title}
               description="This mission needs 2 to 5 simple steps before it can begin."
             />
+
+            {loadError ? <p className="page-text">{loadError}</p> : null}
 
             {saveStepsMessage ? <p className="page-text">{saveStepsMessage}</p> : null}
 
@@ -284,6 +309,11 @@ function TaskFlow() {
 
   return (
     <section className="page-section focus-experience">
+      {loadError ? (
+        <Card className="content-card" variant="soft">
+          <p className="page-text">{loadError}</p>
+        </Card>
+      ) : null}
       <Card className="content-card focus-experience__top-card" variant="soft">
         <PageHeader
           eyebrow="Mission Flow"

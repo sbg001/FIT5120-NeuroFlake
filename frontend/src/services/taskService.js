@@ -1,3 +1,5 @@
+import { getCachedResource, invalidateCachePrefix } from "./requestCache";
+
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
 
@@ -44,12 +46,17 @@ export async function getTasks(childId) {
   const resolvedChildId = childId || getCurrentChildId();
   const query = resolvedChildId ? `?child_id=${encodeURIComponent(resolvedChildId)}` : "";
 
-  const result = await apiRequest(`/api/tasks${query}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `tasks:${resolvedChildId || "all"}`,
+    () =>
+      apiRequest(`/api/tasks${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -58,9 +65,14 @@ export async function getTasks(childId) {
 export async function getTaskById(taskId) {
   const normalizedTaskId = String(taskId);
 
-  const result = await apiRequest(`/api/tasks/${normalizedTaskId}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `task:${normalizedTaskId}`,
+    () =>
+      apiRequest(`/api/tasks/${normalizedTaskId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error) {
     return { data: null, error: result.error };
@@ -72,12 +84,17 @@ export async function getTaskById(taskId) {
 export async function getTaskSteps(taskId) {
   const normalizedTaskId = String(taskId);
 
-  const result = await apiRequest(`/api/tasks/${normalizedTaskId}/steps`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `task-steps:${normalizedTaskId}`,
+    () =>
+      apiRequest(`/api/tasks/${normalizedTaskId}/steps`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !Array.isArray(result.data)) {
-    return { data: [], error: null };
+    return { data: [], error: result.error || null };
   }
 
   return { data: result.data, error: null };
@@ -87,9 +104,14 @@ export async function getTodayTask(childId) {
   const resolvedChildId = childId || getCurrentChildId();
   const query = resolvedChildId ? `?child_id=${encodeURIComponent(resolvedChildId)}` : "";
 
-  const result = await apiRequest(`/api/today-task${query}`, {
-    method: "GET",
-  });
+  const result = await getCachedResource(
+    `today-task:${resolvedChildId || "all"}`,
+    () =>
+      apiRequest(`/api/today-task${query}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
 
   if (result.error || !result.data) {
     return { data: null, error: null };
@@ -99,7 +121,7 @@ export async function getTodayTask(childId) {
 }
 
 export async function createTask(payload) {
-  return apiRequest("/api/tasks", {
+  const result = await apiRequest("/api/tasks", {
     method: "POST",
     body: JSON.stringify({
       child_id: payload.child_id,
@@ -113,10 +135,17 @@ export async function createTask(payload) {
       priority_rank: payload.priority_rank || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }
 
 export async function createTaskStep(payload) {
-  return apiRequest("/api/task-steps", {
+  const result = await apiRequest("/api/task-steps", {
     method: "POST",
     body: JSON.stringify({
       task_id: payload.task_id,
@@ -129,12 +158,20 @@ export async function createTaskStep(payload) {
       example_text: payload.example_text || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task-steps:${payload.task_id}`);
+    invalidateCachePrefix(`task:${payload.task_id}`);
+    invalidateCachePrefix("tasks:");
+  }
+
+  return result;
 }
 
 export async function updateTask(taskId, payload) {
   const normalizedTaskId = String(taskId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}`, {
     method: "PATCH",
     body: JSON.stringify({
       title: payload.title,
@@ -143,12 +180,20 @@ export async function updateTask(taskId, payload) {
       priority_rank: payload.priority_rank || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }
 
 export async function updateTaskStep(stepId, payload) {
   const normalizedStepId = String(stepId);
 
-  return apiRequest(`/api/task-steps/${normalizedStepId}`, {
+  const result = await apiRequest(`/api/task-steps/${normalizedStepId}`, {
     method: "PATCH",
     body: JSON.stringify({
       step_order: payload.step_order,
@@ -158,53 +203,112 @@ export async function updateTaskStep(stepId, payload) {
       example_text: payload.example_text || null,
     }),
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("task-steps:");
+    invalidateCachePrefix("task:");
+    invalidateCachePrefix("tasks:");
+  }
+
+  return result;
 }
 
 export async function deleteTask(taskId) {
   const normalizedTaskId = String(taskId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}`, {
     method: "DELETE",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix(`task-steps:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }
 
 export async function deleteTaskStep(stepId) {
   const normalizedStepId = String(stepId);
 
-  return apiRequest(`/api/task-steps/${normalizedStepId}`, {
+  const result = await apiRequest(`/api/task-steps/${normalizedStepId}`, {
     method: "DELETE",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix("task-steps:");
+    invalidateCachePrefix("task:");
+    invalidateCachePrefix("tasks:");
+  }
+
+  return result;
 }
 
 export async function updateTaskStepCount(taskId) {
   const normalizedTaskId = String(taskId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}/step-count`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}/step-count`, {
     method: "PATCH",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+  }
+
+  return result;
 }
 
 export async function resetTaskStatus(taskId) {
   const normalizedTaskId = String(taskId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}/reset`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}/reset`, {
     method: "POST",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix(`task-steps:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }
 
 export async function completeStep(taskId, stepId) {
   const normalizedTaskId = String(taskId);
   const normalizedStepId = String(stepId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}/complete-step/${normalizedStepId}`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}/complete-step/${normalizedStepId}`, {
     method: "POST",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix(`task-steps:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }
 
 export async function completeTask(taskId) {
   const normalizedTaskId = String(taskId);
 
-  return apiRequest(`/api/tasks/${normalizedTaskId}/complete`, {
+  const result = await apiRequest(`/api/tasks/${normalizedTaskId}/complete`, {
     method: "POST",
   });
+
+  if (!result.error) {
+    invalidateCachePrefix(`task:${normalizedTaskId}`);
+    invalidateCachePrefix(`task-steps:${normalizedTaskId}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
+  }
+
+  return result;
 }

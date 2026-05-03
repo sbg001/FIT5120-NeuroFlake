@@ -25,6 +25,7 @@ function FocusMode() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [currentStep, setCurrentStep] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [secondsLeft, setSecondsLeft] = useState(25 * 60);
@@ -42,19 +43,29 @@ function FocusMode() {
   useEffect(() => {
     async function loadFocusData() {
       setLoading(true);
+      setLoadError("");
 
       const childResult = await getChildProfile();
       const childData = childResult.data;
 
-      const tasksResult = await getTasks();
+      if (!childData?.user_id) {
+        setAvailableTasks([]);
+        setLoadError(
+          childResult.error || "We could not load focus mode right now."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const tasksResult = await getTasks(childData.user_id);
       const allTasks = tasksResult.data || [];
 
       const childTasks = allTasks
-        .filter((task) => task.child_id === childData?.user_id)
         .filter((task) => task.status !== "completed")
         .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0));
 
       setAvailableTasks(childTasks);
+      setLoadError(childResult.error || tasksResult.error || "");
       setLoading(false);
     }
 
@@ -122,6 +133,9 @@ function FocusMode() {
 
     const stepsResult = await getTaskSteps(taskId);
     const steps = stepsResult.data || [];
+    if (stepsResult.error) {
+      setLoadError(stepsResult.error);
+    }
     setTaskSteps(steps);
 
     const firstIncompleteIndex = steps.findIndex((step) => !step.is_completed);
@@ -264,6 +278,11 @@ function FocusMode() {
 
   return (
     <section className="page-section focus-experience">
+      {loadError ? (
+        <Card className="content-card" variant="soft">
+          <p className="page-text">{loadError}</p>
+        </Card>
+      ) : null}
       {!isFocusActive && (
         <Card className="content-card focus-experience__top-card" variant="soft">
           <PageHeader

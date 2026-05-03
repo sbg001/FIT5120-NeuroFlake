@@ -9,18 +9,53 @@ import os
 import uuid
 import psycopg2
 import psycopg2.extras
+from psycopg2.pool import SimpleConnectionPool
 from behavior_engine import calculate_overload_risk, load_model
 
 # Load the variables from your .env file
 load_dotenv() 
 
 app = FastAPI()
+DB_POOL = None
+
+
+class PooledConnectionProxy:
+    def __init__(self, connection, pool):
+        self._connection = connection
+        self._pool = pool
+        self._is_returned = False
+
+    def __getattr__(self, name):
+        return getattr(self._connection, name)
+
+    def close(self):
+        if self._is_returned:
+            return
+        self._is_returned = True
+        self._pool.putconn(self._connection)
 
 # Initialize the ML model when the FastAPI server starts
 @app.on_event("startup")
 async def startup_event():
+    global DB_POOL
     print("Booting up backend services...")
     load_model()
+    if not DATABASE_URL:
+        raise RuntimeError("Database URL is not configured.")
+    if DB_POOL is None:
+        DB_POOL = SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            dsn=DATABASE_URL,
+        )
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global DB_POOL
+    if DB_POOL is not None:
+        DB_POOL.closeall()
+        DB_POOL = None
 
 class RiskRequest(BaseModel):
     hours_slept: float
@@ -58,9 +93,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def get_db_connection():
-    if not DATABASE_URL:
+    if DB_POOL is None:
         raise HTTPException(status_code=500, detail="Database URL is not configured.")
-    return psycopg2.connect(DATABASE_URL)
+    return PooledConnectionProxy(DB_POOL.getconn(), DB_POOL)
 
 
 def user_row_to_dict(row):
@@ -1575,6 +1610,75 @@ async def get_routine_items(routine_id: str):
     except Exception as e:
         print(f"Get routine items error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not load routine items.")
+
+
+@app.get("/api/routines-with-items")
+async def get_routines_with_items(child_id: Optional[str] = None):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        if child_id:
+            cur.execute(
+                """
+                SELECT *
+                FROM routines
+                WHERE child_id = %s OR child_id IS NULL
+                ORDER BY display_order ASC
+                """,
+                (child_id,),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT *
+                FROM routines
+                ORDER BY display_order ASC
+                """
+            )
+
+        routines = cur.fetchall()
+
+        routine_ids = [routine["routine_id"] for routine in routines if routine.get("routine_id")]
+        items_by_routine = {}
+
+        if routine_ids:
+            cur.execute(
+                """
+                SELECT *
+                FROM routine_items
+                WHERE routine_id = ANY(%s)
+                ORDER BY routine_id ASC, item_order ASC
+                """,
+                (routine_ids,),
+            )
+
+            for item in cur.fetchall():
+                normalized_item = routine_item_row_to_dict(item)
+                routine_key = normalized_item["routine_id"]
+                items_by_routine.setdefault(routine_key, []).append(normalized_item)
+
+        cur.close()
+        conn.close()
+
+        blocks = []
+        for routine in routines:
+            normalized_routine = routine_row_to_dict(routine)
+            items = items_by_routine.get(normalized_routine["routine_id"], [])
+            blocks.append(
+                {
+                    **normalized_routine,
+                    "items": items,
+                    "completed_count": len([item for item in items if item.get("is_completed")]),
+                    "total_count": len(items),
+                }
+            )
+
+        return blocks
+
+    except Exception as e:
+        print(f"Get routines with items error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not load routines.")
 
 
 @app.patch("/api/routine-items/{item_id}")

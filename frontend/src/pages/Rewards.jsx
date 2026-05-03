@@ -32,11 +32,12 @@ function Rewards() {
   const [rewardTransactions, setRewardTransactions] = useState([]);
   const [parentRewards, setParentRewards] = useState([]);
   const [nextTaskId, setNextTaskId] = useState(null);
-  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(showCelebration);
   const [claimMessage, setClaimMessage] = useState("");
   const [claimError, setClaimError] = useState("");
   const [claimingRewardId, setClaimingRewardId] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [celebrationDismissed, setCelebrationDismissed] = useState(false);
 
   const buildLatestRewardSummary = (pointsBalance, transactions) => {
     const safePointsBalance = pointsBalance ?? 0;
@@ -96,7 +97,7 @@ function Rewards() {
         await Promise.all([
           getPointsBalance(resolvedChildId),
           getRewardTransactions(resolvedChildId),
-          getParentApprovedRewards(),
+          getParentApprovedRewards(resolvedChildId),
           getTasks(resolvedChildId),
         ]);
 
@@ -130,9 +131,11 @@ function Rewards() {
     loadRewardsData();
   }, []);
 
-  useEffect(() => {
-    setIsCelebrationOpen(showCelebration);
-  }, [showCelebration]);
+  const dismissCelebration = () => {
+    setIsCelebrationOpen(false);
+    setCelebrationDismissed(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  };
 
   const handleStartAnotherTask = () => {
     if (nextTaskId) {
@@ -244,7 +247,7 @@ function Rewards() {
         </Card>
       ) : null}
 
-      {showCelebration ? (
+      {showCelebration && !celebrationDismissed ? (
         <Card className="reward-celebration-banner" variant="glow">
           <div className="reward-celebration-banner__stars" aria-hidden="true">
             <span>★</span>
@@ -414,33 +417,33 @@ function Rewards() {
         >
           <div
             className="reward-celebration-modal__backdrop"
-            onClick={() => setIsCelebrationOpen(false)}
+            onClick={dismissCelebration}
           />
           <Card className="reward-celebration-modal__panel" variant="glow">
             <button
               type="button"
               className="reward-celebration-modal__close"
-              onClick={() => setIsCelebrationOpen(false)}
+              onClick={dismissCelebration}
               aria-label="Close celebration"
             >
-              ×
+              {"\u00D7"}
             </button>
 
             <div className="reward-celebration-modal__confetti" aria-hidden="true">
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--1">
-                ★
+                {"\u2605"}
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--2">
-                ✦
+                {"\u2726"}
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--3">
-                ★
+                {"\u2605"}
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--4">
-                ✦
+                {"\u2726"}
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--5">
-                ★
+                {"\u2605"}
               </span>
             </div>
 

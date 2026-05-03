@@ -427,15 +427,6 @@ function TaskFlow() {
             <Button variant="secondary" onClick={() => setShowSupportPanel((prev) => !prev)}>
               I need a break
             </Button>
-            {!isLastStep ? (
-              <Button
-                variant="secondary"
-                onClick={goToNextStep}
-                disabled={!currentStepDone}
-              >
-                Next Step
-              </Button>
-            ) : null}
             <Button onClick={handleDone}>
               {currentStepDone
                 ? isLastStep

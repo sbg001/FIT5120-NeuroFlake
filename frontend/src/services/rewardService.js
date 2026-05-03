@@ -18,6 +18,17 @@ function resolveActiveChildId(childId) {
   return "";
 }
 
+function getCurrentParentId() {
+  const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
+  const currentUserId = localStorage.getItem("current_user_id");
+
+  if (currentRole === "parent" && currentUserId) {
+    return String(currentUserId);
+  }
+
+  return "";
+}
+
 async function apiRequest(path, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -267,11 +278,19 @@ export function getSuggestedRewards() {
   ];
 }
 
-export async function getParentApprovedRewards() {
+export async function getParentApprovedRewards(childId) {
+  const resolvedChildId = resolveActiveChildId(childId);
+  const parentId = getCurrentParentId();
+  const query = resolvedChildId
+    ? `?approved=true&child_id=${encodeURIComponent(resolvedChildId)}`
+    : parentId
+      ? `?approved=true&parent_id=${encodeURIComponent(parentId)}`
+      : "?approved=true";
+
   const result = await getCachedResource(
-    "rewards:approved",
+    `rewards:approved:${resolvedChildId || parentId || "all"}`,
     () =>
-      apiRequest("/api/rewards?approved=true", {
+      apiRequest(`/api/rewards${query}`, {
         method: "GET",
       }),
     { ttlMs: 15000 }
@@ -285,10 +304,13 @@ export async function getParentApprovedRewards() {
 }
 
 export async function getAllRewardsForParent() {
+  const parentId = getCurrentParentId();
+  const query = parentId ? `?parent_id=${encodeURIComponent(parentId)}` : "";
+
   const result = await getCachedResource(
-    "rewards:all",
+    `rewards:all:${parentId || "all"}`,
     () =>
-      apiRequest("/api/rewards", {
+      apiRequest(`/api/rewards${query}`, {
         method: "GET",
       }),
     { ttlMs: 15000 }
@@ -302,9 +324,16 @@ export async function getAllRewardsForParent() {
 }
 
 export async function createParentReward(payload) {
+  const parentId = payload.parent_id || getCurrentParentId();
+
+  if (!parentId) {
+    return { data: null, error: "Parent reward settings are not ready yet." };
+  }
+
   const result = await apiRequest("/api/rewards", {
     method: "POST",
     body: JSON.stringify({
+      parent_id: parentId,
       title: payload.title,
       emoji: payload.emoji || "🎁",
       cost: Number(payload.cost),
@@ -322,10 +351,16 @@ export async function createParentReward(payload) {
 
 export async function updateParentReward(rewardId, payload) {
   const normalizedRewardId = String(rewardId);
+  const parentId = payload.parent_id || getCurrentParentId();
+
+  if (!parentId) {
+    return { data: null, error: "Parent reward settings are not ready yet." };
+  }
 
   const result = await apiRequest(`/api/rewards/${normalizedRewardId}`, {
     method: "PATCH",
     body: JSON.stringify({
+      parent_id: parentId,
       title: payload.title,
       emoji: payload.emoji || "🎁",
       cost: Number(payload.cost),
@@ -343,10 +378,18 @@ export async function updateParentReward(rewardId, payload) {
 
 export async function deleteParentReward(rewardId) {
   const normalizedRewardId = String(rewardId);
+  const parentId = getCurrentParentId();
 
-  const result = await apiRequest(`/api/rewards/${normalizedRewardId}`, {
-    method: "DELETE",
-  });
+  if (!parentId) {
+    return { data: null, error: "Parent reward settings are not ready yet." };
+  }
+
+  const result = await apiRequest(
+    `/api/rewards/${normalizedRewardId}?parent_id=${encodeURIComponent(parentId)}`,
+    {
+      method: "DELETE",
+    }
+  );
 
   if (!result.error) {
     invalidateCachePrefix("rewards:");

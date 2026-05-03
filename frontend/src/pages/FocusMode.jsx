@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
+  createRewardTransaction,
+  getPointsBalance,
   getTasks,
   getTaskSteps,
   getChildProfile,
   completeStep,
   completeTask,
+  updatePointsBalance,
 } from "../services";
 
 const soundMap = {
@@ -17,7 +21,11 @@ const soundMap = {
   forest: "/forest.mp3",
 };
 
+const MIN_FOCUS_MINUTES = 5;
+const MAX_FOCUS_MINUTES = 45;
+
 function FocusMode() {
+  const navigate = useNavigate();
   const [availableTasks, setAvailableTasks] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [currentTask, setCurrentTask] = useState(null);
@@ -149,7 +157,12 @@ function FocusMode() {
   const handleMarkStepComplete = async () => {
     if (!selectedTaskId || !currentStep) return;
 
-    await completeStep(selectedTaskId, currentStep.step_id);
+    const result = await completeStep(selectedTaskId, currentStep.step_id);
+
+    if (result.error) {
+      setFocusMessage("This step could not be marked done yet. Please try again.");
+      return;
+    }
 
     setTaskSteps((prevSteps) =>
       prevSteps.map((step) =>
@@ -179,15 +192,67 @@ function FocusMode() {
   };
 
   const handleCompleteTask = async () => {
-    if (!selectedTaskId) return;
+    if (!selectedTaskId || !currentTask?.child_id || !currentTask?.task_id) {
+      setFocusMessage("This mission is missing task details. Please try again.");
+      return;
+    }
 
-    await completeTask(selectedTaskId);
+    const completeResult = await completeTask(selectedTaskId);
+
+    if (completeResult.error) {
+      setFocusMessage("The mission could not be completed yet. Please try again.");
+      return;
+    }
+
+    const pointsResult = await getPointsBalance(currentTask.child_id);
+
+    if (pointsResult.error) {
+      setFocusMessage("The mission is done, but the points balance could not be loaded.");
+      return;
+    }
+
+    const currentPoints = Number(pointsResult.data?.points_balance || 0);
+    const completedStepCount = Math.max(taskSteps.length, 1);
+    const earnedPoints = completedStepCount * 10;
+    const updatedPoints = currentPoints + earnedPoints;
+
+    const transactionResult = await createRewardTransaction({
+      child_id: currentTask.child_id,
+      task_id: currentTask.task_id,
+      points_earned: earnedPoints,
+      steps_completed: completedStepCount,
+      transaction_type: "earn",
+    });
+
+    if (transactionResult.error) {
+      setFocusMessage("The mission was completed, but reward points could not be recorded.");
+      return;
+    }
+
+    const updatePointsResult = await updatePointsBalance(
+      currentTask.child_id,
+      updatedPoints
+    );
+
+    if (updatePointsResult.error) {
+      setFocusMessage("The mission was completed, but the points balance could not be updated.");
+      return;
+    }
+
     setCurrentStep(null);
     setFocusMessage("Mission complete. You did it.");
     setIsFocusActive(false);
     setIsRunning(false);
     setCurrentStepDone(false);
     setShowSupportPanel(false);
+    navigate("/rewards", {
+      state: {
+        showCelebration: true,
+        pointsEarned: earnedPoints,
+        updatedPointsBalance: updatedPoints,
+        taskTitle: currentTask.title,
+      },
+    });
   };
 
   const handleStartFocus = () => {
@@ -231,12 +296,12 @@ function FocusMode() {
   };
 
   const handleGoSlower = () => {
-    setDurationMinutes((prev) => prev + 5);
+    setDurationMinutes((prev) => Math.min(MAX_FOCUS_MINUTES, prev + 5));
     setIsRunning(false);
   };
 
   const handleGoFaster = () => {
-    setDurationMinutes((prev) => Math.max(5, prev - 5));
+    setDurationMinutes((prev) => Math.max(MIN_FOCUS_MINUTES, prev - 5));
     setIsRunning(false);
   };
 
@@ -326,7 +391,9 @@ function FocusMode() {
             <Button variant="secondary" size="sm" onClick={handleGoFaster}>
               Faster
             </Button>
-            <span className="focus-pace-row__note">{durationMinutes} minute pace</span>
+            <span className="focus-pace-row__note">
+              {durationMinutes} minute pace, capped at {MAX_FOCUS_MINUTES} minutes
+            </span>
           </div>
 
           <div className="focus-setup-actions">
@@ -409,16 +476,6 @@ function FocusMode() {
             ) : (
               <Button variant="secondary" onClick={handleStartFocus}>
                 Start Focus
-              </Button>
-            )}
-
-            {!isLastStep && (
-              <Button
-                variant="secondary"
-                onClick={handleNextStep}
-                disabled={!currentStepDone}
-              >
-                Next Step
               </Button>
             )}
 

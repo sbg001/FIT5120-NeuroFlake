@@ -34,6 +34,32 @@ class PooledConnectionProxy:
         self._is_returned = True
         self._pool.putconn(self._connection)
 
+
+def ensure_rewards_parent_column():
+    conn = None
+    cur = None
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            ALTER TABLE rewards_catalog
+            ADD COLUMN IF NOT EXISTS parent_id UUID
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_rewards_catalog_parent_id
+            ON rewards_catalog (parent_id)
+            """
+        )
+        conn.commit()
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 # Initialize the ML model when the FastAPI server starts
 @app.on_event("startup")
 async def startup_event():
@@ -42,6 +68,7 @@ async def startup_event():
     load_model()
     if not DATABASE_URL:
         raise RuntimeError("Database URL is not configured.")
+    ensure_rewards_parent_column()
     if DB_POOL is None:
         DB_POOL = SimpleConnectionPool(
             minconn=1,
@@ -96,6 +123,20 @@ def get_db_connection():
     if DB_POOL is None:
         raise HTTPException(status_code=500, detail="Database URL is not configured.")
     return PooledConnectionProxy(DB_POOL.getconn(), DB_POOL)
+
+
+def get_parent_id_for_child(cur, child_id: str):
+    cur.execute(
+        """
+        SELECT parent_id
+        FROM users
+        WHERE user_id = %s
+        LIMIT 1
+        """,
+        (child_id,),
+    )
+    row = cur.fetchone()
+    return str(row.get("parent_id")) if row and row.get("parent_id") else None
 
 
 def user_row_to_dict(row):
@@ -1866,6 +1907,7 @@ def reward_row_to_dict(row):
     return {
         "id": str(row.get("reward_id") or row.get("id")),
         "reward_id": str(row.get("reward_id") or row.get("id")),
+        "parent_id": str(row.get("parent_id")) if row.get("parent_id") else None,
         "emoji": row.get("emoji") or "🎁",
         "title": row.get("title"),
         "cost": row.get("points_cost"),
@@ -1894,6 +1936,7 @@ class ClaimRewardRequest(BaseModel):
 
 
 class CreateRewardRequest(BaseModel):
+    parent_id: str
     title: str
     emoji: str = "🎁"
     cost: int
@@ -1902,6 +1945,7 @@ class CreateRewardRequest(BaseModel):
 
 
 class UpdateRewardRequest(BaseModel):
+    parent_id: str
     title: str
     emoji: str = "🎁"
     cost: int
@@ -2777,15 +2821,21 @@ async def claim_reward(request: ClaimRewardRequest):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        parent_id = get_parent_id_for_child(cur, request.child_id)
+
+        if not parent_id:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="The child's reward profile was not found.")
 
         cur.execute(
             """
             SELECT *
             FROM rewards_catalog
-            WHERE reward_id = %s
+            WHERE reward_id = %s AND (parent_id = %s OR parent_id IS NULL)
             LIMIT 1
             """,
-            (request.reward_id,),
+            (request.reward_id, parent_id),
         )
         reward = cur.fetchone()
 
@@ -2902,12 +2952,63 @@ async def claim_reward(request: ClaimRewardRequest):
 
 
 @app.get("/api/rewards")
-async def get_rewards(approved: Optional[bool] = None):
+async def get_rewards(
+    approved: Optional[bool] = None,
+    parent_id: Optional[str] = None,
+    child_id: Optional[str] = None,
+):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        resolved_parent_id = parent_id
 
-        if approved is None:
+        if child_id and not resolved_parent_id:
+            resolved_parent_id = get_parent_id_for_child(cur, child_id)
+
+        if resolved_parent_id and approved is None:
+            cur.execute(
+                """
+                SELECT *
+                FROM rewards_catalog
+                WHERE parent_id = %s
+                ORDER BY points_cost ASC
+                """,
+                (resolved_parent_id,),
+            )
+            rewards = cur.fetchall()
+            if not rewards:
+                cur.execute(
+                    """
+                    SELECT *
+                    FROM rewards_catalog
+                    WHERE parent_id IS NULL
+                    ORDER BY points_cost ASC
+                    """
+                )
+                rewards = cur.fetchall()
+        elif resolved_parent_id:
+            cur.execute(
+                """
+                SELECT *
+                FROM rewards_catalog
+                WHERE approved = %s AND parent_id = %s
+                ORDER BY points_cost ASC
+                """,
+                (approved, resolved_parent_id),
+            )
+            rewards = cur.fetchall()
+            if not rewards:
+                cur.execute(
+                    """
+                    SELECT *
+                    FROM rewards_catalog
+                    WHERE approved = %s AND parent_id IS NULL
+                    ORDER BY points_cost ASC
+                    """,
+                    (approved,),
+                )
+                rewards = cur.fetchall()
+        elif approved is None:
             cur.execute(
                 """
                 SELECT *
@@ -2915,6 +3016,7 @@ async def get_rewards(approved: Optional[bool] = None):
                 ORDER BY points_cost ASC
                 """
             )
+            rewards = cur.fetchall()
         else:
             cur.execute(
                 """
@@ -2925,8 +3027,7 @@ async def get_rewards(approved: Optional[bool] = None):
                 """,
                 (approved,),
             )
-
-        rewards = cur.fetchall()
+            rewards = cur.fetchall()
 
         cur.close()
         conn.close()
@@ -2950,6 +3051,7 @@ async def create_reward(request: CreateRewardRequest):
             """
             INSERT INTO rewards_catalog (
                 reward_id,
+                parent_id,
                 title,
                 emoji,
                 points_cost,
@@ -2957,11 +3059,12 @@ async def create_reward(request: CreateRewardRequest):
                 theme,
                 created_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
             RETURNING *
             """,
             (
                 reward_id,
+                request.parent_id,
                 request.title,
                 request.emoji,
                 request.cost,
@@ -2993,21 +3096,24 @@ async def update_reward(reward_id: str, request: UpdateRewardRequest):
             """
             UPDATE rewards_catalog
             SET
+                parent_id = %s,
                 title = %s,
                 emoji = %s,
                 points_cost = %s,
                 approved = %s,
                 theme = %s
-            WHERE reward_id = %s
+            WHERE reward_id = %s AND (parent_id = %s OR parent_id IS NULL)
             RETURNING *
             """,
             (
+                request.parent_id,
                 request.title,
                 request.emoji,
                 request.cost,
                 request.approved,
                 request.theme,
                 reward_id,
+                request.parent_id,
             ),
         )
 
@@ -3030,7 +3136,7 @@ async def update_reward(reward_id: str, request: UpdateRewardRequest):
 
 
 @app.delete("/api/rewards/{reward_id}")
-async def delete_reward(reward_id: str):
+async def delete_reward(reward_id: str, parent_id: str):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -3038,9 +3144,9 @@ async def delete_reward(reward_id: str):
         cur.execute(
             """
             DELETE FROM rewards_catalog
-            WHERE reward_id = %s
+            WHERE reward_id = %s AND (parent_id = %s OR parent_id IS NULL)
             """,
-            (reward_id,),
+            (reward_id, parent_id),
         )
 
         conn.commit()

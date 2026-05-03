@@ -2400,12 +2400,14 @@ a:focus-visible {
   position: absolute;
   top: 18px;
   right: 18px;
+  z-index: 3;
   width: 42px;
   height: 42px;
   border: 0;
   border-radius: 999px;
   background: rgba(237, 244, 251, 0.96);
   color: var(--text-soft);
+  cursor: pointer;
 }
 
 .reward-celebration-modal__content {

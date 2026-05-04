@@ -19,22 +19,15 @@ import {
   deleteTask,
   generateTaskSteps,
   getAllRewardsForParent,
-  getChildProfile,
-  getCommunicationPrompts,
-  getEmotionLogs,
-  getParentProfile,
-  getPersonalisedSuggestions,
-  getPointsBalance,
-  getRoutineBlocksWithItems,
   getSensoryRiskPrediction,
-  getSupportResources,
   getTasks,
-  getTriggers,
   resetTaskStatus,
   updateParentReward,
   updateChildPassword,
   updateTask,
   updateTaskStepCount,
+  getParentDashboardCore,
+  getParentDashboardSupport,
 } from "../services";
 
 function ParentDashboard() {
@@ -252,35 +245,23 @@ const checkRoutineReminders = useCallback(() => {
       setIsLoadingCore(true);
       setDashboardError("");
 
-      const [parentResult, childResult] = await Promise.all([
-        getParentProfile(),
-        getChildProfile(),
-      ]);
+      const parentId = localStorage.getItem("current_user_id");
+      const activeChildId = localStorage.getItem("current_child_id") || "";
 
-      const childId = childResult.data?.user_id;
+      const coreResult = await getParentDashboardCore(parentId, activeChildId);
 
-      setParentProfile(parentResult.data);
-      setChildProfile(childResult.data);
+      if (coreResult.error || !coreResult.data) {
+        setDashboardError(coreResult.error || "Could not load dashboard.");
+        setIsLoadingCore(false);
+        return;
+      }
 
-      const [tasksResult, pointsResult, rewardsResult] = await Promise.all([
-        getTasks(childId),
-        childId
-          ? getPointsBalance(childId)
-          : Promise.resolve({ data: { points_balance: 0 }, error: null }),
-        getAllRewardsForParent(),
-      ]);
-
-      setTasks(tasksResult.data || []);
-      setPointsData(pointsResult.data || { points_balance: 0 });
-      setRewards(rewardsResult.data || []);
-      setDashboardError(
-        parentResult.error ||
-          childResult.error ||
-          tasksResult.error ||
-          pointsResult.error ||
-          rewardsResult.error ||
-          ""
-      );
+      setParentProfile(coreResult.data.parent);
+      setChildProfile(coreResult.data.child);
+      setTasks(coreResult.data.tasks || []);
+      setPointsData(coreResult.data.points || { points_balance: 0 });
+      setRewards(coreResult.data.rewards || []);
+      setDashboardError("");
       setIsLoadingCore(false);
     }
 
@@ -301,37 +282,16 @@ const checkRoutineReminders = useCallback(() => {
 
     setIsLoadingSupport(true);
 
-    const [
-      triggersResult,
-      suggestionsResult,
-      routinesResult,
-      promptsResult,
-      resourcesResult,
-      emotionLogsResult,
-    ] = await Promise.all([
-      getTriggers(childId),
-      getPersonalisedSuggestions(childId),
-      getRoutineBlocksWithItems(childId),
-      getCommunicationPrompts(childId),
-      getSupportResources(),
-      getEmotionLogs(childId),
-    ]);
+    const supportResult = await getParentDashboardSupport(childId);
+    const supportData = supportResult.data || {};
 
-    setTriggers(triggersResult.data || []);
-    setSuggestions(suggestionsResult.data || []);
-    setRoutineBlocks(routinesResult.data || []);
-    setCommunicationPrompts(promptsResult.data || []);
-    setSupportResources(resourcesResult.data || []);
-    setEmotionLogs(emotionLogsResult.data || []);
-    setDashboardError(
-      triggersResult.error ||
-        suggestionsResult.error ||
-        routinesResult.error ||
-        promptsResult.error ||
-        resourcesResult.error ||
-        emotionLogsResult.error ||
-        ""
-    );
+    setTriggers(supportData.triggers || []);
+    setSuggestions(supportData.suggestions || []);
+    setRoutineBlocks(supportData.routineBlocks || []);
+    setCommunicationPrompts(supportData.communicationPrompts || []);
+    setSupportResources(supportData.supportResources || []);
+    setEmotionLogs(supportData.emotionLogs || []);
+    setDashboardError(supportResult.error || "");
     setHasLoadedSupport(true);
     setIsLoadingSupport(false);
   }, []);

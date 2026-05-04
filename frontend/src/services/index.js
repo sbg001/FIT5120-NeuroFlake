@@ -9,3 +9,4 @@ export * from "./focusService";
 export * from "./analyticsServices";
 export * from "./triggerService";
 export * from "./supportService";
+export * from "./dashboardService";

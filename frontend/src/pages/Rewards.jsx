@@ -123,7 +123,6 @@ function Rewards() {
       setLoadError(
         childResult.error ||
           pointsResult.error ||
-          transactionsResult.error ||
           parentRewardsResult.error ||
           tasksResult.error ||
           ""
@@ -492,7 +491,7 @@ function Rewards() {
               </div>
 
               <div className="reward-celebration-modal__actions">
-                <Button onClick={handleGoToMyTasks}>Go to My Tasks</Button>
+                <Button onClick={handleGoToMyTasks}>Back to Child Dashboard</Button>
                 <Button variant="secondary" onClick={handleStartAnotherTask}>
                   Start Another Task
                 </Button>

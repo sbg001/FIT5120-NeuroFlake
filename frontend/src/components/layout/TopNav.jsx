@@ -63,6 +63,7 @@ function TopNav() {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === "/parent"}
               className={({ isActive }) => {
                 const isParentSectionLink =
                   currentRole === "parent" &&

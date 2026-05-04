@@ -144,6 +144,28 @@ function ParentDashboard() {
   const [routineItemMessage, setRoutineItemMessage] = useState("");
   const [reminderNotificationMessage, setReminderNotificationMessage] = useState("");
 
+  const scrollToTriggerForm = () => {
+    const triggerForm = document.getElementById("add-trigger-form");
+
+    if (triggerForm) {
+      triggerForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  const scrollToResourceForm = () => {
+    const resourceForm = document.getElementById("add-resource-form");
+
+    if (resourceForm) {
+      resourceForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   const activeSection = useMemo(() => {
     if (location.pathname === "/parent/rewards") return "rewards";
     if (location.pathname === "/parent/insights") return "insights";
@@ -1342,7 +1364,7 @@ const checkRoutineReminders = useCallback(() => {
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Child Sign-In</p>
-                  <h3>Keep access simple</h3>
+                  <h3>Update child login password</h3>
                 </div>
               </div>
 
@@ -1747,12 +1769,22 @@ const checkRoutineReminders = useCallback(() => {
                   ))}
                 </div>
               ) : (
-                <div className="parent-dashboard__empty-state">
+                <div
+                  className="parent-dashboard__empty-state"
+                  role="button"
+                  tabIndex={0}
+                  onClick={scrollToTriggerForm}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      scrollToTriggerForm();
+                    }
+                  }}
+                >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     {"\u{1F50E}"}
                   </div>
                   <h4>No triggers yet</h4>
-                  <p>Add a trigger to start seeing repeated patterns.</p>
+                  <p>Add a trigger to start seeing repeated patterns. Click here to add one.</p>
                 </div>
               )}
             </Card>
@@ -1814,6 +1846,7 @@ const checkRoutineReminders = useCallback(() => {
             </Card>
 
             <Card
+              id="add-trigger-form"
               className="parent-dashboard__form-card parent-dashboard__form-card--feature"
               variant="glow"
             >
@@ -1998,12 +2031,22 @@ const checkRoutineReminders = useCallback(() => {
                   ))}
                 </div>
               ) : (
-                <div className="parent-dashboard__empty-state">
+                <div
+                  className="parent-dashboard__empty-state"
+                  role="button"
+                  tabIndex={0}
+                  onClick={scrollToResourceForm}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      scrollToResourceForm();
+                    }
+                  }}
+                >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     {"\u{1F4DA}"}
                   </div>
                   <h4>No resources yet</h4>
-                  <p>Add support resources or expert tips for parents.</p>
+                  <p>Add support resources or expert tips for parents. Click here to add one.</p>
                 </div>
               )}
             </Card>
@@ -2167,15 +2210,15 @@ const checkRoutineReminders = useCallback(() => {
                 </Button>
               </div>
             </Card>
-
-            <Card className="parent-dashboard__form-card" variant="soft">
+            
+            <Card id="add-resource-form" className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Add Resource</p>
                   <h3>Save expert tips</h3>
                 </div>
               </div>
-
+            
               <div className="parent-dashboard__form-grid">
                 <input
                   type="text"

@@ -1791,7 +1791,159 @@ a:focus-visible {
   background: rgba(250, 252, 255, 0.84);
   text-align: center;
 }
+/* Prevent long text from breaking cards and modals */
 
+.parent-dashboard__task-item,
+
+.parent-dashboard__reward-item,
+
+.parent-dashboard__reward-suggestion,
+
+.parent-dashboard__form-card,
+
+.parent-dashboard__collection-card,
+
+.reward-item-card,
+
+.reward-badge-tile,
+
+.reward-activity-item,
+
+.focus-step-card,
+
+.focus-support-panel,
+
+.task-assistant-modal__panel,
+
+.task-assistant-modal__bubble,
+
+.task-assistant-modal__step-item,
+
+.reward-celebration-modal__panel,
+
+.login-card {
+
+  min-width: 0;
+
+  max-width: 100%;
+
+  overflow-wrap: anywhere;
+
+  word-break: break-word;
+
+}
+
+.parent-dashboard__task-item *,
+
+.parent-dashboard__reward-item *,
+
+.parent-dashboard__reward-suggestion *,
+
+.reward-item-card *,
+
+.reward-badge-tile *,
+
+.reward-activity-item *,
+
+.focus-step-card *,
+
+.task-assistant-modal__panel *,
+
+.reward-celebration-modal__panel * {
+
+  min-width: 0;
+
+}
+
+.parent-dashboard__reward-grid,
+
+.reward-shelf-grid,
+
+.reward-badges-grid,
+
+.parent-dashboard__task-list {
+
+  min-width: 0;
+
+}
+
+.parent-dashboard__task-item h4,
+
+.parent-dashboard__reward-item h4,
+
+.parent-dashboard__reward-suggestion strong,
+
+.reward-item-card h4,
+
+.reward-badge-tile h4,
+
+.focus-step-card__title,
+
+.task-assistant-modal__message,
+
+.task-assistant-modal__step-item,
+
+.reward-celebration-modal__task {
+
+  overflow-wrap: anywhere;
+
+  word-break: break-word;
+
+}
+
+.task-assistant-modal__panel,
+
+.reward-celebration-modal__panel,
+
+.parent-setup-modal__panel {
+
+  max-width: calc(100vw - 40px);
+
+}
+
+.task-assistant-modal__step-input,
+
+.login-form input,
+
+.login-form textarea,
+
+.parent-dashboard__form-grid input,
+
+.parent-dashboard__form-grid textarea,
+
+.parent-dashboard__form-grid select {
+
+  min-width: 0;
+
+}
+
+.parent-dashboard__empty-state[role="button"] {
+
+  cursor: pointer;
+
+  transition:
+
+    transform var(--transition),
+
+    border-color var(--transition),
+
+    background var(--transition),
+
+    box-shadow var(--transition);
+
+}
+
+.parent-dashboard__empty-state[role="button"]:hover {
+
+  transform: translateY(-1px);
+
+  border-color: rgba(77, 142, 247, 0.34);
+
+  background: rgba(244, 248, 255, 0.94);
+
+  box-shadow: var(--shadow-soft);
+
+}
 .parent-dashboard__empty-state--compact {
   justify-items: start;
   text-align: left;
@@ -2401,7 +2553,17 @@ a:focus-visible {
   font-size: 0.9rem;
   font-weight: 700;
 }
-
+.reward-encouragement-pill {
+  cursor: default;
+  pointer-events: none;
+  background: rgba(255, 249, 235, 0.72);
+  border-style: dashed;
+  color: var(--text-soft);
+}
+.reward-celebration-modal__messages span {
+  cursor: default;
+  pointer-events: none;
+}
 .reward-encouragement-list,
 .reward-celebration-modal__messages,
 .reward-celebration-modal__actions {

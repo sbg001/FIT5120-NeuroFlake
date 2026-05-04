@@ -15,6 +15,7 @@ import {
   getPointsBalance,
   getTaskById,
   getTaskSteps,
+  saveEmotionSelection,
   updatePointsBalance,
   updateTaskStepCount,
 } from "../services";
@@ -87,7 +88,7 @@ function TaskFlow() {
       setSupportMessage("");
       setStepCelebration(null);
       setSaveStepsMessage("");
-      setEmotion(null);
+      setEmotion(localStorage.getItem(`emotion_checkin_${taskId}_${new Date().toISOString().slice(0, 10)}`));
       setLoadError(
         taskResult.error || stepsResult.error || preferenceResult.error || ""
       );
@@ -111,6 +112,34 @@ function TaskFlow() {
     window.dispatchEvent(new CustomEvent("companionEmotion", { detail: state }));
   };
 
+  const getTodayEmotionCheckInKey = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    return `emotion_checkin_${taskId}_${today}`;
+  };
+
+  const handleEmotionCheckIn = async (emotionType) => {
+    setEmotion(emotionType);
+    localStorage.setItem(getTodayEmotionCheckInKey(), emotionType);
+
+    if (emotionType === "happy") {
+      triggerCompanionEmotion("success");
+    }
+
+    if (emotionType === "overwhelmed") {
+      triggerCompanionEmotion("struggle");
+    }
+
+    if (!task?.child_id) {
+      return;
+    }
+
+    await saveEmotionSelection({
+      child_id: task.child_id,
+      emotion_type: emotionType,
+      linked_task_id: task.task_id,
+      notes: null,
+    });
+  };
   const goToNextStep = () => {
     if (isLastStep) return;
 
@@ -123,70 +152,52 @@ function TaskFlow() {
   };
 
   const handleFinishTask = async () => {
-    if (!task?.child_id || !task?.task_id) {
-      setSupportMessage("This task is missing child or task information.");
+    if (!task || String(task.status) === "completed") {
+      navigate("/rewards", { state: { showCelebration: false } });
       return;
     }
 
-    const completeResult = await completeTask(taskId);
+    const alreadyRewardedKey = `rewarded_task_${task.task_id}`;
 
-    if (completeResult.error) {
-      setSupportMessage("The task could not be completed yet. Please try again.");
+    if (localStorage.getItem(alreadyRewardedKey)) {
+      navigate("/rewards", { state: { showCelebration: false } });
       return;
     }
+
+    await completeTask(taskId);
 
     const pointsResult = await getPointsBalance(task.child_id);
-    if (pointsResult.error) {
-      setSupportMessage("The task is done, but the points balance could not be loaded.");
-      return;
-    }
-    const currentPoints = Number(pointsResult.data?.points_balance || 0);
-
-    const completedStepCount = Math.max(steps.length, 1);
-    const earnedPoints = completedStepCount * 10;
+    const currentPoints = pointsResult.data?.points_balance ?? 0;
+    const earnedPoints = 10;
     const updatedPoints = currentPoints + earnedPoints;
 
-    const transactionResult = await createRewardTransaction({
+    await createRewardTransaction({
       child_id: task.child_id,
       task_id: task.task_id,
       points_earned: earnedPoints,
-      steps_completed: completedStepCount,
+      steps_completed: steps.length,
       transaction_type: "earn",
     });
 
-    if (transactionResult.error) {
-      setSupportMessage("The task was completed, but reward points could not be recorded.");
-      return;
-    }
+    await updatePointsBalance(task.child_id, updatedPoints);
 
-    const updatePointsResult = await updatePointsBalance(task.child_id, updatedPoints);
-
-    if (updatePointsResult.error) {
-      setSupportMessage("The task was completed, but the points balance could not be updated.");
-      return;
-    }
+    localStorage.setItem(alreadyRewardedKey, "true");
 
     setTask((prevTask) =>
-      prevTask
-        ? {
-            ...prevTask,
-            status: "completed",
-            completed_steps: completedStepCount,
-          }
-        : prevTask
+      prevTask ? { ...prevTask, status: "completed" } : prevTask
     );
 
-    navigate("/rewards", {
-      state: {
-        showCelebration: true,
-        pointsEarned: earnedPoints,
-        updatedPointsBalance: updatedPoints,
-        taskTitle: task.title,
-      },
-    });
+    navigate("/rewards", { state: { showCelebration: true } });
   };
 
   const handleDone = async () => {
+    if (String(task?.status) === "completed") {
+
+      navigate("/rewards", { state: { showCelebration: false } });
+
+      return;
+
+    }
     if (!currentStep) return;
 
     if (currentStepDone) {
@@ -233,12 +244,44 @@ function TaskFlow() {
 
   const handleStepsSaved = async (generatedSteps) => {
     try {
-      for (const step of generatedSteps) {
+      const existingStepsResult = await getTaskSteps(taskId);
+      const existingSteps = existingStepsResult.data || [];
+
+      if (existingSteps.length >= 2 && existingSteps.length <= 5) {
+        const { data: taskData, error: taskError } = await getTaskById(taskId);
+        const firstIncompleteIndex = existingSteps.findIndex((step) => !step.is_completed);
+        const nextIndex = firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
+
+        setTask(taskData);
+        setSteps(existingSteps);
+        setTaskReady(true);
+        setCurrentStepIndex(nextIndex);
+        setCurrentStepDone(Boolean(existingSteps[nextIndex]?.is_completed));
+        setIsNovaOpen(false);
+        setSaveStepsMessage("");
+        setLoadError(taskError || existingStepsResult.error || "");
+        return;
+      }
+
+      if (existingSteps.length > 5) {
+        setIsNovaOpen(false);
+        setTaskReady(false);
+        setSaveStepsMessage(
+          "This mission has too many saved steps. Please ask a parent to reset this task before starting again."
+        );
+        return;
+      }
+
+      for (const [index, step] of generatedSteps.entries()) {
         await createTaskStep({
           task_id: taskId,
-          step_title: step.step_title || step.description || `Step ${step.step_number}`,
-          step_description: step.step_description || step.description || step.step_title || "",
-          step_order: step.step_number,
+          step_title: step.step_title || step.description || `Step ${index + 1}`,
+          step_description:
+            step.step_description ||
+            step.description ||
+            step.step_title ||
+            "",
+          step_order: step.step_number || index + 1,
           visual_hint: step.visual_hint || "",
           example_text: step.example_text || "",
         });
@@ -251,9 +294,9 @@ function TaskFlow() {
         getTaskById(taskId),
         getTaskSteps(taskId),
       ]);
+
       const taskData = taskResult.data;
-      const stepsData = stepsResult.data;
-      const orderedSteps = stepsData || [];
+      const orderedSteps = stepsResult.data || [];
       const firstIncompleteIndex = orderedSteps.findIndex((step) => !step.is_completed);
       const nextIndex = firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0;
 
@@ -343,22 +386,19 @@ function TaskFlow() {
           <div className="focus-emotion-card__actions">
             <Button
               variant="secondary"
-              onClick={() => {
-                setEmotion("happy");
-                triggerCompanionEmotion("success");
-              }}
+              onClick={() => handleEmotionCheckIn("happy")}
             >
               Good / Happy
             </Button>
-            <Button variant="secondary" onClick={() => setEmotion("tired")}>
+            <Button
+              variant="secondary"
+              onClick={() => handleEmotionCheckIn("tired")}
+            >
               Tired
             </Button>
             <Button
               variant="secondary"
-              onClick={() => {
-                setEmotion("overwhelmed");
-                triggerCompanionEmotion("struggle");
-              }}
+              onClick={() => handleEmotionCheckIn("overwhelmed")}
             >
               Overwhelmed
             </Button>
@@ -428,11 +468,13 @@ function TaskFlow() {
               I need a break
             </Button>
             <Button onClick={handleDone}>
-              {currentStepDone
-                ? isLastStep
-                  ? "Finish Mission"
-                  : "Next Step"
-                : "Done"}
+              {String(task.status) === "completed"
+                ? "View Rewards"
+                : currentStepDone
+                  ? isLastStep
+                    ? "Finish Mission"
+                    : "Next Step"
+                  : "Done"}
             </Button>
           </div>
 

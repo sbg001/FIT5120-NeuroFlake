@@ -68,14 +68,25 @@ function FocusMode() {
       const tasksResult = await getTasks(childData.user_id);
       const allTasks = tasksResult.data || [];
 
-      const childTasks = allTasks
+      const activeTasks = allTasks
         .filter((task) => task.status !== "completed")
         .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0));
 
-      setAvailableTasks(childTasks);
+      const tasksWithValidSteps = [];
+
+      for (const task of activeTasks) {
+        const stepsResult = await getTaskSteps(task.task_id);
+        const steps = stepsResult.data || [];
+
+        if (steps.length >= 2 && steps.length <= 5) {
+          tasksWithValidSteps.push(task);
+        }
+      }
+
+      setAvailableTasks(tasksWithValidSteps);
       setLoadError(childResult.error || tasksResult.error || "");
       setLoading(false);
-    }
+          }
 
     loadFocusData();
   }, []);
@@ -197,6 +208,18 @@ function FocusMode() {
       return;
     }
 
+    if (String(currentTask.status) === "completed") {
+      navigate("/rewards", { state: { showCelebration: false } });
+      return;
+    }
+
+    const alreadyRewardedKey = `rewarded_task_${currentTask.task_id}`;
+
+    if (localStorage.getItem(alreadyRewardedKey)) {
+      navigate("/rewards", { state: { showCelebration: false } });
+      return;
+    }
+
     const completeResult = await completeTask(selectedTaskId);
 
     if (completeResult.error) {
@@ -238,6 +261,12 @@ function FocusMode() {
       setFocusMessage("The mission was completed, but the points balance could not be updated.");
       return;
     }
+
+    localStorage.setItem(alreadyRewardedKey, "true");
+    setAvailableTasks((prevTasks) =>
+      prevTasks.filter((task) => String(task.task_id) !== String(currentTask.task_id))
+    );
+    setCurrentStep(null);
 
     setCurrentStep(null);
     setFocusMessage("Mission complete. You did it.");

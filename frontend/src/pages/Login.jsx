@@ -45,7 +45,9 @@ function Login() {
     setIsLoading(false);
 
     if (result.error) {
-      setErrorMessage(result.error);
+      setErrorMessage(
+        `${result.error} If you are a child, please ask your parent or caregiver to create your child account first. Parents can use Parent Sign Up to create a new parent account.`
+      );
       return;
     }
 
@@ -145,7 +147,7 @@ function Login() {
         <div className="login-form">
           {authMode === "sign-in" && (
             <>
-              <label htmlFor="login-identifier">Email or child username</label>
+              <label htmlFor="login-identifier">Email or username</label>
               <input
                 id="login-identifier"
                 type="text"

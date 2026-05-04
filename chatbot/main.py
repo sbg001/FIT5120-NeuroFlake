@@ -1825,7 +1825,7 @@ async def get_emotion_logs(child_id: Optional[str] = None):
 
 
 @app.post("/api/emotions")
-async def create_emotion_log(request: CreateEmotionLogRequest):
+async def save_emotion_selection(request: CreateEmotionLogRequest):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -1838,11 +1838,11 @@ async def create_emotion_log(request: CreateEmotionLogRequest):
                 emotion_id,
                 child_id,
                 emotion_type,
+                logged_at,
                 linked_task_id,
-                notes,
-                logged_at
+                notes
             )
-            VALUES (%s, %s, %s, %s, %s, NOW())
+            VALUES (%s, %s, %s, NOW(), %s, %s)
             RETURNING *
             """,
             (
@@ -1854,18 +1854,17 @@ async def create_emotion_log(request: CreateEmotionLogRequest):
             ),
         )
 
-        log = cur.fetchone()
+        emotion_log = cur.fetchone()
         conn.commit()
 
         cur.close()
         conn.close()
 
-        return emotion_row_to_dict(log)
+        return emotion_row_to_dict(emotion_log)
 
     except Exception as e:
-        print(f"Create emotion log error: {str(e)}")
+        print(f"Save emotion error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not save emotion check-in.")
-
 # ==========================================
 # REWARD AND POINTS HELPERS AND MODELS
 # ==========================================
@@ -3079,16 +3078,17 @@ async def get_reward_transactions(child_id: str):
         cur.execute(
             """
             SELECT
-                rt.*,
-                COALESCE(
-                    t.title,
-                    CASE
-                        WHEN rt.transaction_type IN ('claim', 'redeem') THEN 'Reward claimed'
-                        ELSE 'Task reward'
-                    END
-                ) AS task_title
+                rt.transaction_id,
+                rt.child_id,
+                rt.task_id,
+                rt.points_earned,
+                rt.steps_completed,
+                rt.transaction_type,
+                rt.created_at,
+                t.title AS task_title
             FROM reward_transactions rt
-            LEFT JOIN tasks t ON t.task_id = rt.task_id
+            LEFT JOIN tasks t
+                ON rt.task_id = t.task_id
             WHERE rt.child_id = %s
             ORDER BY rt.created_at DESC
             """,
@@ -3100,12 +3100,78 @@ async def get_reward_transactions(child_id: str):
         cur.close()
         conn.close()
 
-        return [reward_transaction_row_to_dict(transaction) for transaction in transactions]
+        return [dict(transaction) for transaction in transactions]
 
     except Exception as e:
         print(f"Get reward transactions error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Could not load reward transactions.")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not load reward transactions."
+        )
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+        if request.transaction_type == "earn" and request.task_id:
+            cur.execute(
+                """
+                SELECT
+                    rt.*,
+                    COALESCE(t.title, 'Task reward') AS task_title
+                FROM reward_transactions rt
+                LEFT JOIN tasks t ON t.task_id = rt.task_id
+                WHERE rt.child_id = %s
+                  AND rt.task_id = %s
+                  AND rt.transaction_type = 'earn'
+                LIMIT 1
+                """,
+                (request.child_id, request.task_id),
+            )
+
+            existing_transaction = cur.fetchone()
+
+            if existing_transaction:
+                cur.close()
+                conn.close()
+                return reward_transaction_row_to_dict(existing_transaction)
+
+        transaction_id = str(uuid.uuid4())
+
+        cur.execute(
+            """
+            INSERT INTO reward_transactions (
+                transaction_id,
+                child_id,
+                task_id,
+                points_earned,
+                steps_completed,
+                transaction_type,
+                created_at
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            RETURNING *
+            """,
+            (
+                transaction_id,
+                request.child_id,
+                request.task_id,
+                request.points_earned,
+                request.steps_completed,
+                request.transaction_type,
+            ),
+        )
+
+        transaction = cur.fetchone()
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return reward_transaction_row_to_dict(transaction)
+
+    except Exception as e:
+        print(f"Create reward transaction error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not create reward transaction.")
 
 @app.post("/api/reward-transactions")
 async def create_reward_transaction(request: CreateRewardTransactionRequest):

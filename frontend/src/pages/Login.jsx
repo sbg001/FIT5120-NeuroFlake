@@ -189,7 +189,7 @@ function Login() {
               </Button>
 
               <p className="login-note">
-                Children cannot create accounts here. A parent or caregiver creates child accounts from the Parent Dashboard.
+                Child accounts are created by parents from the Parent Dashboard.
               </p>
             </>
           )}

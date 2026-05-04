@@ -876,6 +876,22 @@ p {
   gap: 20px;
 }
 
+.home-values .info-card {
+  min-height: 120px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+}
+
+.home-values .info-card h3 {
+  margin-bottom: 4px;
+}
+
+.home-values .info-card p {
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
 .login-page {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1fr);
@@ -2054,6 +2070,32 @@ a:focus-visible {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.82);
   color: var(--text-soft);
+  font-weight: 700;
+}
+
+.parent-dashboard__insight-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.parent-dashboard__insight-metrics div {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(126, 158, 202, 0.16);
+}
+
+.parent-dashboard__insight-metrics strong {
+  font-size: 1.3rem;
+  color: var(--primary-strong);
+}
+
+.parent-dashboard__insight-metrics span {
+  color: var(--text-soft);
+  font-size: 0.9rem;
   font-weight: 700;
 }
 

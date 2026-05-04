@@ -155,6 +155,28 @@ function ParentDashboard() {
     }
   };
 
+  const scrollToRoutineForm = () => {
+    const routineForm = document.getElementById("add-routine-form");
+
+    if (routineForm) {
+      routineForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  const scrollToPromptForm = () => {
+    const promptForm = document.getElementById("add-prompt-form");
+
+    if (promptForm) {
+      promptForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   const scrollToResourceForm = () => {
     const resourceForm = document.getElementById("add-resource-form");
 
@@ -1556,7 +1578,7 @@ const checkRoutineReminders = useCallback(() => {
                             size="sm"
                             onClick={() => handleUseRewardSuggestion(rewardOption)}
                           >
-                            Use
+                            Edit
                           </Button>
                           <Button
                             size="sm"
@@ -1653,10 +1675,20 @@ const checkRoutineReminders = useCallback(() => {
                 )}
               </div>
 
-              <p className="page-text">
-                AI-powered support guidance based on sleep, task completion, and
-                emotion-related telemetry.
-              </p>
+              <div className="parent-dashboard__insight-metrics">
+                <div>
+                  <strong>{riskForecast?.risk_level || "No data"}</strong>
+                  <span>Risk level</span>
+                </div>
+                <div>
+                  <strong>{completedTasks.length}</strong>
+                  <span>Completed tasks</span>
+                </div>
+                <div>
+                  <strong>{emotionLogs.length}</strong>
+                  <span>Emotion logs</span>
+                </div>
+              </div>
 
               {isLoadingSupport ? (
                 <p className="page-text">Loading support insights...</p>
@@ -1835,11 +1867,11 @@ const checkRoutineReminders = useCallback(() => {
                   <h3>Support, not alarm</h3>
                 </div>
               </div>
-              <div className="parent-dashboard__insight-notes">
-                <p>Look for repeated friction, not one hard moment.</p>
-                <p>Use forecasts to simplify the next task before stress grows.</p>
-                <p>Pair emotional patterns with routine changes and reward timing.</p>
-              </div>
+            <div className="parent-dashboard__insight-notes">
+              <p>1. Check repeated triggers.</p>
+              <p>2. Simplify the next task.</p>
+              <p>3. Adjust routines or rewards.</p>
+            </div>
               <Button variant="secondary" onClick={loadInsights} disabled={isLoadingInsights}>
                 {isLoadingInsights ? "Refreshing..." : "Refresh Insights"}
               </Button>
@@ -1854,13 +1886,16 @@ const checkRoutineReminders = useCallback(() => {
                 <div>
                   <p className="eyebrow">Add Trigger</p>
                   <h3>Log a support signal</h3>
+                  <p className="page-text">
+                    A trigger is something that may make the child feel stressed, stuck, or overwhelmed.
+                  </p>
                 </div>
               </div>
 
               <div className="parent-dashboard__form-grid">
                 <input
                   type="text"
-                  placeholder="Trigger title, e.g. Loud noise"
+                  placeholder="Trigger name, e.g. Loud noise or sudden change"
                   value={triggerTitle}
                   onChange={(event) => setTriggerTitle(event.target.value)}
                 />
@@ -1869,7 +1904,7 @@ const checkRoutineReminders = useCallback(() => {
                   value={triggerType}
                   onChange={(event) => setTriggerType(event.target.value)}
                 >
-                  <option value="">Select trigger type</option>
+                  <option value="">What type of trigger is this?</option>
                   <option value="noise">Noise</option>
                   <option value="transition">Transition</option>
                   <option value="routine change">Routine change</option>
@@ -1956,12 +1991,22 @@ const checkRoutineReminders = useCallback(() => {
                   ))}
                 </div>
               ) : (
-                <div className="parent-dashboard__empty-state">
+                <div
+                  className="parent-dashboard__empty-state"
+                  role="button"
+                  tabIndex={0}
+                  onClick={scrollToRoutineForm}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      scrollToRoutineForm();
+                    }
+                  }}
+                >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     {"\u{1F4C5}"}
                   </div>
                   <h4>No routines yet</h4>
-                  <p>Create a routine and reminder to support a consistent schedule.</p>
+                  <p>Create a routine and reminder to support a consistent schedule. Click here to create one.</p>
                 </div>
               )}
             </Card>
@@ -1990,12 +2035,22 @@ const checkRoutineReminders = useCallback(() => {
                   ))}
                 </div>
               ) : (
-                <div className="parent-dashboard__empty-state">
+                <div
+                  className="parent-dashboard__empty-state"
+                  role="button"
+                  tabIndex={0}
+                  onClick={scrollToPromptForm}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      scrollToPromptForm();
+                    }
+                  }}
+                >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     {"\u{1F4AC}"}
                   </div>
                   <h4>No prompts yet</h4>
-                  <p>Add prompts to help parents stay updated with the child's activities.</p>
+                  <p>Add prompts to help parents stay updated with the child's activities. Click here to add one.</p>
                 </div>
               )}
             </Card>
@@ -2074,6 +2129,7 @@ const checkRoutineReminders = useCallback(() => {
               </Button>
             </Card>
             <Card
+              id="add-routine-form"
               className="parent-dashboard__form-card parent-dashboard__form-card--feature"
               variant="glow"
             >
@@ -2171,7 +2227,7 @@ const checkRoutineReminders = useCallback(() => {
                 </Button>
               </div>
             </Card>
-            <Card className="parent-dashboard__form-card" variant="default">
+            <Card id="add-prompt-form" className="parent-dashboard__form-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Add Prompt</p>

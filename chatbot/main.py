@@ -1688,7 +1688,7 @@ async def get_routines_with_items(child_id: Optional[str] = None):
                 """
                 SELECT *
                 FROM routine_items
-                WHERE routine_id = ANY(%s)
+                WHERE routine_id = ANY(%s::uuid[])
                 ORDER BY routine_id ASC, item_order ASC
                 """,
                 (routine_ids,),
@@ -2293,7 +2293,7 @@ async def get_parent_dashboard_support(child_id: str):
                 """
                 SELECT *
                 FROM routine_items
-                WHERE routine_id = ANY(%s)
+                WHERE routine_id = ANY(%s::uuid[])
                 ORDER BY routine_id ASC, item_order ASC
                 """,
                 (routine_ids,),
@@ -2621,6 +2621,7 @@ async def create_routine_item(request: CreateRoutineItemRequest):
             INSERT INTO routine_items (
                 item_id,
                 routine_id,
+                item_text,
                 item_order,
                 title,
                 description,
@@ -2629,12 +2630,13 @@ async def create_routine_item(request: CreateRoutineItemRequest):
                 completed_at,
                 created_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, false, NULL, NOW())
+            VALUES (%s, %s::uuid, %s, %s, %s, %s, NULLIF(%s, '')::time, false, NULL, NOW())
             RETURNING *
             """,
             (
                 item_id,
                 request.routine_id,
+                request.title,
                 request.item_order,
                 request.title,
                 request.description,
@@ -2653,7 +2655,52 @@ async def create_routine_item(request: CreateRoutineItemRequest):
     except Exception as e:
         print(f"Create routine item error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not create routine item.")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+        item_id = str(uuid.uuid4())
+        item_text = request.title or request.description or "Routine item"
+
+        cur.execute(
+            """
+            INSERT INTO routine_items (
+                item_id,
+                routine_id,
+                item_text,
+                item_order,
+                is_completed,
+                completed_at,
+                title,
+                description,
+                reminder_time,
+                created_at
+            )
+            VALUES (%s, %s::uuid, %s, %s, false, NULL, %s, %s, NULLIF(%s, '')::time, NOW())
+            RETURNING *
+            """,
+            (
+                item_id,
+                request.routine_id,
+                item_text,
+                request.item_order,
+                request.title,
+                request.description,
+                request.reminder_time,
+            ),
+        )
+
+        item = cur.fetchone()
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return routine_item_row_to_dict(item)
+
+    except Exception as e:
+        print(f"Create routine item error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not create routine item.")
 
 # ==========================================
 # COMMUNICATION PROMPTS ENDPOINTS

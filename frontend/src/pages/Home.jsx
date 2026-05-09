@@ -165,7 +165,10 @@ function Home() {
             </div>
 
             <div className={`home-demo-mascot home-demo-mascot--${activeDemo.id}`}>
+              <span className="home-demo-mascot__signal home-demo-mascot__signal--one" />
+              <span className="home-demo-mascot__signal home-demo-mascot__signal--two" />
               <img src={activeDemo.icon} alt={activeDemo.iconAlt} />
+              <span className="home-demo-mascot__shadow" />
             </div>
 
             <div className="home-demo-card">

@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
-import PageHeader from "../components/ui/PageHeader";
 import { registerParent, signInUser } from "../services";
 
 function Login() {
-  const [authMode, setAuthMode] = useState("sign-in");
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get("role") === "child" ? "child" : "parent";
+  const initialMode =
+    initialRole === "parent" && searchParams.get("mode") === "sign-up"
+      ? "sign-up"
+      : "sign-in";
+
+  const [selectedRole, setSelectedRole] = useState(initialRole);
+  const [authMode, setAuthMode] = useState(initialMode);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [parentName, setParentName] = useState("");
@@ -16,6 +23,8 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
+  const isParent = selectedRole === "parent";
+  const isCreatingParent = isParent && authMode === "sign-up";
 
   const completeLogin = (user) => {
     localStorage.setItem("current_user_id", user.user_id);
@@ -29,11 +38,21 @@ function Login() {
     }
   };
 
-  const handleSignIn = async () => {
+  const resetFormMessage = () => {
     setErrorMessage("");
+  };
+
+  const handleRoleChange = (role) => {
+    setSelectedRole(role);
+    setAuthMode("sign-in");
+    resetFormMessage();
+  };
+
+  const handleSignIn = async () => {
+    resetFormMessage();
 
     if (!identifier || !password) {
-      setErrorMessage("Please enter your account and password.");
+      setErrorMessage(isParent ? "Add your email and password." : "Add your name and password.");
       return;
     }
 
@@ -46,7 +65,9 @@ function Login() {
 
     if (result.error) {
       setErrorMessage(
-        `${result.error} If you are a child, please ask your parent or caregiver to create your child account first. Parents can use Parent Sign Up to create a new parent account.`
+        isParent
+          ? "Email or password is wrong."
+          : "That did not work. Ask your parent to check your login."
       );
       return;
     }
@@ -55,10 +76,10 @@ function Login() {
   };
 
   const handleParentSignUp = async () => {
-    setErrorMessage("");
+    resetFormMessage();
 
     if (!parentName || !parentEmail || !parentPassword) {
-      setErrorMessage("Please complete all parent sign up fields.");
+      setErrorMessage("Fill in the parent details.");
       return;
     }
 
@@ -78,85 +99,97 @@ function Login() {
     completeLogin(result.data);
   };
 
+  const submitOnEnter = (event, action) => {
+    if (event.key === "Enter") {
+      action();
+    }
+  };
+
   return (
-    <section className="login-page">
-      <div className="login-visual" aria-hidden="true">
+    <section className="login-page login-page--simple">
+      <div className="login-visual login-visual--simple" aria-hidden="true">
         <img src="/logo.png" alt="" />
         <div className="login-visual-card">
-          <p>One routine</p>
-          <strong>One step</strong>
-          <span>One calm start</span>
+          <p>Start small</p>
+          <strong>Next step</strong>
+          <span>Then the next one</span>
         </div>
       </div>
 
-      <Card className="login-card" variant="glow">
-        <div className="login-header">
-          <PageHeader
-            eyebrow="Login"
-            title={authMode === "sign-up" ? "Create parent account" : "Welcome back"}
-            description={
-              authMode === "sign-up"
-                ? "Parents create their own account first, then create child accounts safely."
-                : "Sign in with your account. NeuroFlake will take you to the right space."
-            }
-          />
+      <Card className="login-card login-card--simple" variant="glow">
+        <div className="login-simple-header">
+          <p className="home-landing-kicker">Sign in</p>
+          <h2>{isCreatingParent ? "Create parent account" : "Who are you?"}</h2>
         </div>
 
-        <div className="login-profile-grid">
+        <div className="login-role-grid" aria-label="Choose account type">
           <button
             type="button"
             className={
-              authMode === "sign-in"
-                ? "login-profile-button is-selected"
-                : "login-profile-button"
+              selectedRole === "parent"
+                ? "login-role-button is-selected"
+                : "login-role-button"
             }
-            onClick={() => {
-              setAuthMode("sign-in");
-              setErrorMessage("");
-            }}
+            onClick={() => handleRoleChange("parent")}
           >
-            <span>✓</span>
-            <strong>Sign In</strong>
-            <small>Parent email or child username</small>
+            <span>1</span>
+            <strong>Parent</strong>
           </button>
 
           <button
             type="button"
             className={
-              authMode === "sign-up"
-                ? "login-profile-button is-selected"
-                : "login-profile-button"
+              selectedRole === "child"
+                ? "login-role-button is-selected"
+                : "login-role-button"
             }
-            onClick={() => {
-              setAuthMode("sign-up");
-              setErrorMessage("");
-            }}
+            onClick={() => handleRoleChange("child")}
           >
-            <span>+</span>
-            <strong>Parent Sign Up</strong>
-            <small>Create a parent account</small>
+            <span>2</span>
+            <strong>Child</strong>
           </button>
         </div>
 
-        <div className="login-demo-pin-box">
-          <strong>Prototype access</strong>
-          <p>Parent: parent@neuroflake.test / parent123</p>
-          <p>Child: leo / child123</p>
-        </div>
+        {isParent && (
+          <div className="login-mode-row">
+            <button
+              type="button"
+              className={authMode === "sign-in" ? "login-mode-button is-selected" : "login-mode-button"}
+              onClick={() => {
+                setAuthMode("sign-in");
+                resetFormMessage();
+              }}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={authMode === "sign-up" ? "login-mode-button is-selected" : "login-mode-button"}
+              onClick={() => {
+                setAuthMode("sign-up");
+                resetFormMessage();
+              }}
+            >
+              Create account
+            </button>
+          </div>
+        )}
 
-        <div className="login-form">
-          {authMode === "sign-in" && (
+        <div className="login-form login-form--simple">
+          {!isCreatingParent && (
             <>
-              <label htmlFor="login-identifier">Email or username</label>
+              <label htmlFor="login-identifier">
+                {isParent ? "Email" : "Your name"}
+              </label>
               <input
                 id="login-identifier"
-                type="text"
+                type={isParent ? "email" : "text"}
                 value={identifier}
                 onChange={(e) => {
                   setIdentifier(e.target.value);
-                  setErrorMessage("");
+                  resetFormMessage();
                 }}
-                placeholder="Enter parent email or child username"
+                placeholder={isParent ? "Email address" : "Username"}
                 autoComplete="username"
               />
 
@@ -167,14 +200,10 @@ function Login() {
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setErrorMessage("");
+                  resetFormMessage();
                 }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleSignIn();
-                  }
-                }}
-                placeholder="Enter password"
+                onKeyDown={(event) => submitOnEnter(event, handleSignIn)}
+                placeholder="password"
                 autoComplete="current-password"
               />
 
@@ -184,28 +213,42 @@ function Login() {
                 </div>
               )}
 
-              <Button onClick={handleSignIn} disabled={isLoading}>
-                {isLoading ? "Checking..." : "Sign In"}
+              <Button onClick={handleSignIn} disabled={isLoading} size="lg">
+                {isLoading ? "Checking..." : "Start"}
               </Button>
 
-              <p className="login-note">
-                Child accounts are created by parents from the Parent Dashboard.
-              </p>
+              {isParent && (
+                <div className="login-create-callout">
+                  <div>
+                    <strong>New parent?</strong>
+                    <p>Create an account to set up tasks and child profiles.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("sign-up");
+                      resetFormMessage();
+                    }}
+                  >
+                    Create account
+                  </button>
+                </div>
+              )}
             </>
           )}
 
-          {authMode === "sign-up" && (
+          {isCreatingParent && (
             <>
-              <label htmlFor="parent-name">Parent name</label>
+              <label htmlFor="parent-name">Name</label>
               <input
                 id="parent-name"
                 type="text"
                 value={parentName}
                 onChange={(e) => {
                   setParentName(e.target.value);
-                  setErrorMessage("");
+                  resetFormMessage();
                 }}
-                placeholder="Enter your name"
+                placeholder="Your name"
               />
 
               <label htmlFor="parent-email">Email</label>
@@ -215,9 +258,9 @@ function Login() {
                 value={parentEmail}
                 onChange={(e) => {
                   setParentEmail(e.target.value);
-                  setErrorMessage("");
+                  resetFormMessage();
                 }}
-                placeholder="Enter email"
+                placeholder="Email address"
                 autoComplete="email"
               />
 
@@ -228,13 +271,9 @@ function Login() {
                 value={parentPassword}
                 onChange={(e) => {
                   setParentPassword(e.target.value);
-                  setErrorMessage("");
+                  resetFormMessage();
                 }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handleParentSignUp();
-                  }
-                }}
+                onKeyDown={(event) => submitOnEnter(event, handleParentSignUp)}
                 placeholder="Create password"
                 autoComplete="new-password"
               />
@@ -245,18 +284,14 @@ function Login() {
                 </div>
               )}
 
-              <Button onClick={handleParentSignUp} disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Parent Account"}
+              <Button onClick={handleParentSignUp} disabled={isLoading} size="lg">
+                {isLoading ? "Creating..." : "Create account"}
               </Button>
-
-              <p className="login-note">
-                After signing up, parents can create one or more child accounts.
-              </p>
             </>
           )}
 
           <Button as={Link} to="/" variant="secondary" className="login-home-button">
-            Back to Home
+            Back home
           </Button>
         </div>
       </Card>

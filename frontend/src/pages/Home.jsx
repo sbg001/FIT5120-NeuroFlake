@@ -1,224 +1,259 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
-import Badge from "../components/ui/Badge";
+import { useEffect, useState } from "react";
 import Button from "../components/ui/Button";
-import Card from "../components/ui/Card";
-import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 
 function Home() {
-  const journeySteps = [
+  const featureGroups = {
+    child: {
+      label: "Child",
+      visual: "child",
+      title: "A clear next step",
+      text: "Children see one task, one timer, and one small win at a time.",
+      items: ["Task steps", "Focus mode", "Rewards"],
+    },
+    parent: {
+      label: "Parent",
+      visual: "parent",
+      title: "Create tasks without constant reminders",
+      text: "Parents create tasks, rewards, and support plans from one place.",
+      items: ["Task creation", "Progress insights", "Support guidance"],
+    },
+    support: {
+      label: "Support",
+      visual: "support",
+      title: "Help when the day changes",
+      text: "Prompts stay short, calm, and flexible for stuck moments.",
+      items: ["Gentle prompts", "Break tasks down", "AI helper"],
+    },
+  };
+
+  const appFeatures = [
     {
-      id: "plan",
-      label: "Plan",
-      title: "Pack school bag",
-      action: "Find the bag and put it on the table.",
-      note: "One clear start.",
+      title: "Task creation",
+      text: "Parents can create clear task steps for school, home, and bedtime.",
+      visual: "task",
+    },
+    {
+      title: "Focus mode",
+      text: "A calm task screen with timer, prompts, and fewer distractions.",
+      visual: "focus",
+    },
+    {
+      title: "Rewards",
+      text: "Children can see effort turn into progress and small wins.",
+      visual: "reward",
+    },
+    {
+      title: "Parent",
+      text: "Create tasks, manage children, and adjust supports safely.",
+      visual: "parent",
+    },
+    {
+      title: "Insights",
+      text: "Track tasks, moods, progress, and what support works.",
+      visual: "insight",
+    },
+    {
+      title: "AI helper",
+      text: "Child-friendly guidance and parent support when needed.",
+      visual: "helper",
+    },
+  ];
+
+  const demoScenes = [
+    {
+      id: "start",
+      label: "Start",
+      title: "Pick one step",
+      caption: "Bag first. Everything else can wait.",
+      progress: 1,
+      icon: "/nova-robot.png",
+      iconAlt: "NeuroFlake helper ready to start",
     },
     {
       id: "focus",
       label: "Focus",
-      title: "Stay with one step",
-      action: "Put the lunchbox inside the bag.",
-      note: "A calm timer can wait nearby.",
+      title: "Stay with it",
+      caption: "A calm timer keeps the task small.",
+      progress: 2,
+      icon: "/logo.png",
+      iconAlt: "NeuroFlake helper focusing",
     },
     {
-      id: "celebrate",
-      label: "Celebrate",
-      title: "Mark it done",
-      action: "Close the bag and choose a reward.",
-      note: "Progress feels visible.",
+      id: "reward",
+      label: "Reward",
+      title: "See the win",
+      caption: "Progress turns into a clear reward.",
+      progress: 3,
+      icon: "/nova-robot.png",
+      iconAlt: "NeuroFlake helper celebrating",
     },
   ];
 
-  const supportModes = [
+  const howItWorks = [
     {
-      id: "calm",
-      label: "Calm",
-      message: "Keep the next step simple and steady.",
+      step: "1",
+      title: "Create the task",
+      text: "Parents add the steps.",
     },
     {
-      id: "stuck",
-      label: "Stuck",
-      message: "Make the step smaller and offer a gentle prompt.",
+      step: "2",
+      title: "Follow the next step",
+      text: "Children see what to do now.",
     },
     {
-      id: "overwhelmed",
-      label: "Overwhelmed",
-      message: "Pause, breathe, and return when the child is ready.",
+      step: "3",
+      title: "Celebrate progress",
+      text: "Rewards make effort visible.",
     },
   ];
 
-  const [activeJourneyId, setActiveJourneyId] = useState(journeySteps[0].id);
-  const [activeSupportId, setActiveSupportId] = useState(supportModes[0].id);
+  const featureKeys = Object.keys(featureGroups);
+  const [activeFeature, setActiveFeature] = useState("child");
+  const [activeDemoIndex, setActiveDemoIndex] = useState(0);
+  const currentFeature = featureGroups[activeFeature];
+  const activeDemo = demoScenes[activeDemoIndex];
 
-  const activeJourney =
-    journeySteps.find((step) => step.id === activeJourneyId) || journeySteps[0];
-  const activeSupport =
-    supportModes.find((mode) => mode.id === activeSupportId) || supportModes[0];
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveDemoIndex((currentIndex) => (currentIndex + 1) % demoScenes.length);
+    }, 3200);
+
+    return () => window.clearInterval(timer);
+  }, [demoScenes.length]);
 
   return (
-    <section className="home-page">
-      <div className="home-hero">
-        <div className="home-hero-copy">
-          <div className="home-badge-row">
-            <Badge tone="mint">Soft structure</Badge>
-            <Badge tone="sky">Calm focus</Badge>
-            <Badge tone="warm">Small wins</Badge>
-          </div>
-          <PageHeader
-            eyebrow="Welcome to NeuroFlake"
-            title="Daily tasks can feel like a cozy little adventure"
-            description="NeuroFlake helps children move through routines with clear next steps, gentle focus tools, and warm encouragement that parents can trust."
-          />
+    <section className="home-page home-page--landing">
+      <div className="home-landing-hero">
+        <div className="home-landing-copy">
+          <p className="home-landing-kicker">NeuroFlake</p>
+          <h2>Turn daily tasks into clear little wins.</h2>
+          <p>
+            A calmer way for children to start, focus, finish, and feel proud.
+          </p>
 
-          <div className="home-hero-actions">
-            <Button as={Link} to="/login" variant="primary">
-              Start
-            </Button>
-            <Button as="a" href="#how-it-helps" variant="secondary">
-              See How It Helps
-            </Button>
+          <div className="home-entry-panel" aria-label="Choose how to enter NeuroFlake">
+            <Link to="/login?role=parent&mode=sign-up" className="home-entry-start-card">
+              <span>New here?</span>
+              <strong>Get started</strong>
+              <p>Create a parent account and add the first task.</p>
+            </Link>
+
+            <div className="home-entry-returning">
+              <p>Already a user?</p>
+              <div className="home-entry-grid">
+                <Link to="/login?role=parent" className="home-entry-card home-entry-card--parent">
+                  <span>Parent</span>
+                  <strong>Sign in</strong>
+                </Link>
+                <Link to="/login?role=child" className="home-entry-card home-entry-card--child">
+                  <span>Child</span>
+                  <strong>Sign in</strong>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="home-preview" aria-label="NeuroFlake task preview">
-          <img
-            className="home-preview-logo"
-            src="/logo.png"
-            alt="NeuroFlake robot holding a snowflake"
-          />
-          <div className="home-preview-orbit" aria-hidden="true">
-            <span>Plan</span>
-            <span>Focus</span>
-            <span>Reward</span>
-          </div>
-          <div className="home-preview-card">
-            <p className="home-preview-label">Today</p>
-            <h3>Get ready for school</h3>
-            <ProgressBar value={2} max={3} label="Task progress" />
-            <div className="home-step-row is-done">
-              <span>1</span>
-              <p>Put on shoes</p>
+        <div className="home-demo-section home-demo-section--hero" aria-label="Animated NeuroFlake journey">
+          <div className={`home-demo-screen home-demo-screen--${activeDemo.id}`}>
+            <div className="home-demo-orbit" aria-hidden="true">
+              <span />
+              <span />
+              <span />
             </div>
-            <div className="home-step-row is-active">
-              <span>2</span>
-              <p>Pack lunchbox</p>
+
+            <div className={`home-demo-mascot home-demo-mascot--${activeDemo.id}`}>
+              <img src={activeDemo.icon} alt={activeDemo.iconAlt} />
             </div>
-            <div className="home-step-row">
-              <span>3</span>
-              <p>Zip the bag</p>
+
+            <div className="home-demo-card">
+              <span>{activeDemo.label}</span>
+              <h4>{activeDemo.title}</h4>
+              <p>{activeDemo.caption}</p>
+              <ProgressBar value={activeDemo.progress} max={3} label="Demo progress" />
             </div>
           </div>
         </div>
       </div>
 
-      <Card id="how-it-helps" className="home-panel" variant="glow">
-        <PageHeader
-          eyebrow="How It Helps"
-          title="Try the task journey"
-          description="Tap each stage to see how a big routine becomes easier to start, follow, and finish."
-        />
+      <section className="home-feature-showcase" aria-labelledby="home-showcase-title">
+        <div className="home-section-heading">
+          <p className="home-landing-kicker">Built for real tasks</p>
+          <h3 id="home-showcase-title">One app, three clear paths.</h3>
+        </div>
 
-        <div className="home-journey-tabs">
-          {journeySteps.map((step) => (
+        <div className="home-feature-tabs" role="tablist" aria-label="Feature views">
+          {featureKeys.map((key) => (
             <button
-              key={step.id}
+              key={key}
               type="button"
+              role="tab"
+              aria-selected={activeFeature === key}
               className={
-                step.id === activeJourneyId
-                  ? "home-tab is-selected"
-                  : "home-tab"
+                activeFeature === key
+                  ? "home-feature-tab is-selected"
+                  : "home-feature-tab"
               }
-              onClick={() => setActiveJourneyId(step.id)}
+              onClick={() => setActiveFeature(key)}
             >
-              {step.label}
+              <span
+                className={`home-feature-tab__icon home-feature-tab__icon--${featureGroups[key].visual}`}
+                aria-hidden="true"
+              />
+              <strong>{featureGroups[key].label}</strong>
             </button>
           ))}
         </div>
 
-        <div className="home-journey-display">
-          <div>
-            <p className="home-preview-label">{activeJourney.label}</p>
-            <h3>{activeJourney.title}</h3>
-            <p>{activeJourney.action}</p>
+        <div className="home-feature-panel">
+          <div className={`home-feature-visual home-feature-visual--${currentFeature.visual}`} aria-hidden="true">
+            <span />
+            <span />
+            <span />
           </div>
-          <strong>{activeJourney.note}</strong>
-        </div>
-      </Card>
-
-      <div className="home-support-grid">
-        <Card as="article" className="home-support-copy" variant="soft">
-          <p className="eyebrow">Support That Adapts</p>
-          <h3>Meet the child where they are</h3>
-          <p>
-            Some days need momentum. Some days need a pause. NeuroFlake keeps
-            the next step calm and concrete.
-          </p>
-        </Card>
-
-        <Card as="article" className="home-support-tool" variant="default">
-          <div className="home-mode-buttons">
-            {supportModes.map((mode) => (
-              <button
-                key={mode.id}
-                type="button"
-                className={
-                  mode.id === activeSupportId
-                    ? "home-mode-button is-selected"
-                    : "home-mode-button"
-                }
-                onClick={() => setActiveSupportId(mode.id)}
-              >
-                {mode.label}
-              </button>
+          <div className="home-feature-copy">
+            <h4>{currentFeature.title}</h4>
+            <p>{currentFeature.text}</p>
+          </div>
+          <div className="home-feature-pills">
+            {currentFeature.items.map((item) => (
+              <span key={item}>{item}</span>
             ))}
           </div>
-          <p>{activeSupport.message}</p>
-        </Card>
-      </div>
+        </div>
+      </section>
 
-      <Card as="article" className="home-companion-panel" variant="glow">
-        <div className="home-companion-copy">
-          <p className="eyebrow">AI Companion</p>
-          <h3>A built-in chat helper for children and parents</h3>
-          <p>
-            NeuroFlake includes an AI companion that can give gentle prompts,
-            answer questions, and support the next step once you are signed in.
-          </p>
-          <div className="home-companion-pills">
-            <span>Child-friendly encouragement</span>
-            <span>Parent support guidance</span>
-            <span>Available after login</span>
-          </div>
-          <Button as={Link} to="/login" variant="secondary">
-            Explore In App
-          </Button>
+      <section className="home-app-grid" aria-label="NeuroFlake features">
+        {appFeatures.map((feature) => (
+          <article key={feature.title} className="home-app-card">
+            <div
+              className={`home-app-card__symbol home-app-card__symbol--${feature.visual}`}
+              aria-hidden="true"
+            />
+            <h4>{feature.title}</h4>
+            <p>{feature.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="home-flow-section" aria-labelledby="home-flow-title">
+        <div className="home-section-heading">
+          <p className="home-landing-kicker">How it works</p>
+          <h3 id="home-flow-title">Simple enough to start today.</h3>
         </div>
 
-        <div className="home-companion-preview" aria-hidden="true">
-          <div className="home-companion-bubble home-companion-bubble--bot">
-            Let&apos;s take the next step together.
-          </div>
-          <div className="home-companion-bubble home-companion-bubble--user">
-            What should I do first?
-          </div>
-          <div className="home-companion-avatar">
-            <img src="/logo.png" alt="" />
-          </div>
+        <div className="home-flow-grid">
+          {howItWorks.map((item) => (
+            <article key={item.step} className="home-flow-card">
+              <span>{item.step}</span>
+              <h4>{item.title}</h4>
+              <p>{item.text}</p>
+            </article>
+          ))}
         </div>
-      </Card>
-
-      <div className="home-values">
-        <Card as="article" className="feature-card" variant="soft">
-          <h3>For Children</h3>
-          <p>Simple words, visible progress, and one step at a time.</p>
-        </Card>
-        <Card as="article" className="feature-card" variant="soft">
-          <h3>For Parents</h3>
-          <p>Create routines, guide priorities, and choose meaningful rewards.</p>
-        </Card>
-      </div>
+      </section>
     </section>
   );
 }

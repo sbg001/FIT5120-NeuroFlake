@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import PageContainer from "./PageContainer";
 import TopNav from "./TopNav";
@@ -11,6 +12,10 @@ function AppLayout() {
 
   const hideCompanionPaths = ["/", "/login", "/signup"];
   const shouldShowCompanion = !hideCompanionPaths.includes(location.pathname);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   return (
     <div className="app-shell">

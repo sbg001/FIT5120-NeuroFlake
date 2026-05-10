@@ -3183,6 +3183,79 @@ a:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
+.home-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 24px;
+  margin-top: 28px;
+  padding: 22px 26px;
+  border-top: 1px solid rgba(126, 158, 202, 0.22);
+  color: var(--text-soft);
+}
+
+.home-footer__brand {
+  display: grid;
+  gap: 4px;
+}
+
+.home-footer__brand strong {
+  color: #17263d;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.home-footer__brand p,
+.home-footer__copyright {
+  margin: 0;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.home-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.home-footer__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid rgba(126, 158, 202, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #304055;
+  font-size: 0.95rem;
+  font-weight: 850;
+  text-decoration: none;
+  box-shadow: 0 10px 22px rgba(74, 108, 161, 0.08);
+  transition:
+    transform var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition),
+    color var(--transition);
+}
+
+.home-footer__links a:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+  color: var(--primary-strong);
+  box-shadow: 0 14px 28px rgba(74, 108, 161, 0.12);
+}
+
+.home-footer__links a:focus-visible {
+  outline: 4px solid rgba(82, 134, 255, 0.2);
+  outline-offset: 3px;
+}
+
+.home-footer__copyright {
+  grid-column: 1 / -1;
+  font-size: 0.92rem;
+}
+
 .login-page--simple {
   min-height: calc(100vh - 120px);
   padding-top: 18px;
@@ -3664,6 +3737,16 @@ a:focus-visible {
   .home-landing-copy p:not(.home-landing-kicker),
   .login-simple-header p:not(.home-landing-kicker) {
     max-width: 24ch;
+  }
+
+  .home-footer {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .home-footer__links {
+    justify-content: center;
   }
 
   .task-assistant-modal__panel {

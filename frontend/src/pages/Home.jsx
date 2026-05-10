@@ -259,28 +259,19 @@ function Home() {
         </section>
       </section>
 
-      <section className="home-flow-section mt-10 md:mt-14" aria-label="Footer">
-        <div className="home-section-heading">
-          <p className="home-landing-kicker">Support</p>
-          <h3>Support</h3>
+      <footer className="home-footer" aria-label="NeuroFlake footer">
+        <div className="home-footer__brand">
+          <strong>NeuroFlake</strong>
+          <p>Made with care for every small step.</p>
         </div>
 
-        <div className="home-flow-grid">
-          <Link to="/privacy-policy" className="home-flow-card">
-            <span aria-hidden="true">1</span>
-            <h4>Privacy Policy</h4>
-          </Link>
+        <nav className="home-footer__links" aria-label="Legal links">
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <Link to="/terms-and-conditions">Terms & Conditions</Link>
+        </nav>
 
-          <Link to="/terms-and-conditions" className="home-flow-card">
-            <span aria-hidden="true">2</span>
-            <h4>Terms & Conditions</h4>
-          </Link>
-        </div>
-
-        <p className="mt-2 text-center text-[18px] md:text-[20px] text-black">
-          © 2026 NeuroFlake. Made with care for every small step.
-        </p>
-      </section>
+        <p className="home-footer__copyright">&copy; 2026 NeuroFlake.</p>
+      </footer>
     </>
   );
 }

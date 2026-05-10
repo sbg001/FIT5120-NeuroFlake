@@ -8,6 +8,8 @@ import FocusMode from "../pages/FocusMode";
 import Rewards from "../pages/Rewards";
 import ParentDashboard from "../pages/ParentDashboard";
 import NotFound from "../pages/NotFound";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
+import TermsConditions from "../pages/TermsConditions";
 
 function ProtectedRoute({ children }) {
   const currentUserId = localStorage.getItem("current_user_id");
@@ -25,6 +27,8 @@ function AppRouter() {
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="terms-and-conditions" element={<TermsConditions />} />
         </Route>
 
         <Route path="/login" element={<Login />} />

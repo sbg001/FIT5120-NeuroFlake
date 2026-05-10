@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getChildPreferences, getTasks } from "../../services";
+import { getChildPreferences, getTasks, getTaskById } from "../../services";
 import "./FloatingCompanion.css";
 
 const CHAT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || ""}/api/chat`;
@@ -117,6 +117,34 @@ function FloatingCompanion() {
         role: msg.sender === "bot" ? "assistant" : "user",
         content: msg.text,
       }));
+      let pendingTasksString = "";
+      let activeTaskString = "";
+
+      if (!isParent) {
+        try {
+          // Check if the user is currently looking at a specific task page
+          const currentPath = window.location.pathname;
+          const isTaskPage = currentPath.includes("/task/");
+          
+          if (isTaskPage) {
+            // Extract the task ID from the URL (e.g., "/task/123" -> "123")
+            const taskId = currentPath.split("/task/")[1];
+            const taskRes = await getTaskById(taskId);
+            if (taskRes && taskRes.data) {
+              activeTaskString = `"${taskRes.data.title}" - ${taskRes.data.description}`;
+            }
+          } else {
+            // If they are on the home page, just get the general list
+            const tasksRes = await getTasks();
+            const pendingTasks = (tasksRes.data || []).filter(t => t.status !== "completed");
+            if (pendingTasks.length > 0) {
+              pendingTasksString = pendingTasks.map((t, index) => `${index + 1}. ${t.title}`).join("\n");
+            }
+          }
+        } catch (e) {
+          console.error("Could not fetch task context.", e);
+        }
+      }
 
       const response = await fetch(CHAT_API_URL, {
         method: "POST",
@@ -127,6 +155,7 @@ function FloatingCompanion() {
           history: formattedHistory,
           user_role: userRole,
           tasks_context: tasksContextRef.current,
+          active_task_context: activeTaskString,
         }),
       });
 

@@ -114,6 +114,7 @@ class ChatRequest(BaseModel):
     history: List[ChatMessage] = []
     user_role: str = "child" # NEW: Default to child for safety
     tasks_context: str = ""
+    active_task_context: str = ""
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -2955,6 +2956,21 @@ async def companion_chat(request: ChatRequest):
         6. Keep the total response under 70 words.
         """
     else:
+        focus_guidance = ""
+        
+        if request.active_task_context:
+            focus_guidance = f"""
+            CURRENT FOCUS: The child is currently looking at this specific task: {request.active_task_context}.
+            If the child gets highly distracted, asks about complex/dangerous things (like nuclear reactors), or says they are bored:
+            1. Humor them playfully for ONE sentence.
+            2. Gently and warmly redirect their attention back to their current task.
+            Do NOT be overly strict or mean. You are a playful study buddy, not a strict teacher.
+            """
+        else:
+            focus_guidance = f"""
+            PENDING TASKS: {request.tasks_context if request.tasks_context else "No tasks currently assigned."}
+            If they ask what they need to do today, remind them of these tasks!
+            """
         chat_system_prompt = f"""
         You are a friendly, highly supportive digital companion for a neurodivergent child (age 7-13).
         Your current persona is a {request.pet_type}. Act like this character in a subtle, cute way.
@@ -2970,6 +2986,7 @@ async def companion_chat(request: ChatRequest):
         {request.tasks_context if request.tasks_context else "No tasks currently assigned."}
         
         If the child asks what they need to do, gently remind them of their unfinished tasks. If they finished all tasks, celebrate with them!
+        {focus_guidance}
         """
 
     # Build the message array starting with the correct system prompt

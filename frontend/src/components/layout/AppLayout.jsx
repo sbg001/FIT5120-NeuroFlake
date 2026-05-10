@@ -8,7 +8,8 @@ import FloatingCompanion from "../ui/FloatingCompanion";
 
 function AppLayout() {
   const location = useLocation();
-  const isPublicGuestPath = location.pathname === "/" || location.pathname === "/login";
+  const publicGuestPaths = ["/", "/about", "/login", "/privacy-policy", "/terms-and-conditions"];
+  const isPublicGuestPath = publicGuestPaths.includes(location.pathname);
   const isLoggedIn = !isPublicGuestPath && Boolean(localStorage.getItem("current_user_id"));
 
   const hideCompanionPaths = ["/", "/login", "/signup"];

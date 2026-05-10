@@ -19,46 +19,13 @@ function Home() {
       items: ["Task creation", "Progress insights", "Support guidance"],
     },
     support: {
-      label: "Support",
+      label: "AI buddy",
       visual: "support",
-      title: "Help when the day changes",
-      text: "Prompts stay short, calm, and flexible for stuck moments.",
-      items: ["Gentle prompts", "Break tasks down", "AI helper"],
+      title: "A safe helper for task time",
+      text: "The AI buddy helps children with task steps and gives parents a calmer way to support them.",
+      items: ["Task-only help", "Child-friendly words", "Parent support"],
     },
   };
-
-  const appFeatures = [
-    {
-      title: "Task creation",
-      text: "Parents can create clear task steps for school, home, and bedtime.",
-      visual: "task",
-    },
-    {
-      title: "Focus mode",
-      text: "A calm task screen with timer, prompts, and fewer distractions.",
-      visual: "focus",
-    },
-    {
-      title: "Rewards",
-      text: "Children can see effort turn into progress and small wins.",
-      visual: "reward",
-    },
-    {
-      title: "Parent",
-      text: "Create tasks, manage children, and adjust supports safely.",
-      visual: "parent",
-    },
-    {
-      title: "Insights",
-      text: "Track tasks, moods, progress, and what support works.",
-      visual: "insight",
-    },
-    {
-      title: "AI helper",
-      text: "Child-friendly guidance and parent support when needed.",
-      visual: "helper",
-    },
-  ];
 
   const demoScenes = [
     {
@@ -90,24 +57,6 @@ function Home() {
     },
   ];
 
-  const howItWorks = [
-    {
-      step: "1",
-      title: "Create the task",
-      text: "Parents add the steps.",
-    },
-    {
-      step: "2",
-      title: "Follow the next step",
-      text: "Children see what to do now.",
-    },
-    {
-      step: "3",
-      title: "Celebrate progress",
-      text: "Rewards make effort visible.",
-    },
-  ];
-
   const featureKeys = Object.keys(featureGroups);
   const [activeFeature, setActiveFeature] = useState("child");
   const [activeDemoIndex, setActiveDemoIndex] = useState(0);
@@ -123,8 +72,7 @@ function Home() {
   }, [demoScenes.length]);
 
   return (
-    <>
-      <section className="home-page home-page--landing">
+    <section className="home-page home-page--landing">
         <div className="home-landing-hero">
           <div className="home-landing-copy">
             <p className="home-landing-kicker">NeuroFlake</p>
@@ -194,6 +142,7 @@ function Home() {
                 type="button"
                 role="tab"
                 aria-selected={activeFeature === key}
+                aria-controls="home-feature-panel"
                 className={
                   activeFeature === key
                     ? "home-feature-tab is-selected"
@@ -205,12 +154,15 @@ function Home() {
                   className={`home-feature-tab__icon home-feature-tab__icon--${featureGroups[key].visual}`}
                   aria-hidden="true"
                 />
-                <strong>{featureGroups[key].label}</strong>
+                <span className="home-feature-tab__text">
+                  <strong>{featureGroups[key].label}</strong>
+                  <small>{activeFeature === key ? "Showing now" : "Tap to view"}</small>
+                </span>
               </button>
             ))}
           </div>
 
-          <div className="home-feature-panel">
+          <div className="home-feature-panel" id="home-feature-panel">
             <div className={`home-feature-visual home-feature-visual--${currentFeature.visual}`} aria-hidden="true">
               <span />
               <span />
@@ -227,39 +179,7 @@ function Home() {
             </div>
           </div>
         </section>
-
-        <section className="home-app-grid" aria-label="NeuroFlake features">
-          {appFeatures.map((feature) => (
-            <article key={feature.title} className="home-app-card">
-              <div
-                className={`home-app-card__symbol home-app-card__symbol--${feature.visual}`}
-                aria-hidden="true"
-              />
-              <h4>{feature.title}</h4>
-              <p>{feature.text}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="home-flow-section" aria-labelledby="home-flow-title">
-          <div className="home-section-heading">
-            <p className="home-landing-kicker">How it works</p>
-            <h3 id="home-flow-title">Simple enough to start today.</h3>
-          </div>
-
-          <div className="home-flow-grid">
-            {howItWorks.map((item) => (
-              <article key={item.step} className="home-flow-card">
-                <span>{item.step}</span>
-                <h4>{item.title}</h4>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </section>
-
-    </>
+    </section>
   );
 }
 

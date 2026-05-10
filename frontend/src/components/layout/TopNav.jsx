@@ -6,7 +6,8 @@ import { clearRequestCache } from "../../services/requestCache";
 function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isPublicGuestPath = location.pathname === "/" || location.pathname === "/login";
+  const publicGuestPaths = ["/", "/about", "/login", "/privacy-policy", "/terms-and-conditions"];
+  const isPublicGuestPath = publicGuestPaths.includes(location.pathname);
   const isLoggedIn = !isPublicGuestPath && !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
   const currentName = localStorage.getItem("current_user_name");
@@ -24,7 +25,10 @@ function TopNav() {
     { to: "/parent/support", label: "Support" },
   ];
 
-  const guestNavItems = [{ to: "/", label: "Home" }];
+  const guestNavItems = [
+    { to: "/", label: "Home" },
+    { to: "/about", label: "About" },
+  ];
 
   const navItems = !isLoggedIn
     ? guestNavItems
@@ -63,7 +67,7 @@ function TopNav() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/parent"}
+              end={item.to === "/" || item.to === "/parent"}
               className={({ isActive }) => {
                 const isParentSectionLink =
                   currentRole === "parent" &&

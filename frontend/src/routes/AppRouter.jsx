@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
+import About from "../pages/About";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import ChildDashboard from "../pages/ChildDashboard";
@@ -27,6 +28,7 @@ function AppRouter() {
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
+          <Route path="about" element={<About />} />
           <Route path="login" element={<Login />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="terms-and-conditions" element={<TermsConditions />} />

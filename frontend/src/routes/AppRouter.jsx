@@ -27,11 +27,11 @@ function AppRouter() {
       <Routes>
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
+          <Route path="login" element={<Login />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="terms-and-conditions" element={<TermsConditions />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
-
-        <Route path="/login" element={<Login />} />
 
         <Route
           element={

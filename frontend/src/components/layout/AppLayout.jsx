@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import AppFooter from "./AppFooter";
 import PageContainer from "./PageContainer";
 import TopNav from "./TopNav";
 import AnimatedBackground from "../ui/AnimatedBackground";
@@ -24,6 +25,7 @@ function AppLayout() {
       <PageContainer>
         <Outlet />
       </PageContainer>
+      <AppFooter />
       {shouldShowCompanion && isLoggedIn && <FloatingCompanion />}
     </div>
   );

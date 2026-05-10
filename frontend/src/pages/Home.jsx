@@ -259,19 +259,6 @@ function Home() {
         </section>
       </section>
 
-      <footer className="home-footer" aria-label="NeuroFlake footer">
-        <div className="home-footer__brand">
-          <strong>NeuroFlake</strong>
-          <p>Made with care for every small step.</p>
-        </div>
-
-        <nav className="home-footer__links" aria-label="Legal links">
-          <Link to="/privacy-policy">Privacy Policy</Link>
-          <Link to="/terms-and-conditions">Terms & Conditions</Link>
-        </nav>
-
-        <p className="home-footer__copyright">&copy; 2026 NeuroFlake.</p>
-      </footer>
     </>
   );
 }

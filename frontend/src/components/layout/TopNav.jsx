@@ -14,7 +14,6 @@ function TopNav() {
 
   const childNavItems = [
     { to: "/child", label: "Child Dashboard" },
-    { to: "/focus", label: "Focus" },
     { to: "/rewards", label: "Rewards" },
   ];
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
@@ -19,6 +19,15 @@ import {
   updatePointsBalance,
   updateTaskStepCount,
 } from "../services";
+
+const soundMap = {
+  rain: "/rain.mp3",
+  "white-noise": "/white-noise.mp3",
+  forest: "/forest.mp3",
+};
+
+const MIN_FOCUS_MINUTES = 5;
+const MAX_FOCUS_MINUTES = 45;
 
 function TaskFlow() {
   const celebrationMessages = [
@@ -41,6 +50,14 @@ function TaskFlow() {
   const [emotion, setEmotion] = useState(null);
   const [petPreference, setPetPreference] = useState("\u{1F9F8}");
   const [loadError, setLoadError] = useState("");
+  const [isFocusActive, setIsFocusActive] = useState(false);
+  const [durationMinutes, setDurationMinutes] = useState(25);
+  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [isRunning, setIsRunning] = useState(false);
+  const [selectedSound, setSelectedSound] = useState("rain");
+  const [isSoundPlaying, setIsSoundPlaying] = useState(false);
+
+  const audioRef = useRef(null);
 
   const { taskId } = useParams();
   const navigate = useNavigate();
@@ -89,6 +106,10 @@ function TaskFlow() {
       setStepCelebration(null);
       setSaveStepsMessage("");
       setEmotion(localStorage.getItem(`emotion_checkin_${taskId}_${new Date().toISOString().slice(0, 10)}`));
+      setIsFocusActive(false);
+      setIsRunning(false);
+      setSecondsLeft(25 * 60);
+      setIsSoundPlaying(false);
       setLoadError(
         taskResult.error || stepsResult.error || preferenceResult.error || ""
       );
@@ -103,6 +124,47 @@ function TaskFlow() {
       loadTask();
     }
   }, [taskId]);
+
+  useEffect(() => {
+    setSecondsLeft(durationMinutes * 60);
+  }, [durationMinutes]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsRunning(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isRunning]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.loop = true;
+    audioRef.current.src = soundMap[selectedSound];
+  }, [selectedSound]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    if (isSoundPlaying) {
+      audioRef.current.loop = true;
+      audioRef.current.play().catch(() => {
+        setIsSoundPlaying(false);
+      });
+    } else {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [isSoundPlaying, selectedSound]);
 
   const currentStep = steps[currentStepIndex];
   const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
@@ -149,6 +211,73 @@ function TaskFlow() {
     setShowSupportPanel(false);
     setSupportMessage("");
     setStepCelebration(null);
+  };
+
+  const handleStartFocus = () => {
+    setIsFocusActive(true);
+    setIsRunning(true);
+    setSupportMessage("");
+  };
+
+  const handleUseNormalFlow = () => {
+    setIsFocusActive(false);
+    setIsRunning(false);
+    setIsSoundPlaying(false);
+  };
+
+  const handlePauseFocus = () => {
+    setIsRunning(false);
+  };
+
+  const handleContinueFocus = () => {
+    setIsRunning(true);
+  };
+
+  const handleResetFocusTimer = () => {
+    setIsRunning(false);
+    setSecondsLeft(durationMinutes * 60);
+  };
+
+  const setNormalPace = () => {
+    setDurationMinutes(25);
+    setIsRunning(false);
+  };
+
+  const handleGoSlower = () => {
+    setDurationMinutes((prev) => Math.min(MAX_FOCUS_MINUTES, prev + 5));
+    setIsRunning(false);
+  };
+
+  const handleGoFaster = () => {
+    setDurationMinutes((prev) => Math.max(MIN_FOCUS_MINUTES, prev - 5));
+    setIsRunning(false);
+  };
+
+  const handleToggleSound = async () => {
+    if (!audioRef.current) return;
+
+    if (isSoundPlaying) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsSoundPlaying(false);
+      return;
+    }
+
+    audioRef.current.src = soundMap[selectedSound];
+    audioRef.current.loop = true;
+
+    try {
+      await audioRef.current.play();
+      setIsSoundPlaying(true);
+    } catch {
+      setIsSoundPlaying(false);
+    }
+  };
+
+  const formatTime = (totalSeconds) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
   const handleFinishTask = async () => {
@@ -371,6 +500,33 @@ function TaskFlow() {
         />
       </Card>
 
+      <Card className="content-card task-flow-mode-card" variant="soft">
+        <div className="task-flow-mode-card__copy">
+          <p className="eyebrow">Choose your way</p>
+          <h3>{isFocusActive ? "Focus is on" : "Do this task your way"}</h3>
+          <p className="page-text">
+            {isFocusActive
+              ? "You will see one clear step with a calm timer."
+              : "Use normal steps, or turn on Focus when you want extra help staying with one step."}
+          </p>
+        </div>
+
+        <div className="task-flow-mode-card__actions">
+          <Button
+            variant={isFocusActive ? "secondary" : "primary"}
+            onClick={handleUseNormalFlow}
+          >
+            Normal Flow
+          </Button>
+          <Button
+            variant={isFocusActive ? "primary" : "secondary"}
+            onClick={handleStartFocus}
+          >
+            {isFocusActive ? "Focus On" : "Start Focus"}
+          </Button>
+        </div>
+      </Card>
+
       {!emotion ? (
         <Card className="content-card focus-emotion-card" variant="glow">
           <div className="focus-emotion-card__pet" aria-hidden="true">
@@ -409,7 +565,9 @@ function TaskFlow() {
       {currentStep ? (
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
-            <span className="focus-step-card__eyebrow">One Step At A Time</span>
+            <span className="focus-step-card__eyebrow">
+              {isFocusActive ? "Focus Session" : "One Step At A Time"}
+            </span>
             <div className="focus-step-card__status-row">
               {stepCelebration ? <Badge tone="warm">Gentle celebration</Badge> : null}
               {currentStepDone ? (
@@ -417,6 +575,51 @@ function TaskFlow() {
               ) : null}
             </div>
           </div>
+
+          {isFocusActive ? (
+            <div className="focus-timer-panel task-flow-focus-panel">
+              <div>
+                <p className="focus-timer-panel__label">Calm timer</p>
+                <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
+              </div>
+              <div className="focus-pace-row">
+                <Button variant="secondary" size="sm" onClick={handleGoSlower}>
+                  Slower
+                </Button>
+                <Button variant="secondary" size="sm" onClick={setNormalPace}>
+                  Normal
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleGoFaster}>
+                  Faster
+                </Button>
+              </div>
+              <div className="focus-setup-actions">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={isRunning ? handlePauseFocus : handleContinueFocus}
+                >
+                  {isRunning ? "Pause Timer" : "Resume Timer"}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleResetFocusTimer}>
+                  Reset Timer
+                </Button>
+              </div>
+              <div className="focus-support-panel__audio">
+                <select
+                  value={selectedSound}
+                  onChange={(e) => setSelectedSound(e.target.value)}
+                >
+                  <option value="rain">Rain</option>
+                  <option value="white-noise">White Noise</option>
+                  <option value="forest">Forest</option>
+                </select>
+                <Button variant="secondary" size="sm" onClick={handleToggleSound}>
+                  {isSoundPlaying ? "Stop Sound" : "Play Calm Sound"}
+                </Button>
+              </div>
+            </div>
+          ) : null}
 
           {emotion ? (
             <div className="focus-step-card__emotion-note">
@@ -530,6 +733,7 @@ function TaskFlow() {
         onSaveSteps={handleStepsSaved}
         petPreference={petPreference}
       />
+      <audio ref={audioRef} hidden />
     </section>
   );
 }

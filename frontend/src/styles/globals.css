@@ -813,46 +813,192 @@ a:focus-visible {
 }
 
 .child-dashboard {
-  gap: 26px;
-}
-
-.child-dashboard__hero-grid,
-.child-dashboard__main-grid,
-.child-dashboard__bottom-grid {
-  display: grid;
   gap: 20px;
 }
 
-.child-dashboard__hero-grid {
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+.child-dashboard__top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  align-items: stretch;
+  gap: 18px;
 }
 
-.child-dashboard__main-grid {
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+.child-dashboard__intro {
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  min-height: 178px;
+  padding: 8px 0;
+}
+
+.child-dashboard__intro h2 {
+  margin: 0;
+  color: #17263d;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.04;
+}
+
+.child-dashboard__journey-card {
+  display: grid;
+  gap: 16px;
+  align-content: center;
+  padding: 22px;
+}
+
+.child-dashboard__journey-track {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.child-dashboard__journey-step {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-height: 112px;
+  padding: 14px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.56);
+  text-align: center;
+}
+
+.child-dashboard__journey-step strong {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: rgba(72, 130, 247, 0.14);
+  color: var(--primary-strong);
+  font-size: 1.25rem;
+}
+
+.child-dashboard__journey-step span {
+  color: #17263d;
+  font-weight: 900;
+}
+
+.child-dashboard__journey-step--focus {
+  border-color: rgba(50, 157, 136, 0.28);
+  background: rgba(220, 249, 241, 0.72);
+  box-shadow: 0 12px 28px rgba(41, 145, 125, 0.12);
+}
+
+.child-dashboard__journey-step--focus strong {
+  background: rgba(50, 157, 136, 0.18);
+  color: #176d5f;
+}
+
+.child-dashboard__journey-arrow {
+  color: var(--primary-strong);
+  font-size: 1.55rem;
+  font-weight: 900;
+}
+
+.child-dashboard__bottom-grid {
+  display: grid;
+  gap: 20px;
 }
 
 .child-dashboard__bottom-grid {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
 }
 
-.child-dashboard__side-column {
-  display: grid;
-  gap: 20px;
+.child-dashboard__focus-card {
+  padding: clamp(22px, 3vw, 30px);
 }
 
-.child-dashboard__welcome,
-.child-dashboard__points-card,
-.child-dashboard__mission-card,
-.child-dashboard__progress-card,
-.child-dashboard__achievements-card,
+.child-dashboard__focus-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: center;
+  gap: clamp(18px, 3vw, 30px);
+}
+
+.child-dashboard__focus-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.child-dashboard__focus-side {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 14px 30px rgba(74, 108, 161, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+}
+
+.child-dashboard__focus-hint {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.child-dashboard__focus-hint strong {
+  color: #17263d;
+  font-size: 1rem;
+}
+
+.child-dashboard__focus-hint span {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.child-dashboard__mascot--large {
+  width: 116px;
+  height: 116px;
+  border-radius: 34px;
+  font-size: 3rem;
+}
+
+.child-dashboard__quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.child-dashboard__quick-stat {
+  display: grid;
+  gap: 4px;
+  min-height: 112px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.74);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow:
+    0 16px 34px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+
+.child-dashboard__quick-stat strong {
+  color: #17263d;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  line-height: 1;
+}
+
+.child-dashboard__quick-stat span {
+  color: var(--text-soft);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
 .child-dashboard__missions-list,
 .child-dashboard__style-card {
   padding: 26px;
 }
 
-.child-dashboard__welcome-top,
-.child-dashboard__hero-pills,
-.child-dashboard__mission-header,
 .child-dashboard__section-row,
 .child-dashboard__mission-progress-label {
   display: flex;
@@ -860,17 +1006,6 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-}
-
-.child-dashboard__welcome-copy {
-  display: grid;
-  gap: 16px;
-}
-
-.child-dashboard__mascot-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 .child-dashboard__mascot,
@@ -886,50 +1021,13 @@ a:focus-visible {
   font-size: 2rem;
 }
 
-.child-dashboard__hero-title,
 .child-dashboard__mission-title {
   margin: 0 0 0.35rem;
   font-size: clamp(1.45rem, 2.5vw, 2rem);
 }
 
-.child-dashboard__hero-pills span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
-.child-dashboard__points-card {
-  text-align: center;
-  align-content: center;
-}
-
-.child-dashboard__points-value {
-  margin: 0.35rem 0 0.6rem;
-  font-size: clamp(2.4rem, 6vw, 3.5rem);
-  font-weight: 800;
-  line-height: 1;
-  color: var(--primary-strong);
-}
-
-.child-dashboard__points-stars {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 1rem;
-  font-size: 1.3rem;
-}
-
-.child-dashboard__mission-card,
-.child-dashboard__progress-card,
 .child-dashboard__missions-list,
-.child-dashboard__style-card,
-.child-dashboard__achievements-card {
+.child-dashboard__style-card {
   display: grid;
   gap: 16px;
 }
@@ -944,57 +1042,24 @@ a:focus-visible {
 }
 
 .child-dashboard__mission-progress-label span,
-.child-dashboard__mini-mission p,
-.child-dashboard__achievement-tile p {
+.child-dashboard__mini-mission p {
   color: var(--text-soft);
   font-size: 0.95rem;
 }
 
 .child-dashboard__mission-actions {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
   gap: 12px;
   align-items: start;
 }
 
-.child-dashboard__stat-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+.child-dashboard__mission-actions .page-text {
+  grid-column: 1 / -1;
 }
 
-.child-dashboard__stat-item {
-  display: grid;
-  gap: 4px;
-  padding: 14px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.child-dashboard__stat-item strong {
-  font-size: 1.45rem;
-}
-
-.child-dashboard__stat-item span {
-  color: var(--text-soft);
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.child-dashboard__achievements-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.child-dashboard__achievement-tile {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.child-dashboard__achievement-emoji {
-  font-size: 1.5rem;
+.child-dashboard__mission-actions--single {
+  grid-template-columns: max-content;
 }
 
 .child-dashboard__mini-missions {
@@ -1019,6 +1084,31 @@ a:focus-visible {
 .child-dashboard__style-form {
   display: grid;
   gap: 14px;
+}
+
+.child-dashboard__bottom-grid--simple {
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+}
+
+.child-dashboard__reward-card {
+  display: grid;
+  gap: 16px;
+  padding: 26px;
+}
+
+.child-dashboard__reward-count {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--primary-strong);
+  font-size: 1.8rem;
+  font-weight: 900;
+  box-shadow:
+    0 14px 28px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
 }
 
 .child-dashboard__style-message {
@@ -1634,6 +1724,31 @@ a:focus-visible {
   padding: 24px 26px;
 }
 
+.task-flow-mode-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.task-flow-mode-card__copy {
+  display: grid;
+  gap: 8px;
+}
+
+.task-flow-mode-card__copy h3 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+}
+
+.task-flow-mode-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .focus-setup-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1860,6 +1975,10 @@ a:focus-visible {
   border: 1px solid rgba(99, 135, 189, 0.16);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.76);
+}
+
+.task-flow-focus-panel {
+  width: 100%;
 }
 
 .focus-support-panel__title {
@@ -3681,9 +3800,9 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .child-dashboard__hero-grid,
-  .child-dashboard__main-grid,
   .child-dashboard__bottom-grid,
+  .child-dashboard__top-grid,
+  .child-dashboard__focus-grid,
   .reward-overview-grid,
   .reward-overview-grid--simple,
   .parent-dashboard__hero-grid,
@@ -3750,6 +3869,23 @@ a:focus-visible {
   .home-entry-grid {
     grid-template-columns: 1fr;
   }
+
+  .child-dashboard__focus-side {
+    justify-items: start;
+  }
+
+  .child-dashboard__intro {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .task-flow-mode-card {
+    grid-template-columns: 1fr;
+  }
+
+  .task-flow-mode-card__actions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 720px) {
@@ -3807,6 +3943,19 @@ a:focus-visible {
 
   .parent-setup-modal__panel {
     padding: 22px;
+  }
+
+  .child-dashboard__journey-track {
+    grid-template-columns: 1fr;
+  }
+
+  .child-dashboard__journey-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
+  }
+
+  .child-dashboard__mission-actions {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3881,12 +4030,9 @@ a:focus-visible {
     padding: 18px;
   }
 
-  .child-dashboard__welcome,
-  .child-dashboard__points-card,
-  .child-dashboard__mission-card,
-  .child-dashboard__progress-card,
-  .child-dashboard__achievements-card,
+  .child-dashboard__focus-card,
   .child-dashboard__missions-list,
+  .child-dashboard__reward-card,
   .child-dashboard__style-card,
   .parent-dashboard__hero-card,
   .parent-dashboard__snapshot-card,
@@ -3897,13 +4043,12 @@ a:focus-visible {
     padding: 20px;
   }
 
-  .child-dashboard__mascot-row,
   .child-dashboard__mini-mission {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .child-dashboard__stat-list {
+  .child-dashboard__quick-stats {
     grid-template-columns: 1fr;
   }
 

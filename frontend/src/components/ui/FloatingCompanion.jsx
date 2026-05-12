@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getChildPreferences, getTasks, getTaskById } from "../../services";
+import BuddyIcon from "./BuddyIcon";
 import "./FloatingCompanion.css";
 
 const CHAT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || ""}/api/chat`;
@@ -8,13 +9,15 @@ const petExpressions = {
   cat: { idle: "\u{1F431}", success: "\u{1F63B}", struggle: "\u{1F63F}" },
   dog: { idle: "\u{1F436}", success: "\u{1F415}\u{1F389}", struggle: "\u{1F97A}" },
   bear: { idle: "\u{1F9F8}", success: "\u{1F9F8}\u2728", struggle: "\u{1F9F8}\u{1F499}" },
+  turtle: { idle: "\u{1F422}", success: "\u{1F422}\u2728", struggle: "\u{1F422}\u{1F499}" },
+  robot: { idle: "\u{1F916}", success: "\u{1F916}\u2728", struggle: "\u{1F916}\u{1F499}" },
   star: { idle: "\u2B50", success: "\u{1F31F}", struggle: "\u{1F4AB}" },
   guide: { idle: "\u{1F9ED}", success: "\u{1F9ED}", struggle: "\u{1F9ED}" },
 };
 
 function FloatingCompanion() {
   const [isOpen, setIsOpen] = useState(false);
-  const [petData, setPetData] = useState({ type: "bear", emoji: "\u{1F9F8}" });
+  const [petData, setPetData] = useState({ type: "dog" });
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [emotionState, setEmotionState] = useState("idle");
@@ -29,7 +32,7 @@ function FloatingCompanion() {
 
   const loadPet = useCallback(async () => {
     if (isParent) {
-      setPetData({ type: "guide", emoji: petExpressions.guide.idle });
+      setPetData({ type: "guide" });
       setMessages([
         {
           id: 1,
@@ -41,14 +44,10 @@ function FloatingCompanion() {
     }
 
     const { data } = await getChildPreferences();
-    const rawStyle = String(data?.character_style || "bear").toLowerCase();
+    const rawStyle = String(data?.character_style || "dog").toLowerCase();
+    const selectedType = petExpressions[rawStyle] ? rawStyle : "dog";
 
-    let selectedType = "bear";
-    if (rawStyle.includes("cat")) selectedType = "cat";
-    else if (rawStyle.includes("dog")) selectedType = "dog";
-    else if (rawStyle.includes("star")) selectedType = "star";
-
-    setPetData({ type: selectedType, emoji: petExpressions[selectedType].idle });
+    setPetData({ type: selectedType });
     setMessages([
       { id: 1, sender: "bot", text: "Hi! I'm here for you. How are you doing today?" },
     ]);
@@ -199,12 +198,14 @@ function FloatingCompanion() {
         return "anim-cat";
       case "star":
         return "anim-star";
+      case "turtle":
+        return "anim-turtle";
+      case "robot":
+        return "anim-robot";
       default:
         return "anim-bear";
     }
   };
-
-  const currentFace = petExpressions[petData.type]?.[emotionState] || petExpressions.bear.idle;
 
   return (
     <div className="companion-container">
@@ -220,8 +221,25 @@ function FloatingCompanion() {
               alignItems: "center",
             }}
           >
-            <span style={{ fontWeight: "bold", color: "#312E81", fontSize: "1.1rem" }}>
-              {petData.emoji} My Companion
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontWeight: "bold",
+                color: "#312E81",
+                fontSize: "1.1rem",
+              }}
+            >
+              {isParent ? petExpressions.guide.idle : (
+                <BuddyIcon
+                  type={petData.type}
+                  label="My companion"
+                  decorative
+                  className="companion-chat-icon"
+                />
+              )}
+              Buddy Helper
             </span>
             <button
               onClick={() => setIsOpen(false)}
@@ -307,9 +325,25 @@ function FloatingCompanion() {
 
       <div
         className={`companion-avatar ${getAnimationClass()}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Open buddy helper"
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setIsOpen((prev) => !prev);
+          }
+        }}
       >
-        {currentFace}
+        <span className="companion-avatar__hint">
+          Ask Buddy
+        </span>
+        {isParent ? (
+          petExpressions.guide.idle
+        ) : (
+          <BuddyIcon type={petData.type} label="Open companion chat" />
+        )}
       </div>
     </div>
   );

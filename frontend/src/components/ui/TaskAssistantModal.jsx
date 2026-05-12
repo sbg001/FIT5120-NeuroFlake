@@ -8,7 +8,6 @@ function TaskAssistantModal({
   onClose,
   task,
   onSaveSteps,
-  petPreference = "\u{1F9F8}",
 }) {
   const [steps, setSteps] = useState([]);
   const [companionMessage, setCompanionMessage] = useState("");
@@ -143,7 +142,7 @@ function TaskAssistantModal({
                 ? "Thinking..."
                 : isParent
                   ? "Generate AI Steps"
-                  : `Yes, ${petPreference} please help me!`}
+                  : "Yes, please help me!"}
             </Button>
           </div>
         ) : null}

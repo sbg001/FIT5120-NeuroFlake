@@ -11,6 +11,7 @@
 }
 
 .companion-avatar {
+  position: relative;
   width: 70px;
   height: 70px;
   border-radius: 50%;
@@ -25,9 +26,45 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.companion-avatar__hint {
+  position: absolute;
+  right: 78px;
+  top: 50%;
+  width: max-content;
+  max-width: 120px;
+  transform: translateY(-50%);
+  padding: 8px 12px;
+  border: 1px solid rgba(126, 158, 202, 0.28);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #17263d;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.1;
+  box-shadow: 0 12px 26px rgba(74, 108, 161, 0.14);
+}
+
+.companion-avatar__hint::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateY(-50%) rotate(45deg);
+  border-top: 1px solid rgba(126, 158, 202, 0.28);
+  border-right: 1px solid rgba(126, 158, 202, 0.28);
+  background: rgba(255, 255, 255, 0.94);
+}
+
 .companion-avatar:hover {
   transform: scale(1.05);
   box-shadow: 0 15px 20px -3px rgba(0, 0, 0, 0.15);
+}
+
+.companion-avatar:focus-visible {
+  outline: 4px solid rgba(72, 130, 247, 0.28);
+  outline-offset: 4px;
 }
 
 /* --- THE SIGNATURE ANIMATIONS --- */
@@ -54,12 +91,46 @@
 .anim-bear {
   animation: breathe-calm 4s infinite ease-in-out;
 }
+
+.companion-avatar .buddy-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.companion-chat-icon {
+  display: inline-block;
+  flex: 0 0 30px;
+  width: 30px !important;
+  height: 30px !important;
+  max-width: 30px;
+  max-height: 30px;
+  object-fit: contain;
+  vertical-align: middle;
+}
 @keyframes breathe-calm {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.08); }
 }
 
-/* 4. The Cat: Sleeping / Gentle Rocking */
+/* 4. The Turtle: Extra slow calm breathing */
+.anim-turtle {
+  animation: turtle-calm 5s infinite ease-in-out;
+}
+@keyframes turtle-calm {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.04); }
+}
+
+/* 5. The Robot: Small predictable nod */
+.anim-robot {
+  animation: robot-nod 3s infinite ease-in-out;
+}
+@keyframes robot-nod {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(4deg); }
+}
+
+/* 6. The Cat: Sleeping / Gentle Rocking */
 .anim-cat {
   animation: sleep-rock 3s infinite ease-in-out;
   position: relative;

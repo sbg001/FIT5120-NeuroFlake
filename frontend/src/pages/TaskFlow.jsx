@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Badge from "../components/ui/Badge";
+import BuddyIcon from "../components/ui/BuddyIcon";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
@@ -26,9 +27,6 @@ const soundMap = {
   forest: "/forest.mp3",
 };
 
-const MIN_FOCUS_MINUTES = 5;
-const MAX_FOCUS_MINUTES = 45;
-
 function TaskFlow() {
   const celebrationMessages = [
     "Great effort!",
@@ -48,7 +46,7 @@ function TaskFlow() {
   const [stepCelebration, setStepCelebration] = useState(null);
   const [saveStepsMessage, setSaveStepsMessage] = useState("");
   const [emotion, setEmotion] = useState(null);
-  const [petPreference, setPetPreference] = useState("\u{1F9F8}");
+  const [petPreference, setPetPreference] = useState("dog");
   const [loadError, setLoadError] = useState("");
   const [isFocusActive, setIsFocusActive] = useState(false);
   const [durationMinutes, setDurationMinutes] = useState(25);
@@ -86,16 +84,7 @@ function TaskFlow() {
             ? firstIncompleteIndex
             : 0;
 
-      const characterMap = {
-        star: "\u2B50",
-        rocket: "\u{1F680}",
-        bear: "\u{1F9F8}",
-        cat: "\u{1F431}",
-        dog: "\u{1F436}",
-        fox: "\u{1F98A}",
-      };
-
-      setPetPreference(characterMap[prefData?.character_style] || "\u{1F9F8}");
+      setPetPreference(prefData?.character_style || "dog");
       setTask(taskData);
       setSteps(orderedSteps);
       setTaskReady(validStepCount);
@@ -215,7 +204,7 @@ function TaskFlow() {
 
   const handleStartFocus = () => {
     setIsFocusActive(true);
-    setIsRunning(true);
+    setIsRunning(false);
     setSupportMessage("");
   };
 
@@ -233,24 +222,14 @@ function TaskFlow() {
     setIsRunning(true);
   };
 
+  const handleDurationChange = (event) => {
+    setDurationMinutes(Number(event.target.value));
+    setIsRunning(false);
+  };
+
   const handleResetFocusTimer = () => {
     setIsRunning(false);
     setSecondsLeft(durationMinutes * 60);
-  };
-
-  const setNormalPace = () => {
-    setDurationMinutes(25);
-    setIsRunning(false);
-  };
-
-  const handleGoSlower = () => {
-    setDurationMinutes((prev) => Math.min(MAX_FOCUS_MINUTES, prev + 5));
-    setIsRunning(false);
-  };
-
-  const handleGoFaster = () => {
-    setDurationMinutes((prev) => Math.max(MIN_FOCUS_MINUTES, prev - 5));
-    setIsRunning(false);
   };
 
   const handleToggleSound = async () => {
@@ -462,7 +441,7 @@ function TaskFlow() {
 
             <div className="focus-setup-actions">
               <Button onClick={() => setIsNovaOpen(true)}>
-                {petPreference} I need help with this
+                I need help with this
               </Button>
             </div>
           </Card>
@@ -473,7 +452,6 @@ function TaskFlow() {
           onClose={() => setIsNovaOpen(false)}
           task={task}
           onSaveSteps={handleStepsSaved}
-          petPreference={petPreference}
         />
       </div>
     );
@@ -506,31 +484,28 @@ function TaskFlow() {
           <h3>{isFocusActive ? "Focus is on" : "Do this task your way"}</h3>
           <p className="page-text">
             {isFocusActive
-              ? "You will see one clear step with a calm timer."
+              ? "One step is ready. Start the timer only when you feel ready."
               : "Use normal steps, or turn on Focus when you want extra help staying with one step."}
           </p>
         </div>
 
         <div className="task-flow-mode-card__actions">
-          <Button
-            variant={isFocusActive ? "secondary" : "primary"}
-            onClick={handleUseNormalFlow}
-          >
-            Normal Flow
-          </Button>
-          <Button
-            variant={isFocusActive ? "primary" : "secondary"}
-            onClick={handleStartFocus}
-          >
-            {isFocusActive ? "Focus On" : "Start Focus"}
-          </Button>
+          {isFocusActive ? (
+            <Button variant="secondary" onClick={handleUseNormalFlow}>
+              Leave Focus
+            </Button>
+          ) : (
+            <Button onClick={handleStartFocus}>
+              Start Focus
+            </Button>
+          )}
         </div>
       </Card>
 
       {!emotion ? (
         <Card className="content-card focus-emotion-card" variant="glow">
           <div className="focus-emotion-card__pet" aria-hidden="true">
-            {petPreference}
+            <BuddyIcon type={petPreference} label="Buddy" decorative />
           </div>
           <div className="focus-emotion-card__copy">
             <p className="eyebrow">Check In</p>
@@ -578,44 +553,31 @@ function TaskFlow() {
 
           {isFocusActive ? (
             <div className="focus-timer-panel task-flow-focus-panel">
-              <div>
+              <div className="focus-timer-panel__readout">
                 <p className="focus-timer-panel__label">Calm timer</p>
                 <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
+                <span>{isRunning ? "Timer is running" : "Timer is ready"}</span>
               </div>
-              <div className="focus-pace-row">
-                <Button variant="secondary" size="sm" onClick={handleGoSlower}>
-                  Slower
-                </Button>
-                <Button variant="secondary" size="sm" onClick={setNormalPace}>
-                  Normal
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleGoFaster}>
-                  Faster
-                </Button>
-              </div>
-              <div className="focus-setup-actions">
+
+              <div className="focus-timer-panel__controls">
                 <Button
-                  variant="secondary"
-                  size="sm"
+                  variant={isRunning ? "secondary" : "primary"}
                   onClick={isRunning ? handlePauseFocus : handleContinueFocus}
                 >
-                  {isRunning ? "Pause Timer" : "Resume Timer"}
+                  {isRunning ? "Pause" : "Start Timer"}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={handleResetFocusTimer}>
-                  Reset Timer
-                </Button>
-              </div>
-              <div className="focus-support-panel__audio">
                 <select
-                  value={selectedSound}
-                  onChange={(e) => setSelectedSound(e.target.value)}
+                  aria-label="Timer length"
+                  value={durationMinutes}
+                  onChange={handleDurationChange}
                 >
-                  <option value="rain">Rain</option>
-                  <option value="white-noise">White Noise</option>
-                  <option value="forest">Forest</option>
+                  <option value="10">10 min</option>
+                  <option value="15">15 min</option>
+                  <option value="25">25 min</option>
+                  <option value="35">35 min</option>
                 </select>
-                <Button variant="secondary" size="sm" onClick={handleToggleSound}>
-                  {isSoundPlaying ? "Stop Sound" : "Play Calm Sound"}
+                <Button variant="secondary" onClick={handleResetFocusTimer}>
+                  Reset
                 </Button>
               </div>
             </div>
@@ -668,7 +630,7 @@ function TaskFlow() {
 
           <div className="focus-step-card__actions">
             <Button variant="secondary" onClick={() => setShowSupportPanel((prev) => !prev)}>
-              I need a break
+              Help Me
             </Button>
             <Button onClick={handleDone}>
               {String(task.status) === "completed"
@@ -697,25 +659,28 @@ function TaskFlow() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() =>
+                  onClick={() => {
+                    setIsRunning(false);
                     setSupportMessage(
                       "Take a small break, then come back when your body feels ready."
-                    )
-                  }
-                >
-                  Small break
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    triggerCompanionEmotion("struggle");
-                    setSupportMessage(
-                      "That is okay. We can try the same step again, nice and gently."
                     );
                   }}
                 >
-                  Try again
+                  Small break
+                </Button>
+              </div>
+              <div className="focus-support-panel__audio">
+                <select
+                  aria-label="Calm sound"
+                  value={selectedSound}
+                  onChange={(e) => setSelectedSound(e.target.value)}
+                >
+                  <option value="rain">Rain</option>
+                  <option value="white-noise">White noise</option>
+                  <option value="forest">Forest</option>
+                </select>
+                <Button variant="secondary" size="sm" onClick={handleToggleSound}>
+                  {isSoundPlaying ? "Stop Sound" : "Calm Sound"}
                 </Button>
               </div>
               {supportMessage ? (
@@ -731,7 +696,6 @@ function TaskFlow() {
         onClose={() => setIsNovaOpen(false)}
         task={task}
         onSaveSteps={handleStepsSaved}
-        petPreference={petPreference}
       />
       <audio ref={audioRef} hidden />
     </section>

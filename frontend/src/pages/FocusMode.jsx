@@ -21,9 +21,6 @@ const soundMap = {
   forest: "/forest.mp3",
 };
 
-const MIN_FOCUS_MINUTES = 5;
-const MAX_FOCUS_MINUTES = 45;
-
 function FocusMode() {
   const navigate = useNavigate();
   const [availableTasks, setAvailableTasks] = useState([]);
@@ -287,7 +284,7 @@ function FocusMode() {
   const handleStartFocus = () => {
     if (!currentTask || !currentStep) return;
     setIsFocusActive(true);
-    setIsRunning(true);
+    setIsRunning(false);
     setFocusMessage("");
   };
 
@@ -297,6 +294,11 @@ function FocusMode() {
 
   const handleContinueFocus = () => {
     setIsRunning(true);
+  };
+
+  const handleDurationChange = (event) => {
+    setDurationMinutes(Number(event.target.value));
+    setIsRunning(false);
   };
 
   const handleDoneAction = async () => {
@@ -317,21 +319,6 @@ function FocusMode() {
   const handleReset = () => {
     setIsRunning(false);
     setSecondsLeft(durationMinutes * 60);
-  };
-
-  const setNormalPace = () => {
-    setDurationMinutes(25);
-    setIsRunning(false);
-  };
-
-  const handleGoSlower = () => {
-    setDurationMinutes((prev) => Math.min(MAX_FOCUS_MINUTES, prev + 5));
-    setIsRunning(false);
-  };
-
-  const handleGoFaster = () => {
-    setDurationMinutes((prev) => Math.max(MIN_FOCUS_MINUTES, prev - 5));
-    setIsRunning(false);
   };
 
   const handleToggleSound = async () => {
@@ -382,7 +369,7 @@ function FocusMode() {
           <PageHeader
             eyebrow="Focus Mode"
             title="A calm space for one step at a time"
-            description="Pick a mission, choose a pace, and start when your body feels ready."
+            description="Pick a mission first. The timer starts only when you press Start Timer."
           />
 
           <div className="focus-setup-grid">
@@ -410,27 +397,12 @@ function FocusMode() {
             </div>
           </div>
 
-          <div className="focus-pace-row">
-            <Button variant="secondary" size="sm" onClick={handleGoSlower}>
-              Slower
-            </Button>
-            <Button variant="secondary" size="sm" onClick={setNormalPace}>
-              Normal
-            </Button>
-            <Button variant="secondary" size="sm" onClick={handleGoFaster}>
-              Faster
-            </Button>
-            <span className="focus-pace-row__note">
-              {durationMinutes} minute pace, capped at {MAX_FOCUS_MINUTES} minutes
-            </span>
-          </div>
-
           <div className="focus-setup-actions">
             <Button onClick={handleStartFocus} disabled={!currentTask || !currentStep}>
-              Start Focus
+              Open Focus
             </Button>
             <Button variant="secondary" onClick={handleReset}>
-              Reset Timer
+              Reset
             </Button>
           </div>
         </Card>
@@ -476,19 +448,31 @@ function FocusMode() {
 
           {isFocusActive && (
             <div className="focus-timer-panel">
-              <div>
+              <div className="focus-timer-panel__readout">
                 <p className="focus-timer-panel__label">Calm timer</p>
                 <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
+                <span>{isRunning ? "Timer is running" : "Timer is ready"}</span>
               </div>
-              <div className="focus-pace-row">
-                <Button variant="secondary" size="sm" onClick={handleGoSlower}>
-                  Slower
+
+              <div className="focus-timer-panel__controls">
+                <Button
+                  variant={isRunning ? "secondary" : "primary"}
+                  onClick={isRunning ? handlePauseFocus : handleContinueFocus}
+                >
+                  {isRunning ? "Pause" : "Start Timer"}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={setNormalPace}>
-                  Normal
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleGoFaster}>
-                  Faster
+                <select
+                  aria-label="Timer length"
+                  value={durationMinutes}
+                  onChange={handleDurationChange}
+                >
+                  <option value="10">10 min</option>
+                  <option value="15">15 min</option>
+                  <option value="25">25 min</option>
+                  <option value="35">35 min</option>
+                </select>
+                <Button variant="secondary" onClick={handleReset}>
+                  Reset
                 </Button>
               </div>
             </div>
@@ -500,11 +484,11 @@ function FocusMode() {
                 variant="secondary"
                 onClick={() => setShowSupportPanel((prev) => !prev)}
               >
-                I need a break
+                Help Me
               </Button>
             ) : (
               <Button variant="secondary" onClick={handleStartFocus}>
-                Start Focus
+                Open Focus
               </Button>
             )}
 
@@ -517,20 +501,9 @@ function FocusMode() {
             </Button>
           </div>
 
-          {isFocusActive && (
-            <div className="focus-setup-actions">
-              <Button variant="secondary" size="sm" onClick={isRunning ? handlePauseFocus : handleContinueFocus}>
-                {isRunning ? "Pause Timer" : "Resume Timer"}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={handleReset}>
-                Reset Timer
-              </Button>
-            </div>
-          )}
-
           {showSupportPanel && (
             <div className="focus-support-panel">
-              <p className="focus-support-panel__title">Let’s calm this step down.</p>
+              <p className="focus-support-panel__title">Let's calm this step down.</p>
               <div className="focus-support-panel__actions">
                 <Button
                   variant="secondary"
@@ -551,26 +524,20 @@ function FocusMode() {
                 >
                   Small break
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setFocusMessage("That is okay. We can try the same step again.")} 
-                >
-                  Try again
-                </Button>
               </div>
 
               <div className="focus-support-panel__audio">
                 <select
+                  aria-label="Calm sound"
                   value={selectedSound}
                   onChange={(e) => setSelectedSound(e.target.value)}
                 >
                   <option value="rain">Rain</option>
-                  <option value="white-noise">White Noise</option>
+                  <option value="white-noise">White noise</option>
                   <option value="forest">Forest</option>
                 </select>
                 <Button variant="secondary" size="sm" onClick={handleToggleSound}>
-                  {isSoundPlaying ? "Stop Sound" : "Play Calm Sound"}
+                  {isSoundPlaying ? "Stop Sound" : "Calm Sound"}
                 </Button>
               </div>
 

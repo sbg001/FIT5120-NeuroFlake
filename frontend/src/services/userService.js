@@ -388,7 +388,7 @@ export async function getChildPreferences() {
 
   const fallbackPreferences = {
     child_id: childId || null,
-    character_style: "star",
+    character_style: "dog",
   };
 
   if (!childId) {
@@ -428,7 +428,7 @@ export async function upsertChildPreferences(payload) {
 
   const preferencePayload = {
     child_id: childId,
-    character_style: payload.character_style || "star",
+    character_style: payload.character_style || "dog",
     updated_at: new Date().toISOString(),
   };
 

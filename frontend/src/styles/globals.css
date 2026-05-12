@@ -813,223 +813,30 @@ a:focus-visible {
 }
 
 .child-dashboard {
-  gap: 20px;
+  gap: 14px;
 }
 
 .child-dashboard__intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 0;
+  padding: 0;
+}
+
+.child-dashboard__intro > div:first-child {
   display: grid;
-  gap: 10px;
-  align-content: center;
-  min-height: 178px;
-  padding: 8px 0;
+  gap: 6px;
+  max-width: none;
+  min-width: 0;
 }
 
 .child-dashboard__intro h2 {
   margin: 0;
   color: #17263d;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1.04;
-}
-
-.child-dashboard__journey-card {
-  display: grid;
-  gap: 16px;
-  align-content: center;
-  padding: 22px;
-}
-
-.child-dashboard__journey-track {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  align-items: center;
-  gap: 10px;
-}
-
-.child-dashboard__journey-step {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  min-height: 112px;
-  padding: 14px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.56);
-  text-align: center;
-}
-
-.child-dashboard__journey-step strong {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  background: rgba(72, 130, 247, 0.14);
-  color: var(--primary-strong);
-  font-size: 1.25rem;
-}
-
-.child-dashboard__journey-step span {
-  color: #17263d;
-  font-weight: 900;
-}
-
-.child-dashboard__journey-step--focus {
-  border-color: rgba(50, 157, 136, 0.28);
-  background: rgba(220, 249, 241, 0.72);
-  box-shadow: 0 12px 28px rgba(41, 145, 125, 0.12);
-}
-
-.child-dashboard__journey-step--focus strong {
-  background: rgba(50, 157, 136, 0.18);
-  color: #176d5f;
-}
-
-.child-dashboard__journey-arrow {
-  color: var(--primary-strong);
-  font-size: 1.55rem;
-  font-weight: 900;
-}
-
-.child-dashboard__bottom-grid {
-  display: grid;
-  gap: 20px;
-}
-
-.child-dashboard__bottom-grid {
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
-}
-
-.child-dashboard__focus-card {
-  padding: clamp(22px, 3vw, 30px);
-}
-
-.child-dashboard__missions-list,
-.child-dashboard__style-card {
-  padding: 26px;
-}
-
-.child-dashboard__section-row,
-.child-dashboard__mission-progress-label {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.child-dashboard__mascot,
-.child-dashboard__style-identity {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(236,245,255,0.9));
-  box-shadow: 0 16px 28px rgba(74, 108, 161, 0.12);
-  font-size: 2rem;
-}
-
-.child-dashboard__mission-title {
-  margin: 0 0 0.35rem;
-  font-size: clamp(1.45rem, 2.5vw, 2rem);
-}
-
-.child-dashboard__missions-list,
-.child-dashboard__style-card {
-  display: grid;
-  gap: 16px;
-}
-
-.child-dashboard__mission-copy {
-  font-size: 1.05rem;
-}
-
-.child-dashboard__mission-progress {
-  display: grid;
-  gap: 10px;
-}
-
-.child-dashboard__mission-progress-label span,
-.child-dashboard__mini-mission p {
-  color: var(--text-soft);
-  font-size: 0.95rem;
-}
-
-.child-dashboard__mini-missions {
-  display: grid;
-  gap: 12px;
-}
-
-.child-dashboard__mini-mission {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.child-dashboard__mini-mission h4 {
-  margin-bottom: 0.35rem;
-}
-
-.child-dashboard__style-form {
-  display: grid;
-  gap: 14px;
-}
-
-.child-dashboard__bottom-grid--simple {
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-}
-
-.child-dashboard__reward-card {
-  display: grid;
-  gap: 16px;
-  padding: 26px;
-}
-
-.child-dashboard__reward-count {
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--primary-strong);
-  font-size: 1.8rem;
-  font-weight: 900;
-  box-shadow:
-    0 14px 28px rgba(74, 108, 161, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
-}
-
-.child-dashboard__style-message {
-  min-height: 24px;
-}
-
-.child-dashboard {
-  gap: 18px;
-}
-
-.child-dashboard__intro {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 18px;
-  min-height: 0;
-  padding: 2px 0 4px;
-}
-
-.child-dashboard__intro > div:first-child {
-  display: grid;
-  gap: 8px;
-  max-width: 720px;
-}
-
-.child-dashboard__intro h2 {
-  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  font-size: clamp(1.65rem, 2.45vw, 2.35rem);
+  line-height: 1.08;
 }
 
 .child-dashboard__intro-pills {
@@ -1039,30 +846,44 @@ a:focus-visible {
   gap: 10px;
 }
 
-.child-dashboard__workspace {
+.child-dashboard__board {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.78fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
+  grid-template-areas:
+    "task more"
+    "buddy rewards";
+  gap: 16px;
   align-items: stretch;
-}
-
-.child-dashboard__support-stack {
-  display: grid;
-  gap: 18px;
 }
 
 .child-dashboard__focus-card {
   display: grid;
-  gap: 16px;
+  grid-area: task;
+  gap: 14px;
+  align-content: space-between;
+  min-height: 100%;
+  padding: clamp(20px, 2.4vw, 28px);
 }
 
 .child-dashboard__focus-head,
-.child-dashboard__journey-title,
 .child-dashboard__reward-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+}
+
+.child-dashboard__focus-head > div:first-child,
+.child-dashboard__reward-head > div:first-child,
+.child-dashboard__section-row > div:first-child {
+  min-width: 0;
+}
+
+.child-dashboard__focus-side {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .child-dashboard__focus-action-row {
@@ -1076,64 +897,220 @@ a:focus-visible {
   margin: 0;
 }
 
-.child-dashboard__journey-card {
-  align-content: start;
-  gap: 14px;
+.child-dashboard__missions-list,
+.child-dashboard__style-card {
+  display: grid;
+  gap: 12px;
   padding: 20px;
 }
 
-.child-dashboard__journey-step {
-  min-height: 92px;
-  padding: 12px 8px;
+.child-dashboard__missions-list {
+  grid-area: more;
+  align-content: start;
 }
 
-.child-dashboard__journey-step strong {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  font-size: 1.15rem;
-}
-
-.child-dashboard__journey-arrow {
-  font-size: 1.4rem;
-}
-
-.child-dashboard__journey-note {
-  margin: 0;
-  font-size: 0.96rem;
-}
-
-.child-dashboard__bottom-grid,
-.child-dashboard__bottom-grid--simple {
-  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-  gap: 18px;
-}
-
-.child-dashboard__missions-list,
 .child-dashboard__style-card {
-  padding: 22px;
+  grid-area: buddy;
+  align-content: start;
 }
 
-.child-dashboard__mascot--compact {
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
-  font-size: 1.5rem;
+.child-dashboard__section-row,
+.child-dashboard__mission-progress-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.child-dashboard__mascot,
+.child-dashboard__focus-buddy,
+.child-dashboard__style-identity {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(236,245,255,0.9));
+  box-shadow: 0 16px 28px rgba(74, 108, 161, 0.12);
+  font-size: 1.8rem;
+}
+
+.child-dashboard__focus-buddy {
+  width: 70px;
+  height: 70px;
+  border-radius: 24px;
+  font-size: 2.15rem;
+}
+
+.buddy-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.child-dashboard__mission-title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.45rem, 2.1vw, 2rem);
+  line-height: 1.12;
+}
+
+.child-dashboard__mission-copy {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.child-dashboard__mission-progress,
+.child-dashboard__mini-missions,
+.child-dashboard__style-form {
+  display: grid;
+  gap: 12px;
+}
+
+.child-dashboard__buddy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.child-dashboard__buddy-option {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 74px;
+  padding: 10px 8px;
+  border: 1px solid rgba(126, 158, 202, 0.22);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #17263d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.child-dashboard__buddy-option span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 13px;
+  background: rgba(236, 245, 255, 0.9);
+  font-size: 1.3rem;
+}
+
+.child-dashboard__buddy-option .buddy-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.child-dashboard__buddy-option strong {
+  font-size: 0.85rem;
+}
+
+.child-dashboard__buddy-option--active {
+  border-color: rgba(72, 130, 247, 0.45);
+  background: rgba(235, 243, 255, 0.92);
+  box-shadow:
+    0 12px 24px rgba(72, 130, 247, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.child-dashboard__buddy-option:focus-visible {
+  outline: 3px solid rgba(72, 130, 247, 0.35);
+  outline-offset: 3px;
+}
+
+.child-dashboard__mission-progress-label span,
+.child-dashboard__mini-mission p {
+  color: var(--text-soft);
+  font-size: 0.95rem;
 }
 
 .child-dashboard__mini-mission {
-  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 76px;
+  padding: 12px 14px;
+  border: 1px solid rgba(126, 158, 202, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.child-dashboard__mini-mission h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0.35rem;
+  line-height: 1.25;
+}
+
+.child-dashboard__mini-mission-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .child-dashboard__reward-card {
+  display: grid;
+  grid-area: rewards;
   gap: 14px;
+  align-content: stretch;
   padding: 20px;
 }
 
 .child-dashboard__reward-count {
-  width: 64px;
-  height: 64px;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--primary-strong);
+  font-size: 1.55rem;
+  font-weight: 900;
+  box-shadow:
+    0 14px 28px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.child-dashboard__points-display {
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  padding: 18px;
+  border: 1px solid rgba(240, 198, 110, 0.34);
   border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 166, 0.42), transparent 36%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 248, 224, 0.88));
+  color: #17263d;
+  text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.child-dashboard__points-display strong {
+  color: var(--primary-strong);
+  font-size: clamp(3rem, 6vw, 4.8rem);
+  line-height: 0.9;
+}
+
+.child-dashboard__points-display span {
+  color: #675225;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.child-dashboard__style-message {
+  min-height: 24px;
 }
 
 .parent-dashboard {
@@ -1996,6 +1973,40 @@ a:focus-visible {
   border: 1px solid rgba(99, 135, 189, 0.16);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.76);
+}
+
+.focus-timer-panel {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.focus-timer-panel__readout {
+  display: grid;
+  gap: 6px;
+}
+
+.focus-timer-panel__readout span {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.focus-timer-panel__controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.focus-timer-panel__controls select,
+.focus-support-panel__audio select {
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid rgba(126, 158, 202, 0.24);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #17263d;
+  font-weight: 800;
 }
 
 .task-flow-focus-panel {
@@ -3821,8 +3832,7 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .child-dashboard__bottom-grid,
-  .child-dashboard__workspace,
+  .child-dashboard__board,
   .reward-overview-grid,
   .reward-overview-grid--simple,
   .parent-dashboard__hero-grid,
@@ -3869,6 +3879,18 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .child-dashboard__board {
+    grid-template-areas:
+      "task"
+      "more"
+      "rewards"
+      "buddy";
+  }
+
+  .child-dashboard__buddy-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .home-feature-tabs {
     grid-template-columns: 1fr;
   }
@@ -3904,6 +3926,14 @@ a:focus-visible {
   }
 
   .task-flow-mode-card__actions {
+    justify-content: flex-start;
+  }
+
+  .focus-timer-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .focus-timer-panel__controls {
     justify-content: flex-start;
   }
 }
@@ -3963,15 +3993,6 @@ a:focus-visible {
 
   .parent-setup-modal__panel {
     padding: 22px;
-  }
-
-  .child-dashboard__journey-track {
-    grid-template-columns: 1fr;
-  }
-
-  .child-dashboard__journey-arrow {
-    justify-self: center;
-    transform: rotate(90deg);
   }
 
 }

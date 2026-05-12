@@ -1358,7 +1358,7 @@ const checkRoutineReminders = useCallback(() => {
                 <div className="parent-dashboard__form-card">
                   <h4>Delete task</h4>
                   <p className="page-text">
-                    Removing a task also removes its saved step list.
+                    Removing a task deletes its step list. Past mood and reward history stays saved.
                   </p>
                   <div className="parent-dashboard__form-grid">
                     <select value={deleteTaskId} onChange={(e) => setDeleteTaskId(e.target.value)}>

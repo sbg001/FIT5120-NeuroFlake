@@ -1124,29 +1124,65 @@ async def update_task_step(step_id: str, request: UpdateTaskStepRequest):
 
 async def delete_task(task_id: str):
 
+    conn = None
+    cur = None
+
     try:
 
         conn = get_db_connection()
 
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+        cur.execute(
+            """
+            UPDATE emotion_logs
+            SET linked_task_id = NULL
+            WHERE linked_task_id = %s
+            """,
+            (task_id,),
+        )
+
+        cur.execute(
+            """
+            UPDATE reward_transactions
+            SET task_id = NULL
+            WHERE task_id = %s
+            """,
+            (task_id,),
+        )
+
         cur.execute("DELETE FROM task_steps WHERE task_id = %s", (task_id,))
 
-        cur.execute("DELETE FROM tasks WHERE task_id = %s", (task_id,))
+        cur.execute(
+            "DELETE FROM tasks WHERE task_id = %s RETURNING task_id",
+            (task_id,),
+        )
+
+        deleted_task = cur.fetchone()
+
+        if not deleted_task:
+            conn.rollback()
+            raise HTTPException(status_code=404, detail="Task not found.")
 
         conn.commit()
 
-        cur.close()
-
-        conn.close()
-
         return {"task_id": task_id}
 
+    except HTTPException:
+        raise
     except Exception as e:
+
+        if conn:
+            conn.rollback()
 
         print(f"Delete task error: {str(e)}")
 
         raise HTTPException(status_code=500, detail="Could not delete task.")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 @app.delete("/api/task-steps/{step_id}")
 

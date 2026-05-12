@@ -117,28 +117,20 @@ function FloatingCompanion() {
         role: msg.sender === "bot" ? "assistant" : "user",
         content: msg.text,
       }));
-      let pendingTasksString = "";
       let activeTaskString = "";
 
       if (!isParent) {
         try {
           // Check if the user is currently looking at a specific task page
           const currentPath = window.location.pathname;
-          const isTaskPage = currentPath.includes("/task/");
+          const isTaskPage = currentPath.includes("/tasks/");
           
           if (isTaskPage) {
-            // Extract the task ID from the URL (e.g., "/task/123" -> "123")
-            const taskId = currentPath.split("/task/")[1];
+            // Extract the task ID from the URL (e.g., "/tasks/123" -> "123")
+            const taskId = currentPath.split("/tasks/")[1];
             const taskRes = await getTaskById(taskId);
             if (taskRes && taskRes.data) {
               activeTaskString = `"${taskRes.data.title}" - ${taskRes.data.description}`;
-            }
-          } else {
-            // If they are on the home page, just get the general list
-            const tasksRes = await getTasks();
-            const pendingTasks = (tasksRes.data || []).filter(t => t.status !== "completed");
-            if (pendingTasks.length > 0) {
-              pendingTasksString = pendingTasks.map((t, index) => `${index + 1}. ${t.title}`).join("\n");
             }
           }
         } catch (e) {

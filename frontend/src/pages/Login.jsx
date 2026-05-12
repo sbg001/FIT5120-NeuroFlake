@@ -26,6 +26,37 @@ function Login() {
   const isParent = selectedRole === "parent";
   const isCreatingParent = isParent && authMode === "sign-up";
 
+  const getSignInErrorMessage = (error) => {
+    const normalizedError = String(error || "").toLowerCase();
+
+    if (
+      normalizedError.includes("could not sign in") ||
+      normalizedError.includes("request failed") ||
+      normalizedError.includes("failed to fetch") ||
+      normalizedError.includes("network")
+    ) {
+      return "We could not check your sign in right now. Please try again.";
+    }
+
+    return isParent
+      ? "We could not match that email and password."
+      : "That sign in did not work. Ask your parent to check your username and password.";
+  };
+
+  const getParentSignUpErrorMessage = (error) => {
+    const normalizedError = String(error || "").toLowerCase();
+
+    if (normalizedError.includes("already registered")) {
+      return "That email is already in use. Try signing in instead.";
+    }
+
+    if (normalizedError.includes("complete all parent sign up fields")) {
+      return "Add your name, email, and password.";
+    }
+
+    return "We could not create the parent account right now. Please try again.";
+  };
+
   const completeLogin = (user) => {
     localStorage.setItem("current_user_id", user.user_id);
     localStorage.setItem("current_user_role", user.role);
@@ -64,11 +95,7 @@ function Login() {
     setIsLoading(false);
 
     if (result.error) {
-      setErrorMessage(
-        isParent
-          ? "Email or password is wrong."
-          : "That did not work. Ask your parent to check your login."
-      );
+      setErrorMessage(getSignInErrorMessage(result.error));
       return;
     }
 
@@ -92,7 +119,7 @@ function Login() {
     setIsLoading(false);
 
     if (result.error) {
-      setErrorMessage(result.error);
+      setErrorMessage(getParentSignUpErrorMessage(result.error));
       return;
     }
 

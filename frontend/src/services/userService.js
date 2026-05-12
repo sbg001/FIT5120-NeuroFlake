@@ -388,9 +388,7 @@ export async function getChildPreferences() {
 
   const fallbackPreferences = {
     child_id: childId || null,
-    theme: "fun",
     character_style: "star",
-    reward_interest: "games",
   };
 
   if (!childId) {
@@ -430,9 +428,7 @@ export async function upsertChildPreferences(payload) {
 
   const preferencePayload = {
     child_id: childId,
-    theme: payload.theme || "fun",
     character_style: payload.character_style || "star",
-    reward_interest: payload.reward_interest || "games",
     updated_at: new Date().toISOString(),
   };
 

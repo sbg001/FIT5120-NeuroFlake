@@ -816,13 +816,6 @@ a:focus-visible {
   gap: 20px;
 }
 
-.child-dashboard__top-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  align-items: stretch;
-  gap: 18px;
-}
-
 .child-dashboard__intro {
   display: grid;
   gap: 10px;
@@ -910,90 +903,6 @@ a:focus-visible {
   padding: clamp(22px, 3vw, 30px);
 }
 
-.child-dashboard__focus-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
-  align-items: center;
-  gap: clamp(18px, 3vw, 30px);
-}
-
-.child-dashboard__focus-copy {
-  display: grid;
-  gap: 16px;
-}
-
-.child-dashboard__focus-side {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.42);
-  box-shadow:
-    0 14px 30px rgba(74, 108, 161, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(16px) saturate(135%);
-  -webkit-backdrop-filter: blur(16px) saturate(135%);
-}
-
-.child-dashboard__focus-hint {
-  display: grid;
-  gap: 3px;
-  text-align: center;
-}
-
-.child-dashboard__focus-hint strong {
-  color: #17263d;
-  font-size: 1rem;
-}
-
-.child-dashboard__focus-hint span {
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  font-weight: 800;
-}
-
-.child-dashboard__mascot--large {
-  width: 116px;
-  height: 116px;
-  border-radius: 34px;
-  font-size: 3rem;
-}
-
-.child-dashboard__quick-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.child-dashboard__quick-stat {
-  display: grid;
-  gap: 4px;
-  min-height: 112px;
-  padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.74);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.48);
-  box-shadow:
-    0 16px 34px rgba(74, 108, 161, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(18px) saturate(135%);
-  -webkit-backdrop-filter: blur(18px) saturate(135%);
-}
-
-.child-dashboard__quick-stat strong {
-  color: #17263d;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  line-height: 1;
-}
-
-.child-dashboard__quick-stat span {
-  color: var(--text-soft);
-  font-size: 0.96rem;
-  font-weight: 800;
-}
-
 .child-dashboard__missions-list,
 .child-dashboard__style-card {
   padding: 26px;
@@ -1047,21 +956,6 @@ a:focus-visible {
   font-size: 0.95rem;
 }
 
-.child-dashboard__mission-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, max-content));
-  gap: 12px;
-  align-items: start;
-}
-
-.child-dashboard__mission-actions .page-text {
-  grid-column: 1 / -1;
-}
-
-.child-dashboard__mission-actions--single {
-  grid-template-columns: max-content;
-}
-
 .child-dashboard__mini-missions {
   display: grid;
   gap: 12px;
@@ -1113,6 +1007,133 @@ a:focus-visible {
 
 .child-dashboard__style-message {
   min-height: 24px;
+}
+
+.child-dashboard {
+  gap: 18px;
+}
+
+.child-dashboard__intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 0;
+  padding: 2px 0 4px;
+}
+
+.child-dashboard__intro > div:first-child {
+  display: grid;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.child-dashboard__intro h2 {
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+}
+
+.child-dashboard__intro-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.child-dashboard__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.78fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.child-dashboard__support-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.child-dashboard__focus-card {
+  display: grid;
+  gap: 16px;
+}
+
+.child-dashboard__focus-head,
+.child-dashboard__journey-title,
+.child-dashboard__reward-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.child-dashboard__focus-action-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.child-dashboard__focus-action-row .page-text {
+  margin: 0;
+}
+
+.child-dashboard__journey-card {
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+}
+
+.child-dashboard__journey-step {
+  min-height: 92px;
+  padding: 12px 8px;
+}
+
+.child-dashboard__journey-step strong {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  font-size: 1.15rem;
+}
+
+.child-dashboard__journey-arrow {
+  font-size: 1.4rem;
+}
+
+.child-dashboard__journey-note {
+  margin: 0;
+  font-size: 0.96rem;
+}
+
+.child-dashboard__bottom-grid,
+.child-dashboard__bottom-grid--simple {
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 18px;
+}
+
+.child-dashboard__missions-list,
+.child-dashboard__style-card {
+  padding: 22px;
+}
+
+.child-dashboard__mascot--compact {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  font-size: 1.5rem;
+}
+
+.child-dashboard__mini-mission {
+  padding: 14px 16px;
+}
+
+.child-dashboard__reward-card {
+  gap: 14px;
+  padding: 20px;
+}
+
+.child-dashboard__reward-count {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
 }
 
 .parent-dashboard {
@@ -3801,8 +3822,7 @@ a:focus-visible {
   }
 
   .child-dashboard__bottom-grid,
-  .child-dashboard__top-grid,
-  .child-dashboard__focus-grid,
+  .child-dashboard__workspace,
   .reward-overview-grid,
   .reward-overview-grid--simple,
   .parent-dashboard__hero-grid,
@@ -3870,13 +3890,13 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .child-dashboard__focus-side {
-    justify-items: start;
+  .child-dashboard__intro {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .child-dashboard__intro {
-    min-height: 0;
-    padding: 0;
+  .child-dashboard__intro-pills {
+    justify-content: flex-start;
   }
 
   .task-flow-mode-card {
@@ -3954,9 +3974,6 @@ a:focus-visible {
     transform: rotate(90deg);
   }
 
-  .child-dashboard__mission-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 520px) {
@@ -4046,10 +4063,6 @@ a:focus-visible {
   .child-dashboard__mini-mission {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .child-dashboard__quick-stats {
-    grid-template-columns: 1fr;
   }
 
   .parent-dashboard__tab {

@@ -8,6 +8,7 @@ import TaskFlow from "../pages/TaskFlow";
 import FocusMode from "../pages/FocusMode";
 import Rewards from "../pages/Rewards";
 import ParentDashboard from "../pages/ParentDashboard";
+import DataVisualisation from "../pages/DataVisualisation";
 import NotFound from "../pages/NotFound";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import TermsConditions from "../pages/TermsConditions";
@@ -29,6 +30,7 @@ function AppRouter() {
         <Route path="/" element={<AppLayout />}>
           <Route index element={<Home />} />
           <Route path="about" element={<About />} />
+          <Route path="data" element={<DataVisualisation />} />
           <Route path="login" element={<Login />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
           <Route path="terms-and-conditions" element={<TermsConditions />} />

@@ -74,24 +74,26 @@ function DataIcon({ type }) {
         <path d="M5 21c.8-4.5 3.2-7 7-7s6.2 2.5 7 7" />
       </>
     ),
-    routine: (
-      <>
-        <rect x="4" y="4" width="16" height="16" rx="4" />
-        <path d="M8 9h8" />
-        <path d="M8 13h5" />
-        <path d="M8 17h7" />
-      </>
-    ),
     steps: (
       <>
         <path d="M5 18h4v-4h4v-4h4V6h2" />
         <path d="M5 18h14" />
       </>
     ),
-    search: (
+    guide: (
       <>
-        <circle cx="10.5" cy="10.5" r="6.5" />
-        <path d="M16 16l4 4" />
+        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
+        <path d="M8 7h8" />
+        <path d="M8 11h7" />
+        <path d="M8 15h5" />
+      </>
+    ),
+    progress: (
+      <>
+        <path d="M4 18h16" />
+        <path d="M7 18V9" />
+        <path d="M12 18V5" />
+        <path d="M17 18v-6" />
       </>
     ),
     star: (
@@ -173,7 +175,7 @@ function DataVisualisation() {
   const autisticAssistance = getAutisticValue(assistanceRow);
   const restrictionGap = autisticRestriction - nonAutisticRestriction;
 
-  const schoolComparisonData = useMemo(
+  const restrictionComparisonData = useMemo(
     () => [
       {
         label: "Autistic students",
@@ -229,7 +231,7 @@ function DataVisualisation() {
     const iconMap = {
       "Special tuition": "learning",
       "Counsellor or disability support person": "person",
-      "Special assessment procedure": "routine",
+      "Special assessment procedure": "guide",
       "Other support": "support",
     };
 
@@ -240,36 +242,24 @@ function DataVisualisation() {
     };
   });
 
-  const maxComparisonValue = Math.max(
-    1,
-    ...schoolComparisonData.map((item) => item.value)
-  );
-
-  const maxDifficultyValue = Math.max(
-    1,
-    ...difficultyCards.map((item) => item.value)
-  );
-
-  const maxSupportValue = Math.max(1, ...supportCards.map((item) => item.value));
-
   const evidenceCards = [
     {
-      icon: "school",
+      icon: "alert",
       value: `${autisticRestriction.toFixed(0)}%`,
-      label: "Educational restriction",
-      text: "Need extra support in school routines.",
+      label: "Restricted participation",
+      text: "Need extra support to take part in structured activities.",
     },
     {
-      icon: "alert",
+      icon: "communication",
       value: `${autisticDifficulty.toFixed(0)}%`,
-      label: "School difficulties",
-      text: "Face practical barriers at school.",
+      label: "Everyday difficulties",
+      text: "Face practical barriers that can affect daily tasks.",
     },
     {
       icon: "person",
       value: `${autisticAssistance.toFixed(0)}%`,
-      label: "Personal assistance",
-      text: "Use direct human support at school.",
+      label: "Human support",
+      text: "Use direct support from another person.",
     },
   ];
 
@@ -280,14 +270,14 @@ function DataVisualisation() {
       text: "Break hard tasks into clear actions.",
     },
     {
-      icon: "routine",
-      title: "Routines",
-      text: "Keep daily support repeatable.",
+      icon: "communication",
+      title: "Parent guidance",
+      text: "Give parents clear support suggestions.",
     },
     {
-      icon: "search",
-      title: "Triggers",
-      text: "Spot repeated stress patterns.",
+      icon: "guide",
+      title: "Task support",
+      text: "Help children understand what to do next.",
     },
     {
       icon: "star",
@@ -301,7 +291,7 @@ function DataVisualisation() {
       <PageHeader
         eyebrow="Data Insights"
         title="Why NeuroFlake Matters"
-        description="School data shows clear support needs. NeuroFlake turns those needs into simple daily actions."
+        description="Education data is used as evidence of wider daily support needs. NeuroFlake helps turn those needs into small steps, parent guidance, and visible progress."
       />
 
       {loadError ? (
@@ -316,14 +306,15 @@ function DataVisualisation() {
           <p className="eyebrow">Core problem</p>
           <h2>Support needs should be easier to see and manage.</h2>
           <p>
-            Autistic students experience more school restrictions. NeuroFlake helps
-            families turn support needs into routines, smaller steps, and visible progress.
+            The data shows that many autistic children face restrictions and practical
+            difficulties in structured environments. NeuroFlake helps families turn
+            those needs into clearer daily actions.
           </p>
         </div>
 
         <div className="data-viz__hero-stat">
           <strong>{autisticRestriction.toFixed(0)}%</strong>
-          <span>of autistic students have educational restrictions</span>
+          <span>report educational restrictions</span>
         </div>
       </section>
 
@@ -344,50 +335,51 @@ function DataVisualisation() {
         <span className="data-viz__section-mark" />
         <h3>What the data tells us</h3>
         <p>
-          The issue is not only diagnosis. The data shows practical school barriers:
-          restrictions, communication needs, social difficulty, and reliance on structured support.
+          The issue is not only diagnosis or schooling. The data points to broader
+          support needs: communication, social participation, learning barriers, and
+          reliance on direct support.
         </p>
       </section>
 
       <section className="data-viz__outcome-grid">
         <div className="data-viz__outcome-item">
-          <DataIcon type="school" />
+          <DataIcon type="alert" />
           <h4>Higher restriction</h4>
           <p>{restrictionGap.toFixed(0)} percentage points higher than non-autistic students.</p>
         </div>
 
         <div className="data-viz__outcome-item">
-          <DataIcon type="alert" />
+          <DataIcon type="communication" />
           <h4>Daily barriers</h4>
-          <p>{autisticDifficulty.toFixed(0)}% report school-related difficulties.</p>
+          <p>{autisticDifficulty.toFixed(0)}% report practical difficulties.</p>
         </div>
 
         <div className="data-viz__outcome-item">
           <DataIcon type="person" />
           <h4>Human support</h4>
-          <p>{autisticAssistance.toFixed(0)}% use personal assistance at school.</p>
+          <p>{autisticAssistance.toFixed(0)}% use personal assistance.</p>
         </div>
 
         <div className="data-viz__outcome-item">
           <DataIcon type="support" />
-          <h4>Support at school</h4>
-          <p>{autisticSupport.toFixed(0)}% receive education support.</p>
+          <h4>Structured support</h4>
+          <p>{autisticSupport.toFixed(0)}% receive formal education support.</p>
         </div>
       </section>
 
       <section className="data-viz__story-block">
         <div className="data-viz__story-copy">
           <span className="data-viz__section-mark" />
-          <p className="eyebrow">School gap</p>
-          <h3>Autistic students face more school restrictions</h3>
+          <p className="eyebrow">Support gap</p>
+          <h3>Many children need support beyond ordinary routines</h3>
           <p>
-            This gap shows why families need a tool that makes support needs visible
-            before daily tasks become overwhelming.
+            The gap shows that support needs are real and measurable. Families need
+            a tool that makes those needs visible before daily tasks become overwhelming.
           </p>
         </div>
 
         <div className="data-viz__chart-panel">
-          {schoolComparisonData.map((item) => (
+          {restrictionComparisonData.map((item) => (
             <div key={item.label} className="data-viz__chart-row">
               <div className="data-viz__chart-label">
                 <span>{item.label}</span>
@@ -397,7 +389,7 @@ function DataVisualisation() {
                 <div
                   className="data-viz__bar-fill"
                   style={{
-                    width: `${(item.value / maxComparisonValue) * 100}%`,
+                    width: `${Math.min(item.value, 100)}%`,
                   }}
                 />
               </div>
@@ -412,8 +404,9 @@ function DataVisualisation() {
           <p className="eyebrow">Main difficulties</p>
           <h3>Common barriers are practical, not vague</h3>
           <p>
-            These difficulties explain why NeuroFlake focuses on breaking tasks into
-            clear steps instead of giving general advice.
+            Communication, social participation, and learning difficulties can affect
+            many parts of daily life. This is why NeuroFlake focuses on clear,
+            step-by-step task support.
           </p>
         </div>
 
@@ -432,7 +425,7 @@ function DataVisualisation() {
                   <div
                     className="data-viz__bar-fill"
                     style={{
-                      width: `${(item.value / maxDifficultyValue) * 100}%`,
+                      width: `${Math.min(item.value, 100)}%`,
                     }}
                   />
                 </div>
@@ -446,10 +439,10 @@ function DataVisualisation() {
         <div className="data-viz__story-copy">
           <span className="data-viz__section-mark" />
           <p className="eyebrow">Support types</p>
-          <h3>Support already exists, but it needs coordination</h3>
+          <h3>Support exists, but families still need clarity at home</h3>
           <p>
-            NeuroFlake does not replace school support. It helps parents organise
-            daily routines, triggers, and progress around the child.
+            Formal support can help, but families also need simple tools for daily
+            understanding, task guidance, encouragement, and progress tracking.
           </p>
         </div>
 
@@ -468,7 +461,7 @@ function DataVisualisation() {
                   <div
                     className="data-viz__bar-fill"
                     style={{
-                      width: `${(item.value / maxSupportValue) * 100}%`,
+                      width: `${Math.min(item.value, 100)}%`,
                     }}
                   />
                 </div>
@@ -480,7 +473,7 @@ function DataVisualisation() {
 
       <section className="data-viz__response-section">
         <span className="data-viz__section-mark" />
-        <h3>From school needs to daily support</h3>
+        <h3>From support needs to practical daily help</h3>
 
         <div className="data-viz__response-grid">
           {neuroflakeResponses.map((item) => (

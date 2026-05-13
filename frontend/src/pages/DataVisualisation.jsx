@@ -17,7 +17,8 @@ function parseCsv(text) {
     return headers.reduce((row, header, index) => {
       const rawValue = values[index] || "";
       const numberValue = Number(rawValue);
-      row[header] = rawValue !== "" && !Number.isNaN(numberValue) ? numberValue : rawValue;
+      row[header] =
+        rawValue !== "" && !Number.isNaN(numberValue) ? numberValue : rawValue;
       return row;
     }, {});
   });
@@ -25,49 +26,52 @@ function parseCsv(text) {
 
 function DataIcon({ type }) {
   const icons = {
-    puzzle: (
+    school: (
       <>
-        <path d="M10 3H7.5A2.5 2.5 0 0 0 5 5.5V9H3.5A1.5 1.5 0 0 0 2 10.5v3A1.5 1.5 0 0 0 3.5 15H5v3.5A2.5 2.5 0 0 0 7.5 21H11v-2a2 2 0 1 1 4 0v2h1.5A2.5 2.5 0 0 0 19 18.5V15h1.5A1.5 1.5 0 0 0 22 13.5v-3A1.5 1.5 0 0 0 20.5 9H19V5.5A2.5 2.5 0 0 0 16.5 3H14v2a2 2 0 1 1-4 0V3Z" />
+        <path d="M3 9l9-5l9 5l-9 5l-9-5Z" />
+        <path d="M7 11.5v4.2c0 1.2 2.2 2.3 5 2.3s5-1.1 5-2.3v-4.2" />
+        <path d="M21 9v6" />
       </>
     ),
-    leaf: (
+    alert: (
       <>
-        <path d="M20.5 3.5C13 3.8 6.8 7.2 4.4 12.1C2.8 15.3 4.5 19 8.1 20.1C13.4 21.8 19.6 16.6 20.5 3.5Z" />
-        <path d="M5.5 18.5C8.2 13.9 11.8 10.7 16.5 8.4" />
+        <path d="M12 3l9 16H3L12 3Z" />
+        <path d="M12 9v4" />
+        <path d="M12 17h.01" />
       </>
     ),
-    compass: (
+    support: (
       <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M15.5 8.5L13.4 13.4L8.5 15.5L10.6 10.6L15.5 8.5Z" />
+        <path d="M12 21s-7-4.4-9.1-9.1C1.5 7.8 3.3 5 6.3 5c1.7 0 3.2.9 4 2.3C11.1 5.9 12.6 5 14.3 5c3 0 4.8 2.8 3.4 5.9C19 15.6 12 21 12 21Z" />
       </>
     ),
-    clock: (
+    communication: (
       <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3.5 2" />
+        <path d="M5 6.5h14a2 2 0 0 1 2 2v5.5a2 2 0 0 1-2 2h-6l-4.5 3v-3H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2Z" />
+        <path d="M7 10h10" />
+        <path d="M7 13h6" />
       </>
     ),
-    calendar: (
+    learning: (
       <>
-        <rect x="4" y="5" width="16" height="15" rx="3" />
-        <path d="M8 3v4" />
-        <path d="M16 3v4" />
-        <path d="M4 10h16" />
-        <path d="M8 14h2" />
-        <path d="M13 14h3" />
-        <path d="M8 17h5" />
+        <path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4Z" />
+        <path d="M8 8h7" />
+        <path d="M8 12h7" />
+        <path d="M8 16h5" />
       </>
     ),
-    heart: (
+    social: (
       <>
-        <path d="M12 20s-7-4.4-9.1-9.1C1.5 7.8 3.3 5 6.3 5c1.7 0 3.2.9 4 2.3C11.1 5.9 12.6 5 14.3 5c3 0 4.8 2.8 3.4 5.9C19 15.6 12 20 12 20Z" />
+        <circle cx="8" cy="8" r="3" />
+        <circle cx="16" cy="9" r="3" />
+        <path d="M3.5 20c.6-3.1 2.2-5 4.5-5s3.9 1.9 4.5 5" />
+        <path d="M12 20c.6-2.6 2-4 4-4s3.4 1.4 4 4" />
       </>
     ),
-    check: (
+    person: (
       <>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M8 12.3l2.4 2.4L16.5 8.5" />
+        <circle cx="12" cy="7" r="3" />
+        <path d="M5 21c.8-4.5 3.2-7 7-7s6.2 2.5 7 7" />
       </>
     ),
     routine: (
@@ -76,6 +80,12 @@ function DataIcon({ type }) {
         <path d="M8 9h8" />
         <path d="M8 13h5" />
         <path d="M8 17h7" />
+      </>
+    ),
+    steps: (
+      <>
+        <path d="M5 18h4v-4h4v-4h4V6h2" />
+        <path d="M5 18h14" />
       </>
     ),
     search: (
@@ -92,41 +102,54 @@ function DataIcon({ type }) {
   };
 
   return (
-    <svg
-      className="data-viz__svg-icon"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
+    <svg className="data-viz__svg-icon" viewBox="0 0 24 24" aria-hidden="true">
       {icons[type]}
     </svg>
   );
 }
 
+function findRow(rows, category) {
+  return rows.find((row) => row.category === category) || {};
+}
+
+function getAutisticValue(row) {
+  return Number(row["autistic_persons_(%)"] || 0);
+}
+
+function getNonAutisticValue(row) {
+  return Number(row["non-autistic_persons_(%)"] || 0);
+}
+
 function DataVisualisation() {
-  const [careHoursData, setCareHoursData] = useState([]);
-  const [careReasonsData, setCareReasonsData] = useState([]);
+  const [schoolingData, setSchoolingData] = useState([]);
+  const [supportData, setSupportData] = useState([]);
+  const [difficultyData, setDifficultyData] = useState([]);
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     async function loadVisualisationData() {
       try {
-        const [hoursResponse, reasonsResponse] = await Promise.all([
-          fetch("/data/care_hours_stats.csv"),
-          fetch("/data/care_reasons_stats.csv"),
-        ]);
+        const [schoolingResponse, supportResponse, difficultyResponse] =
+          await Promise.all([
+            fetch("/data/schooling_restrictions.csv"),
+            fetch("/data/support_types.csv"),
+            fetch("/data/difficulty_types.csv"),
+          ]);
 
-        if (!hoursResponse.ok || !reasonsResponse.ok) {
+        if (!schoolingResponse.ok || !supportResponse.ok || !difficultyResponse.ok) {
           setLoadError("Could not load visualisation datasets.");
           return;
         }
 
-        const [hoursText, reasonsText] = await Promise.all([
-          hoursResponse.text(),
-          reasonsResponse.text(),
+        const [schoolingText, supportText, difficultyText] = await Promise.all([
+          schoolingResponse.text(),
+          supportResponse.text(),
+          difficultyResponse.text(),
         ]);
 
-        setCareHoursData(parseCsv(hoursText));
-        setCareReasonsData(parseCsv(reasonsText));
+        setSchoolingData(parseCsv(schoolingText));
+        setSupportData(parseCsv(supportText));
+        setDifficultyData(parseCsv(difficultyText));
       } catch {
         setLoadError("Could not load visualisation datasets.");
       }
@@ -135,78 +158,153 @@ function DataVisualisation() {
     loadVisualisationData();
   }, []);
 
-  const careHours = careHoursData[0] || {};
-
-  const weeklyHoursData = useMemo(
-    () => [
-      {
-        icon: "leaf",
-        label: "Less than 20h",
-        value: Number(careHours.weekly_less_than_20 || 0),
-      },
-      {
-        icon: "compass",
-        label: "20–39h",
-        value: Number(careHours.weekly_20_39 || 0),
-      },
-      {
-        icon: "clock",
-        label: "40h+",
-        value: Number(careHours.weekly_40_or_more || 0),
-      },
-    ],
-    [careHours]
+  const restrictionRow = findRow(schoolingData, "Total with educational restriction");
+  const difficultyRow = findRow(difficultyData, "Total with difficulties(a)");
+  const supportRow = findRow(supportData, "Total receiving support(b)");
+  const assistanceRow = findRow(
+    schoolingData,
+    "Uses special assistance from a person at school"
   );
 
-  const careDurationData = useMemo(
+  const autisticRestriction = getAutisticValue(restrictionRow);
+  const nonAutisticRestriction = getNonAutisticValue(restrictionRow);
+  const autisticDifficulty = getAutisticValue(difficultyRow);
+  const autisticSupport = getAutisticValue(supportRow);
+  const autisticAssistance = getAutisticValue(assistanceRow);
+  const restrictionGap = autisticRestriction - nonAutisticRestriction;
+
+  const schoolComparisonData = useMemo(
     () => [
       {
-        label: "<2y",
-        value: Number(careHours.yearly_less_than_2 || 0),
+        label: "Autistic students",
+        value: autisticRestriction,
       },
       {
-        label: "2–4y",
-        value: Number(careHours.yearly_2_4 || 0),
-      },
-      {
-        label: "5–9y",
-        value: Number(careHours.yearly_5_9 || 0),
-      },
-      {
-        label: "10–24y",
-        value: Number(careHours.yearly_10_24 || 0),
-      },
-      {
-        label: "25y+",
-        value: Number(careHours.yearly_25_or_more || 0),
+        label: "Non-autistic students",
+        value: nonAutisticRestriction,
       },
     ],
-    [careHours]
+    [autisticRestriction, nonAutisticRestriction]
   );
 
-  const topReasons = [...careReasonsData]
-    .sort(
-      (first, second) =>
-        Number(second.parent_percentage || 0) - Number(first.parent_percentage || 0)
-    )
-    .slice(0, 3);
+  const topDifficulties = useMemo(
+    () =>
+      difficultyData
+        .filter((item) => {
+          const label = String(item.category || "").toLowerCase();
+          return !label.startsWith("total") && !label.startsWith("no ");
+        })
+        .sort((first, second) => getAutisticValue(second) - getAutisticValue(first))
+        .slice(0, 4),
+    [difficultyData]
+  );
 
-  const highCareHours = Number(careHours.weekly_40_or_more || 0);
-  const longTermCare =
-    Number(careHours.yearly_10_24 || 0) + Number(careHours.yearly_25_or_more || 0);
+  const topSupports = useMemo(
+    () =>
+      supportData
+        .filter((item) => {
+          const label = String(item.category || "").toLowerCase();
+          return !label.startsWith("total") && !label.startsWith("no ");
+        })
+        .sort((first, second) => getAutisticValue(second) - getAutisticValue(first))
+        .slice(0, 4),
+    [supportData]
+  );
 
-  const maxDurationValue = Math.max(1, ...careDurationData.map((item) => item.value));
-  const maxReasonValue = Math.max(
+  const difficultyCards = topDifficulties.map((item) => {
+    const iconMap = {
+      "Fitting in socially": "social",
+      "Communication difficulties": "communication",
+      "Learning difficulties": "learning",
+    };
+
+    return {
+      icon: iconMap[item.category] || "alert",
+      label: item.category,
+      value: getAutisticValue(item),
+    };
+  });
+
+  const supportCards = topSupports.map((item) => {
+    const iconMap = {
+      "Special tuition": "learning",
+      "Counsellor or disability support person": "person",
+      "Special assessment procedure": "routine",
+      "Other support": "support",
+    };
+
+    return {
+      icon: iconMap[item.category] || "support",
+      label: item.category,
+      value: getAutisticValue(item),
+    };
+  });
+
+  const maxComparisonValue = Math.max(
     1,
-    ...topReasons.map((reason) => Number(reason.parent_percentage || 0))
+    ...schoolComparisonData.map((item) => item.value)
   );
+
+  const maxDifficultyValue = Math.max(
+    1,
+    ...difficultyCards.map((item) => item.value)
+  );
+
+  const maxSupportValue = Math.max(
+    1,
+    ...supportCards.map((item) => item.value)
+  );
+
+  const evidenceCards = [
+    {
+      icon: "school",
+      value: `${autisticRestriction.toFixed(0)}%`,
+      label: "Educational restriction",
+      text: "Many autistic students need extra support in school routines.",
+    },
+    {
+      icon: "alert",
+      value: `${autisticDifficulty.toFixed(0)}%`,
+      label: "School difficulties",
+      text: "Difficulties are practical barriers, not abstract concerns.",
+    },
+    {
+      icon: "person",
+      value: `${autisticAssistance.toFixed(0)}%`,
+      label: "Personal assistance",
+      text: "Support often depends on people, structure, and preparation.",
+    },
+  ];
+
+  const neuroflakeResponses = [
+    {
+      icon: "steps",
+      title: "Small steps",
+      text: "Break hard tasks into clear actions.",
+    },
+    {
+      icon: "routine",
+      title: "Routines",
+      text: "Keep daily support repeatable.",
+    },
+    {
+      icon: "search",
+      title: "Triggers",
+      text: "Spot repeated stress patterns.",
+    },
+    {
+      icon: "star",
+      title: "Rewards",
+      text: "Make progress visible.",
+    },
+  ];
 
   return (
     <section className="page-section data-visualisation-page">
       <PageHeader
         eyebrow="Data Insights"
         title="Why NeuroFlake Matters"
-        description="Caregiving data shows why families need simple routines, gentle prompts, and visible progress."
+        description="School data shows clear support needs. NeuroFlake turns those needs into simple daily actions."
       />
 
       {loadError ? (
@@ -217,130 +315,209 @@ function DataVisualisation() {
 
       <Card className="data-viz__landing-hero" variant="glow">
         <div className="data-viz__hero-icon" aria-hidden="true">
-          <DataIcon type="puzzle" />
+          <DataIcon type="school" />
         </div>
 
         <div className="data-viz__hero-main">
-          <h3>Parent support should reduce pressure, not add more work.</h3>
+          <Badge tone="warm">Core problem</Badge>
+          <h3>Support needs should be easier to see and manage.</h3>
+          <p>
+            Autistic students report higher school restrictions. Families need
+            clear routines, smaller steps, and visible progress.
+          </p>
         </div>
 
         <div className="data-viz__hero-number">
-          <strong>{highCareHours.toFixed(1)}%</strong>
-          <span>provide 40+ hours of care each week</span>
+          <strong>{autisticRestriction.toFixed(0)}%</strong>
+          <span>with educational restrictions</span>
         </div>
       </Card>
 
-      <div className="data-viz__stat-grid">
-        {weeklyHoursData.map((item) => (
-          <Card key={item.label} className="data-viz__stat-card" variant="soft">
-            <div className="data-viz__stat-icon" aria-hidden="true">
+      <div className="data-viz__evidence-grid">
+        {evidenceCards.map((item) => (
+          <Card key={item.label} className="data-viz__evidence-card" variant="soft">
+            <div className="data-viz__small-icon" aria-hidden="true">
               <DataIcon type={item.icon} />
             </div>
-            <strong>{item.value.toFixed(1)}%</strong>
-            <span>{item.label} weekly care</span>
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+            <p>{item.text}</p>
           </Card>
         ))}
       </div>
 
-      <div className="data-viz__story-grid">
+      <div className="data-viz__two-column">
         <Card className="data-viz__visual-card" variant="default">
           <div className="data-viz__mini-header">
             <div>
-              <p className="eyebrow">Long-term care</p>
-              <h3>{longTermCare.toFixed(1)}% provide care for 10+ years</h3>
+              <p className="eyebrow">School gap</p>
+              <h3>Educational restrictions are not equal</h3>
             </div>
-            <div className="data-viz__mini-icon" aria-hidden="true">
-              <DataIcon type="calendar" />
-            </div>
+            <Badge tone="sky">+{restrictionGap.toFixed(0)} pts</Badge>
           </div>
 
-          <div className="data-viz__column-chart">
-            {careDurationData.map((item) => (
-              <div key={item.label} className="data-viz__column-item">
-                <div className="data-viz__column-track">
-                  <div
-                    className="data-viz__column-fill"
-                    style={{ height: `${(item.value / maxDurationValue) * 100}%` }}
-                  />
+          <div className="data-viz__comparison-bars">
+            {schoolComparisonData.map((item) => (
+              <div key={item.label} className="data-viz__comparison-row">
+                <div className="data-viz__bar-label-row">
+                  <span>{item.label}</span>
+                  <strong>{item.value.toFixed(0)}%</strong>
                 </div>
-                <strong>{item.value.toFixed(1)}%</strong>
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <Card className="data-viz__visual-card" variant="glow">
-          <div className="data-viz__mini-header">
-            <div>
-              <p className="eyebrow">Why parents care</p>
-              <h3>Care is personal, not just practical</h3>
-            </div>
-            <div className="data-viz__mini-icon" aria-hidden="true">
-              <DataIcon type="heart" />
-            </div>
-          </div>
-
-          <div className="data-viz__reason-stack">
-            {topReasons.map((reason, index) => (
-              <div key={reason.reason} className="data-viz__reason-pill">
-                <div className="data-viz__reason-rank">{index + 1}</div>
-                <span>{reason.reason}</span>
-                <strong>{Number(reason.parent_percentage || 0).toFixed(1)}%</strong>
                 <div className="data-viz__bar-track">
                   <div
                     className="data-viz__bar-fill"
                     style={{
-                      width: `${
-                        (Number(reason.parent_percentage || 0) / maxReasonValue) * 100
-                      }%`,
+                      width: `${(item.value / maxComparisonValue) * 100}%`,
                     }}
                   />
                 </div>
               </div>
             ))}
           </div>
+
+          <div className="data-viz__chart-note">
+            <strong>What this means</strong>
+            <p>
+              Families need a tool that makes support needs visible before daily
+              tasks become overwhelming.
+            </p>
+          </div>
+        </Card>
+
+        <Card className="data-viz__visual-card" variant="glow">
+          <div className="data-viz__mini-header">
+            <div>
+              <p className="eyebrow">Main difficulties</p>
+              <h3>What children struggle with</h3>
+            </div>
+            <Badge tone="warm">Top 4</Badge>
+          </div>
+
+          <div className="data-viz__compact-list">
+            {difficultyCards.map((item) => (
+              <div key={item.label} className="data-viz__compact-row">
+                <div className="data-viz__compact-icon" aria-hidden="true">
+                  <DataIcon type={item.icon} />
+                </div>
+                <div className="data-viz__compact-main">
+                  <div className="data-viz__bar-label-row">
+                    <span>{item.label}</span>
+                    <strong>{item.value.toFixed(0)}%</strong>
+                  </div>
+                  <div className="data-viz__bar-track">
+                    <div
+                      className="data-viz__bar-fill"
+                      style={{
+                        width: `${(item.value / maxDifficultyValue) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="data-viz__chart-note">
+            <strong>What this means</strong>
+            <p>
+              NeuroFlake should break complex situations into smaller, clearer actions.
+            </p>
+          </div>
         </Card>
       </div>
 
-      <Card className="data-viz__solution-card" variant="soft">
+      <div className="data-viz__two-column">
+        <Card className="data-viz__visual-card" variant="default">
+          <div className="data-viz__mini-header">
+            <div>
+              <p className="eyebrow">Support types</p>
+              <h3>What support often looks like</h3>
+            </div>
+            <Badge tone="mint">Top 4</Badge>
+          </div>
+
+          <div className="data-viz__compact-list">
+            {supportCards.map((item) => (
+              <div key={item.label} className="data-viz__compact-row">
+                <div className="data-viz__compact-icon" aria-hidden="true">
+                  <DataIcon type={item.icon} />
+                </div>
+                <div className="data-viz__compact-main">
+                  <div className="data-viz__bar-label-row">
+                    <span>{item.label}</span>
+                    <strong>{item.value.toFixed(0)}%</strong>
+                  </div>
+                  <div className="data-viz__bar-track">
+                    <div
+                      className="data-viz__bar-fill"
+                      style={{
+                        width: `${(item.value / maxSupportValue) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="data-viz__chart-note">
+            <strong>What this means</strong>
+            <p>
+              School support exists, but families still need home routines that
+              connect with that support.
+            </p>
+          </div>
+        </Card>
+
+        <Card className="data-viz__visual-card data-viz__bridge-card" variant="soft">
+          <div className="data-viz__mini-header">
+            <div>
+              <p className="eyebrow">Design decision</p>
+              <h3>Why this becomes a web app</h3>
+            </div>
+            <Badge tone="warm">Problem → product</Badge>
+          </div>
+
+          <div className="data-viz__bridge-list">
+            <div>
+              <DataIcon type="alert" />
+              <span>School difficulties are hard to track day by day.</span>
+            </div>
+            <div>
+              <DataIcon type="routine" />
+              <span>Parents need repeatable routines, not one-time advice.</span>
+            </div>
+            <div>
+              <DataIcon type="steps" />
+              <span>Children need tasks presented one step at a time.</span>
+            </div>
+            <div>
+              <DataIcon type="star" />
+              <span>Visible progress helps motivation and confidence.</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="data-viz__solution-card" variant="glow">
         <div className="data-viz__solution-header">
           <div>
             <p className="eyebrow">NeuroFlake response</p>
-            <h3>Simple support for daily family routines</h3>
+            <h3>From school needs to daily support</h3>
           </div>
-          <Badge tone="mint">Designed from the data</Badge>
+          <Badge tone="mint">Product response</Badge>
         </div>
 
         <div className="data-viz__solution-grid">
-          <div>
-            <span aria-hidden="true">
-              <DataIcon type="check" />
-            </span>
-            <strong>Small steps</strong>
-            <p>Break tasks into child-friendly actions.</p>
-          </div>
-          <div>
-            <span aria-hidden="true">
-              <DataIcon type="routine" />
-            </span>
-            <strong>Routines</strong>
-            <p>Help parents plan without starting over.</p>
-          </div>
-          <div>
-            <span aria-hidden="true">
-              <DataIcon type="search" />
-            </span>
-            <strong>Triggers</strong>
-            <p>Notice repeated stress patterns early.</p>
-          </div>
-          <div>
-            <span aria-hidden="true">
-              <DataIcon type="star" />
-            </span>
-            <strong>Rewards</strong>
-            <p>Make progress visible and encouraging.</p>
-          </div>
+          {neuroflakeResponses.map((item) => (
+            <div key={item.title}>
+              <span aria-hidden="true">
+                <DataIcon type={item.icon} />
+              </span>
+              <strong>{item.title}</strong>
+              <p>{item.text}</p>
+            </div>
+          ))}
         </div>
       </Card>
     </section>

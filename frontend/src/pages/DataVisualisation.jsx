@@ -250,29 +250,26 @@ function DataVisualisation() {
     ...difficultyCards.map((item) => item.value)
   );
 
-  const maxSupportValue = Math.max(
-    1,
-    ...supportCards.map((item) => item.value)
-  );
+  const maxSupportValue = Math.max(1, ...supportCards.map((item) => item.value));
 
   const evidenceCards = [
     {
       icon: "school",
       value: `${autisticRestriction.toFixed(0)}%`,
       label: "Educational restriction",
-      text: "Many autistic students need extra support in school routines.",
+      text: "Need extra support in school routines.",
     },
     {
       icon: "alert",
       value: `${autisticDifficulty.toFixed(0)}%`,
       label: "School difficulties",
-      text: "Difficulties are practical barriers, not abstract concerns.",
+      text: "Face practical barriers at school.",
     },
     {
       icon: "person",
       value: `${autisticAssistance.toFixed(0)}%`,
       label: "Personal assistance",
-      text: "Support often depends on people, structure, and preparation.",
+      text: "Use direct human support at school.",
     },
   ];
 
@@ -313,53 +310,121 @@ function DataVisualisation() {
         </Card>
       ) : null}
 
-      <Card className="data-viz__landing-hero" variant="glow">
-        <div className="data-viz__hero-icon" aria-hidden="true">
-          <DataIcon type="school" />
-        </div>
-
-        <div className="data-viz__hero-main">
-          <Badge tone="warm">Core problem</Badge>
-          <h3>Support needs should be easier to see and manage.</h3>
+      <section className="data-viz__hero-banner">
+        <div className="data-viz__hero-copy">
+          <span className="data-viz__section-mark" />
+          <p className="eyebrow">Core problem</p>
+          <h2>Support needs should be easier to see and manage.</h2>
           <p>
-            Autistic students report higher school restrictions. Families need
-            clear routines, smaller steps, and visible progress.
+            Autistic students experience more school restrictions. NeuroFlake helps
+            families turn support needs into routines, smaller steps, and visible progress.
           </p>
         </div>
 
-        <div className="data-viz__hero-number">
+        <div className="data-viz__hero-stat">
           <strong>{autisticRestriction.toFixed(0)}%</strong>
-          <span>with educational restrictions</span>
+          <span>of autistic students have educational restrictions</span>
         </div>
-      </Card>
+      </section>
 
-      <div className="data-viz__evidence-grid">
+      <section className="data-viz__floating-panel">
         {evidenceCards.map((item) => (
-          <Card key={item.label} className="data-viz__evidence-card" variant="soft">
-            <div className="data-viz__small-icon" aria-hidden="true">
+          <div key={item.label} className="data-viz__floating-item">
+            <div className="data-viz__floating-icon" aria-hidden="true">
               <DataIcon type={item.icon} />
             </div>
             <strong>{item.value}</strong>
             <span>{item.label}</span>
             <p>{item.text}</p>
-          </Card>
-        ))}
-      </div>
-
-      <div className="data-viz__two-column">
-        <Card className="data-viz__visual-card" variant="default">
-          <div className="data-viz__mini-header">
-            <div>
-              <p className="eyebrow">School gap</p>
-              <h3>Educational restrictions are not equal</h3>
-            </div>
-            <Badge tone="sky">+{restrictionGap.toFixed(0)} pts</Badge>
           </div>
+        ))}
+      </section>
 
-          <div className="data-viz__comparison-bars">
-            {schoolComparisonData.map((item) => (
-              <div key={item.label} className="data-viz__comparison-row">
-                <div className="data-viz__bar-label-row">
+      <section className="data-viz__intro-section">
+        <span className="data-viz__section-mark" />
+        <h3>What the data tells us</h3>
+        <p>
+          The issue is not only diagnosis. The data shows practical school barriers:
+          restrictions, communication needs, social difficulty, and reliance on structured support.
+        </p>
+      </section>
+
+      <section className="data-viz__outcome-grid">
+        <div className="data-viz__outcome-item">
+          <DataIcon type="school" />
+          <h4>Higher restriction</h4>
+          <p>{restrictionGap.toFixed(0)} percentage points higher than non-autistic students.</p>
+        </div>
+
+        <div className="data-viz__outcome-item">
+          <DataIcon type="alert" />
+          <h4>Daily barriers</h4>
+          <p>{autisticDifficulty.toFixed(0)}% report school-related difficulties.</p>
+        </div>
+
+        <div className="data-viz__outcome-item">
+          <DataIcon type="person" />
+          <h4>Human support</h4>
+          <p>{autisticAssistance.toFixed(0)}% use personal assistance at school.</p>
+        </div>
+
+        <div className="data-viz__outcome-item">
+          <DataIcon type="support" />
+          <h4>Support at school</h4>
+          <p>{autisticSupport.toFixed(0)}% receive education support.</p>
+        </div>
+      </section>
+
+      <section className="data-viz__story-block">
+        <div className="data-viz__story-copy">
+          <span className="data-viz__section-mark" />
+          <p className="eyebrow">School gap</p>
+          <h3>Autistic students face more school restrictions</h3>
+          <p>
+            This gap shows why families need a tool that makes support needs visible
+            before daily tasks become overwhelming.
+          </p>
+        </div>
+
+        <div className="data-viz__chart-panel">
+          {schoolComparisonData.map((item) => (
+            <div key={item.label} className="data-viz__chart-row">
+              <div className="data-viz__chart-label">
+                <span>{item.label}</span>
+                <strong>{item.value.toFixed(0)}%</strong>
+              </div>
+              <div className="data-viz__bar-track">
+                <div
+                  className="data-viz__bar-fill"
+                  style={{
+                    width: `${(item.value / maxComparisonValue) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="data-viz__story-block data-viz__story-block--reverse">
+        <div className="data-viz__story-copy">
+          <span className="data-viz__section-mark" />
+          <p className="eyebrow">Main difficulties</p>
+          <h3>Common barriers are practical, not vague</h3>
+          <p>
+            These difficulties explain why NeuroFlake focuses on breaking tasks into
+            clear steps instead of giving general advice.
+          </p>
+        </div>
+
+        <div className="data-viz__chart-panel">
+          {difficultyCards.map((item) => (
+            <div key={item.label} className="data-viz__icon-chart-row">
+              <div className="data-viz__row-icon" aria-hidden="true">
+                <DataIcon type={item.icon} />
+              </div>
+              <div className="data-viz__row-main">
+                <div className="data-viz__chart-label">
                   <span>{item.label}</span>
                   <strong>{item.value.toFixed(0)}%</strong>
                 </div>
@@ -367,159 +432,68 @@ function DataVisualisation() {
                   <div
                     className="data-viz__bar-fill"
                     style={{
-                      width: `${(item.value / maxComparisonValue) * 100}%`,
+                      width: `${(item.value / maxDifficultyValue) * 100}%`,
                     }}
                   />
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="data-viz__chart-note">
-            <strong>What this means</strong>
-            <p>
-              Families need a tool that makes support needs visible before daily
-              tasks become overwhelming.
-            </p>
-          </div>
-        </Card>
-
-        <Card className="data-viz__visual-card" variant="glow">
-          <div className="data-viz__mini-header">
-            <div>
-              <p className="eyebrow">Main difficulties</p>
-              <h3>What children struggle with</h3>
             </div>
-            <Badge tone="warm">Top 4</Badge>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          <div className="data-viz__compact-list">
-            {difficultyCards.map((item) => (
-              <div key={item.label} className="data-viz__compact-row">
-                <div className="data-viz__compact-icon" aria-hidden="true">
-                  <DataIcon type={item.icon} />
-                </div>
-                <div className="data-viz__compact-main">
-                  <div className="data-viz__bar-label-row">
-                    <span>{item.label}</span>
-                    <strong>{item.value.toFixed(0)}%</strong>
-                  </div>
-                  <div className="data-viz__bar-track">
-                    <div
-                      className="data-viz__bar-fill"
-                      style={{
-                        width: `${(item.value / maxDifficultyValue) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="data-viz__chart-note">
-            <strong>What this means</strong>
-            <p>
-              NeuroFlake should break complex situations into smaller, clearer actions.
-            </p>
-          </div>
-        </Card>
-      </div>
-
-      <div className="data-viz__two-column">
-        <Card className="data-viz__visual-card" variant="default">
-          <div className="data-viz__mini-header">
-            <div>
-              <p className="eyebrow">Support types</p>
-              <h3>What support often looks like</h3>
-            </div>
-            <Badge tone="mint">Top 4</Badge>
-          </div>
-
-          <div className="data-viz__compact-list">
-            {supportCards.map((item) => (
-              <div key={item.label} className="data-viz__compact-row">
-                <div className="data-viz__compact-icon" aria-hidden="true">
-                  <DataIcon type={item.icon} />
-                </div>
-                <div className="data-viz__compact-main">
-                  <div className="data-viz__bar-label-row">
-                    <span>{item.label}</span>
-                    <strong>{item.value.toFixed(0)}%</strong>
-                  </div>
-                  <div className="data-viz__bar-track">
-                    <div
-                      className="data-viz__bar-fill"
-                      style={{
-                        width: `${(item.value / maxSupportValue) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="data-viz__chart-note">
-            <strong>What this means</strong>
-            <p>
-              School support exists, but families still need home routines that
-              connect with that support.
-            </p>
-          </div>
-        </Card>
-
-        <Card className="data-viz__visual-card data-viz__bridge-card" variant="soft">
-          <div className="data-viz__mini-header">
-            <div>
-              <p className="eyebrow">Design decision</p>
-              <h3>Why this becomes a web app</h3>
-            </div>
-            <Badge tone="warm">Problem → product</Badge>
-          </div>
-
-          <div className="data-viz__bridge-list">
-            <div>
-              <DataIcon type="alert" />
-              <span>School difficulties are hard to track day by day.</span>
-            </div>
-            <div>
-              <DataIcon type="routine" />
-              <span>Parents need repeatable routines, not one-time advice.</span>
-            </div>
-            <div>
-              <DataIcon type="steps" />
-              <span>Children need tasks presented one step at a time.</span>
-            </div>
-            <div>
-              <DataIcon type="star" />
-              <span>Visible progress helps motivation and confidence.</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <Card className="data-viz__solution-card" variant="glow">
-        <div className="data-viz__solution-header">
-          <div>
-            <p className="eyebrow">NeuroFlake response</p>
-            <h3>From school needs to daily support</h3>
-          </div>
-          <Badge tone="mint">Product response</Badge>
+      <section className="data-viz__story-block">
+        <div className="data-viz__story-copy">
+          <span className="data-viz__section-mark" />
+          <p className="eyebrow">Support types</p>
+          <h3>Support already exists, but it needs coordination</h3>
+          <p>
+            NeuroFlake does not replace school support. It helps parents organise
+            daily routines, triggers, and progress around the child.
+          </p>
         </div>
 
-        <div className="data-viz__solution-grid">
-          {neuroflakeResponses.map((item) => (
-            <div key={item.title}>
-              <span aria-hidden="true">
+        <div className="data-viz__chart-panel">
+          {supportCards.map((item) => (
+            <div key={item.label} className="data-viz__icon-chart-row">
+              <div className="data-viz__row-icon" aria-hidden="true">
                 <DataIcon type={item.icon} />
-              </span>
-              <strong>{item.title}</strong>
+              </div>
+              <div className="data-viz__row-main">
+                <div className="data-viz__chart-label">
+                  <span>{item.label}</span>
+                  <strong>{item.value.toFixed(0)}%</strong>
+                </div>
+                <div className="data-viz__bar-track">
+                  <div
+                    className="data-viz__bar-fill"
+                    style={{
+                      width: `${(item.value / maxSupportValue) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="data-viz__response-section">
+        <span className="data-viz__section-mark" />
+        <h3>From school needs to daily support</h3>
+
+        <div className="data-viz__response-grid">
+          {neuroflakeResponses.map((item) => (
+            <div key={item.title} className="data-viz__response-card">
+              <div className="data-viz__response-top" aria-hidden="true">
+                <DataIcon type={item.icon} />
+              </div>
+              <h4>{item.title}</h4>
               <p>{item.text}</p>
             </div>
           ))}
         </div>
-      </Card>
+      </section>
     </section>
   );
 }

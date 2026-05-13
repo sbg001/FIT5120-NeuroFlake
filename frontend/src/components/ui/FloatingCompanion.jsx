@@ -5,14 +5,37 @@ import "./FloatingCompanion.css";
 
 const CHAT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || ""}/api/chat`;
 
-const petExpressions = {
-  cat: { idle: "\u{1F431}", success: "\u{1F63B}", struggle: "\u{1F63F}" },
-  dog: { idle: "\u{1F436}", success: "\u{1F415}\u{1F389}", struggle: "\u{1F97A}" },
-  bear: { idle: "\u{1F9F8}", success: "\u{1F9F8}\u2728", struggle: "\u{1F9F8}\u{1F499}" },
-  turtle: { idle: "\u{1F422}", success: "\u{1F422}\u2728", struggle: "\u{1F422}\u{1F499}" },
-  robot: { idle: "\u{1F916}", success: "\u{1F916}\u2728", struggle: "\u{1F916}\u{1F499}" },
-  star: { idle: "\u2B50", success: "\u{1F31F}", struggle: "\u{1F4AB}" },
-  guide: { idle: "\u{1F9ED}", success: "\u{1F9ED}", struggle: "\u{1F9ED}" },
+// 1. The NEW Pixel Art Configuration
+const petConfig = {
+  cat: { 
+    images: { awake: "/pets/cat_awake.gif", happy: "/pets/cat_happy.gif", asleep: "/pets/cat_asleep.gif" },
+    greetings: ["*Meow!*", "*Prrr...* Ready?", "Hi there, *meow*!"] 
+  },
+  dog: { 
+    images: { awake: "/pets/dog_awake.gif", happy: "/pets/dog_happy.gif", asleep: "/pets/dog_asleep.gif" }, 
+    greetings: ["*Woof!*", "*Arf!* Let's do this!", "*Pant pant*"] 
+  },
+  bear: { 
+    images: { awake: "/pets/bear_awake.gif", happy: "/pets/bear_happy.gif", asleep: "/pets/bear_asleep.gif" }, 
+    greetings: ["*Rawr!*", "Big bear hug!", "*Grrr...* Let's go!"] 
+  },
+  turtle: { 
+    images: { awake: "/pets/turtle_awake.gif", happy: "/pets/turtle_happy.gif", asleep: "/pets/turtle_asleep.gif" }, 
+    greetings: ["*Snap!*", "Slow and steady!", "Shell yeah!"] 
+  },
+  robot: { 
+    images: { awake: "/pets/robot_awake.gif", happy: "/pets/robot_happy.gif", asleep: "/pets/robot_asleep.gif" }, 
+    greetings: ["*Beep boop!*", "System ready.", "*Whirrr...*"] 
+  },
+  star: { 
+    images: { awake: "/pets/star_awake.gif", happy: "/pets/star_happy.gif", asleep: "/pets/star_asleep.gif" }, 
+    greetings: ["*Twinkle!*", "Shine bright!", "*Sparkle sparkle*"] 
+  },
+  guide: { 
+    // Fallback for the parent dashboard
+    images: { awake: "🧭", happy: "🧭" }, 
+    greetings: ["Hello!", "At your service."] 
+  }
 };
 
 function FloatingCompanion() {
@@ -20,7 +43,12 @@ function FloatingCompanion() {
   const [petData, setPetData] = useState({ type: "dog" });
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
+  
+  // 2. NEW STATES for the greeting animation
+  const [isGreeting, setIsGreeting] = useState(false);
+  const [currentGreeting, setCurrentGreeting] = useState("");
   const [emotionState, setEmotionState] = useState("idle");
+
   const messagesEndRef = useRef(null);
   const tasksContextRef = useRef("");
   const userRole = localStorage.getItem("current_user_role") || "child";
@@ -43,11 +71,15 @@ function FloatingCompanion() {
       return;
     }
 
-    const { data } = await getChildPreferences();
-    const rawStyle = String(data?.character_style || "dog").toLowerCase();
-    const selectedType = petExpressions[rawStyle] ? rawStyle : "dog";
+    try {
+      const { data } = await getChildPreferences();
+      const rawStyle = String(data?.character_style || "dog").toLowerCase();
+      const selectedType = petConfig[rawStyle] ? rawStyle : "dog";
+      setPetData({ type: selectedType });
+    } catch {
+      setPetData({ type: "dog" });
+    }
 
-    setPetData({ type: selectedType });
     setMessages([
       { id: 1, sender: "bot", text: "Hi! I'm here for you. How are you doing today?" },
     ]);
@@ -56,22 +88,7 @@ function FloatingCompanion() {
   useEffect(() => {
     loadPet();
     window.addEventListener("preferencesUpdated", loadPet);
-
-    const handleEmotionEvent = (event) => {
-      const newEmotion = event.detail;
-      setEmotionState(newEmotion);
-
-      setTimeout(() => {
-        setEmotionState("idle");
-      }, 4000);
-    };
-
-    window.addEventListener("companionEmotion", handleEmotionEvent);
-
-    return () => {
-      window.removeEventListener("preferencesUpdated", loadPet);
-      window.removeEventListener("companionEmotion", handleEmotionEvent);
-    };
+    return () => window.removeEventListener("preferencesUpdated", loadPet);
   }, [loadPet]);
 
   const loadTasksContext = useCallback(async () => {
@@ -82,23 +99,32 @@ function FloatingCompanion() {
 
     try {
       const tasksRes = await getTasks();
-      const pendingTasks = (tasksRes.data || []).filter(
-        (task) => task.status !== "completed"
-      );
-
-      tasksContextRef.current =
-        pendingTasks.length > 0
-          ? pendingTasks.map((task, index) => `${index + 1}. ${task.title}`).join("\n")
-          : "All tasks completed! They have free time.";
+      const pendingTasks = (tasksRes.data || []).filter(task => task.status !== "completed");
+      tasksContextRef.current = pendingTasks.length > 0
+        ? pendingTasks.map((task, index) => `${index + 1}. ${task.title}`).join("\n")
+        : "All tasks completed! They have free time.";
     } catch {
       tasksContextRef.current = "";
     }
   }, [isParent]);
 
+  // Listen for app events
   useEffect(() => {
-    if (isOpen) {
-      loadTasksContext();
-    }
+    const handleEmotionEvent = (event) => {
+      setEmotionState(event.detail); // Will be 'success' or 'struggle'
+      
+      // Revert back to awake/idle after 4 seconds
+      setTimeout(() => {
+        setEmotionState("idle");
+      }, 4000);
+    };
+
+    window.addEventListener("companionEmotion", handleEmotionEvent);
+    return () => window.removeEventListener("companionEmotion", handleEmotionEvent);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) loadTasksContext();
   }, [isOpen, loadTasksContext]);
 
   const handleSendMessage = async (event) => {
@@ -120,12 +146,8 @@ function FloatingCompanion() {
 
       if (!isParent) {
         try {
-          // Check if the user is currently looking at a specific task page
           const currentPath = window.location.pathname;
-          const isTaskPage = currentPath.includes("/tasks/");
-          
-          if (isTaskPage) {
-            // Extract the task ID from the URL (e.g., "/tasks/123" -> "123")
+          if (currentPath.includes("/tasks/")) {
             const taskId = currentPath.split("/tasks/")[1];
             const taskRes = await getTaskById(taskId);
             if (taskRes && taskRes.data) {
@@ -153,197 +175,109 @@ function FloatingCompanion() {
       const data = await response.json();
 
       if (data && data.reply) {
-        // 1. Split the AI's response into individual sentences.
-        // This Regex looks for chunks of text ending in a period, exclamation, or question mark.
         const rawSentences = data.reply.match(/[^.!?]+[.!?]*/g) || [data.reply];
+        const sentences = rawSentences.map((s) => s.trim()).filter((s) => s.length > 0);
 
-        // Clean up any weird blank spaces
-        const sentences = rawSentences.map((sentence) => sentence.trim()).filter((sentence) => sentence.length > 0);
-
-        // 2. Add each sentence as its own chat bubble with a staggered delay!
         sentences.forEach((sentence, index) => {
           setTimeout(() => {
-            setMessages((prev) => [
-              ...prev,
-              { id: Date.now() + index, sender: "bot", text: sentence },
-            ]);
-          }, index * 800); // 800 millisecond delay between each bubble
+            setMessages((prev) => [...prev, { id: Date.now() + index, sender: "bot", text: sentence }]);
+          }, index * 800); 
         });
-        
       } else {
         throw new Error("Invalid response");
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now() + 1,
-          sender: "bot",
-          text: "Oops, my connection dropped! Could you say that again?",
-        },
+        { id: Date.now() + 1, sender: "bot", text: "Oops, my connection dropped! Could you say that again?" },
       ]);
     }
   };
 
-  const getAnimationClass = () => {
-    if (emotionState === "success") return "anim-success";
-    if (emotionState === "struggle") return "anim-struggle";
+  // 3. NEW Click Handler for the Pet Animation
+  const handlePetInteraction = () => {
+    setIsOpen(!isOpen); 
+    if (isGreeting || isParent) return;
 
-    if (isParent) return "";
+    const safeConfig = petConfig[petData.type] || petConfig.dog;
+    const randomGreeting = safeConfig.greetings[Math.floor(Math.random() * safeConfig.greetings.length)];
+    
+    setCurrentGreeting(randomGreeting);
+    setIsGreeting(true);
 
-    switch (petData.type) {
-      case "dog":
-        return "anim-dog";
-      case "cat":
-        return "anim-cat";
-      case "star":
-        return "anim-star";
-      case "turtle":
-        return "anim-turtle";
-      case "robot":
-        return "anim-robot";
-      default:
-        return "anim-bear";
-    }
+    setTimeout(() => {
+      setIsGreeting(false);
+    }, 2500);
   };
+
+  // 4. Safely determine which image to show
+  const currentPetConfig = petConfig[petData.type] || petConfig.dog;
+  const safeImages = currentPetConfig.images || {};
+  // DEFAULT STATE: The pet is peacefully asleep
+  let currentImage = safeImages.asleep || "/pets/dog.gif"; 
+
+  // OVERRIDES: Change the image based on what is happening
+  if (emotionState === "success") {
+    // Top Priority: If a task is finished, they celebrate! (Happy)
+    // Note: This still uses the 4-second timeout so the celebration eventually ends!
+    currentImage = safeImages.happy || currentImage;
+  } else if (isOpen) {
+    // WIDE AWAKE: If the chat window is OPEN, the cat stays awake permanently!
+    currentImage = safeImages.awake || currentImage;
+  } else if (emotionState === "struggle") {
+    // If overwhelmed, they stay asleep to keep the screen calm
+    currentImage = safeImages.asleep || currentImage;
+  }
 
   return (
     <div className="companion-container">
       {isOpen ? (
         <div className="companion-chat-window">
-          <div
-            style={{
-              backgroundColor: "#EEF2FF",
-              padding: "12px 16px",
-              borderBottom: "1px solid #E2E8F0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontWeight: "bold",
-                color: "#312E81",
-                fontSize: "1.1rem",
-              }}
-            >
-              {isParent ? petExpressions.guide.idle : (
-                <BuddyIcon
-                  type={petData.type}
-                  label="My companion"
-                  decorative
-                  className="companion-chat-icon"
-                />
+          <div style={{ backgroundColor: "#EEF2FF", padding: "12px 16px", borderBottom: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: "bold", color: "#312E81", fontSize: "1.1rem" }}>
+              {isParent ? "🧭" : (
+                <img 
+                    src={safeImages.awake || "/pets/dog.gif"} 
+                    alt="buddy icon" 
+                    style={{ width: "28px", height: "28px", imageRendering: "pixelated", mixBlendMode: "multiply" }} 
+                 />
               )}
               Buddy Helper
             </span>
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "1.2rem",
-                color: "#64748B",
-              }}
-            >
+            <button onClick={() => setIsOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem", color: "#64748B" }}>
               {"\u2715"}
             </button>
           </div>
 
-          <div
-            style={{
-              flex: 1,
-              padding: "16px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              backgroundColor: "#F8FAFC",
-            }}
-          >
+          <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", backgroundColor: "#F8FAFC" }}>
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
-                  backgroundColor: msg.sender === "user" ? "#6366F1" : "#E0E7FF",
-                  color: msg.sender === "user" ? "white" : "#312E81",
-                  padding: "8px 14px",
-                  borderRadius: msg.sender === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
-                  maxWidth: "80%",
-                  fontSize: "0.95rem",
-                }}
-              >
+              <div key={msg.id} style={{ alignSelf: msg.sender === "user" ? "flex-end" : "flex-start", backgroundColor: msg.sender === "user" ? "#6366F1" : "#E0E7FF", color: msg.sender === "user" ? "white" : "#312E81", padding: "8px 14px", borderRadius: msg.sender === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0", maxWidth: "80%", fontSize: "0.95rem" }}>
                 {msg.text}
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          <form
-            onSubmit={handleSendMessage}
-            style={{ padding: "12px", borderTop: "1px solid #E2E8F0", display: "flex", gap: "8px" }}
-          >
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              placeholder="Say hello..."
-              style={{
-                flex: 1,
-                padding: "8px 12px",
-                borderRadius: "20px",
-                border: "1px solid #CBD5E1",
-                outline: "none",
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                backgroundColor: "#6366F1",
-                color: "white",
-                border: "none",
-                borderRadius: "50%",
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
-            >
+          <form onSubmit={handleSendMessage} style={{ padding: "12px 16px", borderTop: "1px solid #E2E8F0", display: "flex", gap: "10px", boxSizing: "border-box" }}>
+            <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Say hello..." style={{ flex: 1, padding: "10px 16px", borderRadius: "20px", border: "1px solid #CBD5E1", outline: "none", fontSize: "0.95rem" }} />
+            <button type="submit" style={{ backgroundColor: "#6366F1", color: "white", border: "none", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
               {"\u27A4"}
             </button>
           </form>
         </div>
       ) : null}
 
-      <div
-        className={`companion-avatar ${getAnimationClass()}`}
-        role="button"
-        tabIndex={0}
-        aria-label="Open buddy helper"
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setIsOpen((prev) => !prev);
-          }
-        }}
-      >
-        <span className="companion-avatar__hint">
-          Ask Buddy
-        </span>
-        {isParent ? (
-          petExpressions.guide.idle
-        ) : (
-          <BuddyIcon type={petData.type} label="Open companion chat" />
-        )}
+      <div className="companion-avatar" onClick={handlePetInteraction}>
+        <div className={`greeting-bubble ${isGreeting ? 'visible' : ''}`}>
+          {currentGreeting}
+        </div>
+        <div className={`buddy-wrapper ${isGreeting ? 'jump-anim' : 'float-anim'}`}>
+          {isParent ? (
+            <span style={{ fontSize: "3rem" }}>🧭</span>
+          ) : (
+             <img src={currentImage} alt={`${petData?.type} buddy`} className="pixel-pet" draggable="false" />
+          )}
+        </div>
       </div>
     </div>
   );

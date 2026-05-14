@@ -4,7 +4,31 @@ import BuddyIcon from "./BuddyIcon";
 import "./FloatingCompanion.css";
 
 const CHAT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || ""}/api/chat`;
+const SENTIMENT_API_URL = `${import.meta.env.VITE_CHATBOT_API_URL || "http://localhost:8000"}/api/analyze-sentiment`;
 
+async function analyseAndStore(messageText, taskContext = null) {
+  try {
+    const res = await fetch(SENTIMENT_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: messageText, task_context: taskContext || null }),
+    });
+    const result = await res.json();
+    console.log("Sentiment result:", result); // ADD THIS
+
+    const existing = JSON.parse(localStorage.getItem("neuroflake_emotion_log") || "[]");
+    existing.push(result);
+
+    const today = new Date().toISOString().slice(0, 10); // "2026-05-14"
+    const todayOnly = existing.filter(
+      (entry) => entry.timestamp && entry.timestamp.slice(0, 10) === today
+    );
+    console.log("Saving to localStorage:", todayOnly); // ADD THIS
+    localStorage.setItem("neuroflake_emotion_log", JSON.stringify(todayOnly));
+  } catch (e) {
+    console.error("analyseAndStore failed:", e); // ADD THIS
+  }
+}
 // 1. The NEW Pixel Art Configuration
 const petConfig = {
   cat: { 
@@ -136,6 +160,22 @@ function FloatingCompanion() {
 
     setMessages((prev) => [...prev, newMsg]);
     setInputValue("");
+
+    // Silently analyse the child's message for the parent's Emotion Insights panel
+    if (!isParent) {
+      let taskContextForSentiment = null;
+      try {
+        const currentPath = window.location.pathname;
+        if (currentPath.includes("/tasks/")) {
+          const taskId = currentPath.split("/tasks/")[1];
+          const taskRes = await getTaskById(taskId);
+          if (taskRes?.data) taskContextForSentiment = taskRes.data.title;
+        }
+      } catch {
+        // ignore
+      }
+      analyseAndStore(userText, taskContextForSentiment);
+    }
 
     try {
       const formattedHistory = messages.slice(-6).map((msg) => ({

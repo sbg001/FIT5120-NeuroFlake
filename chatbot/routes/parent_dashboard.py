@@ -70,6 +70,18 @@ def build_dashboard_suggestions(top_trigger, top_emotion, task_summary):
 
     return suggestions
 
+def points_row_to_dict(row, child_id: str):
+    if not row:
+        return {
+            "child_id": child_id,
+            "points_balance": 0,
+            "updated_at": None,
+        }
+    return {
+        "child_id": str(row.get("child_id", child_id)),
+        "points_balance": int(row.get("points_balance", 0)),
+        "updated_at": str(row.get("updated_at")) if row.get("updated_at") else None,
+    }
 
 @router.get("/api/parent-dashboard/core/{parent_id}")
 async def get_parent_dashboard_core(parent_id: str, child_id: Optional[str] = None):

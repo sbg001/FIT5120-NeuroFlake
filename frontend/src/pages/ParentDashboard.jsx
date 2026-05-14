@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
+import EmotionInsights from "../components/ui/EmotionInsights";
 import {
   createChildAccount,
   createCommunicationPrompt,
@@ -1658,9 +1659,11 @@ const checkRoutineReminders = useCallback(() => {
           </div>
         </div>
       ) : activeSection === "insights" ? (
-        <div className="parent-dashboard__workspace-grid">
-          <div className="parent-dashboard__main-column">
-            <Card className="parent-dashboard__collection-card" variant="glow">
+        <>
+            <EmotionInsights />
+            <div className="parent-dashboard__workspace-grid">
+              <div className="parent-dashboard__main-column">
+                <Card className="parent-dashboard__collection-card" variant="glow">
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Behavioral Insights</p>
@@ -1931,6 +1934,7 @@ const checkRoutineReminders = useCallback(() => {
             </Card>
           </div>
         </div>
+      </>
       ) : (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">

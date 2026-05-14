@@ -128,9 +128,11 @@ function ChildDashboard() {
     .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0));
 
   const featuredTask = readyTasks[0] || completedTasks[0] || null;
-  const extraTasks = readyTasks.slice(1, 3);
   const completedCount = completedTasks.length;
   const pointsBalance = points?.points_balance ?? 0;
+  const totalQuestCount = childTasks.length;
+  const progressPercent =
+    totalQuestCount > 0 ? Math.round((completedCount / totalQuestCount) * 100) : 0;
 
   const characterOptions = [
     { value: "bear", label: "Bear" },
@@ -155,18 +157,50 @@ function ChildDashboard() {
     ? `${featuredProgressValue} / ${featuredProgressMax} steps`
     : "No steps waiting";
 
+  const getQuestStatus = (task) => {
+    const completed =
+      task.status === "completed" ||
+      Number(task.completed_steps || 0) >= Number(task.total_steps || 0);
+
+    if (completed) {
+      return {
+        label: "Completed",
+        tone: "mint",
+        className: "child-dashboard__quest-card--completed",
+        message: "Great job!",
+      };
+    }
+
+    if (Number(task.completed_steps || 0) > 0) {
+      return {
+        label: "In progress",
+        tone: "sky",
+        className: "child-dashboard__quest-card--active",
+        message: "One step at a time!",
+      };
+    }
+
+    return {
+      label: "Not started",
+      tone: "warm",
+      className: "child-dashboard__quest-card--new",
+      message: "Ready when you are.",
+    };
+  };
+
   return (
-    <section className="page-section child-dashboard child-dashboard--simple">
-      <div className="child-dashboard__intro">
+    <section className="page-section child-dashboard child-dashboard--quest-hub">
+      <Card className="child-dashboard__greeting-card nf-enter-card nf-enter-card--1" variant="glow">
         <div>
           <p className="eyebrow">Today</p>
-          <h2>Hi {displayName}, let&apos;s do one small thing.</h2>
+          <h2>Hi {displayName}, your quest hub is ready.</h2>
+          <p className="page-text">Pick one quest. Your buddy will stay with you.</p>
         </div>
         <div className="child-dashboard__intro-pills" aria-label="Today summary">
-          <Badge tone="mint">{readyTasks.length} ready</Badge>
-          <Badge tone="sky">{completedCount} done</Badge>
+          <Badge tone="warm">{readyTasks.length} ready</Badge>
+          <Badge tone="mint">{completedCount} done</Badge>
         </div>
-      </div>
+      </Card>
 
       {loadError ? (
         <Card className="content-card" variant="soft">
@@ -178,10 +212,13 @@ function ChildDashboard() {
         <Card className="child-dashboard__focus-card nf-enter-card nf-enter-card--1" variant="glow">
           <div className="child-dashboard__focus-head">
             <div>
-              <p className="eyebrow">Start here</p>
+              <p className="eyebrow">Start quest</p>
               <h3 className="child-dashboard__mission-title">
                 {featuredTask ? featuredTask.title : "Nothing to do right now"}
               </h3>
+              <p className="child-dashboard__mission-copy">
+                {featuredTask ? getQuestStatus(featuredTask).message : "You can visit rewards or rest for now."}
+              </p>
             </div>
             <div className="child-dashboard__focus-side">
               <div className="child-dashboard__focus-buddy" aria-hidden="true">
@@ -191,9 +228,9 @@ function ChildDashboard() {
                   decorative
                 />
               </div>
-              {featuredTask?.priority_type ? (
-                <Badge tone="warm">
-                  {featuredTask.priority_type} {featuredTask.priority_rank}
+              {featuredTask ? (
+                <Badge tone={getQuestStatus(featuredTask).tone}>
+                  {getQuestStatus(featuredTask).label}
                 </Badge>
               ) : null}
             </div>
@@ -207,7 +244,7 @@ function ChildDashboard() {
                     {featuredStepText}
                   </span>
                   <span>
-                    {featuredTask.status === "completed" ? "Finished" : "Ready"}
+                    {getQuestStatus(featuredTask).label}
                   </span>
                 </div>
                 <ProgressBar
@@ -219,7 +256,7 @@ function ChildDashboard() {
 
               <div className="child-dashboard__focus-action-row">
                 <Button as={Link} to={`/tasks/${featuredTask.task_id}`} size="lg">
-                  {featuredTask.status === "completed" ? "Look Back" : "Let\u2019s Start"}
+                  {getQuestStatus(featuredTask).label === "Completed" ? "Look Back" : "Start Quest"}
                 </Button>
               </div>
             </>
@@ -235,18 +272,26 @@ function ChildDashboard() {
         <Card className="child-dashboard__missions-list nf-enter-card nf-enter-card--3" variant="default">
           <div className="child-dashboard__section-row">
             <div>
-              <p className="eyebrow">Next up</p>
-              <h3>After this</h3>
+              <p className="eyebrow">Quests</p>
+              <h3>Today&apos;s quests</h3>
             </div>
             <Badge tone="sky">
-              {readyTasks.length > 1 ? `${readyTasks.length - 1} waiting` : "Nice and easy"}
+              {totalQuestCount > 0 ? `${totalQuestCount} total` : "Clear"}
             </Badge>
           </div>
 
           <div className="child-dashboard__mini-missions">
-            {(extraTasks.length > 0 ? extraTasks : completedTasks.slice(0, 2)).map((task) => (
-              <div key={task.task_id} className="child-dashboard__mini-mission">
-                <div>
+            {(readyTasks.length > 0 ? readyTasks : completedTasks.slice(0, 3)).map((task) => {
+              const status = getQuestStatus(task);
+              const totalSteps = Math.max(Number(task.total_steps || 0), 1);
+              const doneSteps = Math.min(Number(task.completed_steps || 0), totalSteps);
+
+              return (
+              <div
+                key={task.task_id}
+                className={`child-dashboard__mini-mission child-dashboard__quest-card ${status.className}`}
+              >
+                <div className="child-dashboard__quest-main">
                   <h4>
                     <BuddyIcon
                       type={savedCharacterStyle}
@@ -256,29 +301,53 @@ function ChildDashboard() {
                     />
                     {task.title}
                   </h4>
-                  <p>
-                    {task.completed_steps} / {task.total_steps} steps done
-                  </p>
+                  <p>{status.message}</p>
+                  <ProgressBar value={doneSteps} max={totalSteps} label={`${task.title} quest progress`} />
                 </div>
-                <Button as={Link} to={`/tasks/${task.task_id}`} variant="secondary" size="sm">
-                  {task.status === "completed" ? "View" : "Start"}
-                </Button>
+                <div className="child-dashboard__quest-actions">
+                  <Badge tone={status.tone}>{status.label}</Badge>
+                  <Button as={Link} to={`/tasks/${task.task_id}`} variant="secondary" size="sm">
+                    {status.label === "Completed" ? "View" : "Start"}
+                  </Button>
+                </div>
               </div>
-            ))}
+              );
+            })}
 
-            {extraTasks.length === 0 && completedTasks.length === 0 ? (
+            {readyTasks.length === 0 && completedTasks.length === 0 ? (
               <p className="page-text">
-                No other tasks right now.
+                No quests right now. Nice and calm.
               </p>
             ) : null}
           </div>
+        </Card>
+
+        <Card className="child-dashboard__path-card nf-enter-card nf-enter-card--2" variant="soft">
+          <div className="child-dashboard__section-row">
+            <div>
+              <p className="eyebrow">Path</p>
+              <h3>Quest progress</h3>
+            </div>
+            <Badge tone="mint">{progressPercent}%</Badge>
+          </div>
+          <div className="child-dashboard__progress-path" aria-label={`${progressPercent}% of quests completed`}>
+            {[0, 1, 2, 3].map((step) => (
+              <span
+                key={step}
+                className={step < Math.ceil(progressPercent / 25) ? "is-complete" : ""}
+              />
+            ))}
+          </div>
+          <p className="page-text">
+            {completedCount > 0 ? "Great job! Keep going gently." : "One step at a time!"}
+          </p>
         </Card>
 
         <Card className="child-dashboard__reward-card nf-enter-card nf-enter-card--4" variant="soft">
           <div className="child-dashboard__reward-head">
             <div>
               <p className="eyebrow">Rewards</p>
-              <h3>Your points</h3>
+              <h3>Stars and points</h3>
             </div>
             <div className="child-dashboard__reward-count" aria-hidden="true">
               <BuddyIcon
@@ -290,7 +359,7 @@ function ChildDashboard() {
           </div>
           <div className="child-dashboard__points-display" aria-label={`${pointsBalance} reward points`}>
             <strong>{pointsBalance}</strong>
-            <span>points</span>
+            <span>star points</span>
           </div>
           <Button as={Link} to="/rewards" variant="secondary">
             See Rewards
@@ -300,8 +369,9 @@ function ChildDashboard() {
         <Card className="child-dashboard__style-card nf-enter-card nf-enter-card--5" variant="soft">
           <div className="child-dashboard__section-row">
             <div>
-              <p className="eyebrow">Buddy</p>
-              <h3>Pick a helper</h3>
+              <p className="eyebrow">Companion</p>
+              <h3>Your calm buddy</h3>
+              <p className="page-text">Your buddy says: “You&apos;ve got this.”</p>
             </div>
             <div className="child-dashboard__style-identity">
               <BuddyIcon type={savedCharacterStyle} label={`${savedCharacterLabel} buddy`} />

@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
@@ -373,10 +374,7 @@ const checkRoutineReminders = useCallback(() => {
         void loadInsights();
       }
 
-      if (
-        (activeSection === "insights" || activeSection === "support") &&
-        !hasLoadedSupport
-      ) {
+      if (!hasLoadedSupport) {
         void loadSupportData(childProfile.user_id);
       }
     }, 0);
@@ -904,16 +902,29 @@ const checkRoutineReminders = useCallback(() => {
   const activeTasks = childTasks.filter((task) => String(task.status) !== "completed");
   const completedTasks = childTasks.filter((task) => String(task.status) === "completed");
   const totalTasks = childTasks.length;
-  const totalRewards = rewards.length;
   const totalPoints = pointsData.points_balance ?? 0;
+  const todayDateKey = new Date().toDateString();
+  const isToday = (dateValue) => {
+    if (!dateValue) return false;
+    return new Date(dateValue).toDateString() === todayDateKey;
+  };
+  const completedTodayCount = completedTasks.filter((task) =>
+    isToday(task.updated_at || task.created_at)
+  ).length;
+  const currentStreak = completedTodayCount > 0 ? 1 : 0;
+  const routineTotals = routineBlocks.reduce(
+    (totals, routine) => ({
+      complete: totals.complete + Number(routine.completed_count || 0),
+      total: totals.total + Number(routine.total_count || 0),
+    }),
+    { complete: 0, total: 0 }
+  );
+  const routineConsistency =
+    routineTotals.total > 0
+      ? Math.round((routineTotals.complete / routineTotals.total) * 100)
+      : 0;
   const completionPercent =
     totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
-  const averageSteps =
-    totalTasks > 0
-      ? Math.round(
-          childTasks.reduce((sum, task) => sum + Number(task.total_steps || 0), 0) / totalTasks
-        )
-      : 0;
   const featuredTask = activeTasks[0] || completedTasks[0] || null;
   const nextParentAction = !featuredTask
     ? {
@@ -984,6 +995,40 @@ const checkRoutineReminders = useCallback(() => {
   const repeatedTriggerLabel = repeatedTriggerEntry
     ? `${repeatedTriggerEntry[0]} (${repeatedTriggerEntry[1]} times)`
     : "No repeated trigger yet";
+  const recentActivity = [...childTasks]
+    .sort((first, second) => {
+      const firstDate = new Date(first.updated_at || first.created_at || 0).getTime();
+      const secondDate = new Date(second.updated_at || second.created_at || 0).getTime();
+      return secondDate - firstDate;
+    })
+    .slice(0, 4);
+  const parentInsightCards = [
+    {
+      icon: "herb",
+      title: "Keep today simple",
+      text:
+        activeTasks.length > 0
+          ? `${activeTasks.length} task${activeTasks.length === 1 ? "" : "s"} still active. Choose one to focus on first.`
+          : "All tasks are complete. A calm finish matters too.",
+    },
+    {
+      icon: "compass",
+      title: "Routine rhythm",
+      text:
+        routineBlocks.length > 0
+          ? `${routineConsistency}% routine consistency across saved routines.`
+          : "Add a routine when you want mornings or evenings to feel more predictable.",
+    },
+    {
+      icon: "sparkles",
+      title: "Support signal",
+      text:
+        suggestions[0]?.text ||
+        (repeatedTriggerEntry
+          ? `Watch for ${repeatedTriggerEntry[0]} this week.`
+          : "No repeated trigger pattern yet."),
+    },
+  ];
   const shouldShowChildSetup = !isLoadingCore && Boolean(parentProfile) && !hasChildAccount;
   const isTasksPage = activeSection === "tasks";
 
@@ -1026,7 +1071,7 @@ const checkRoutineReminders = useCallback(() => {
           <Card className="parent-setup-modal__panel" variant="glow">
             <div className="parent-setup-modal__content">
               <div className="parent-setup-modal__hero" aria-hidden="true">
-                {"\u{1F476}"}
+                <OpenMojiIcon name="baby" />
               </div>
               <div className="parent-setup-modal__copy">
                 <p className="eyebrow">First step</p>
@@ -1089,81 +1134,53 @@ const checkRoutineReminders = useCallback(() => {
 
       {isTasksPage ? (
         <>
-      <div className="parent-dashboard__overview-grid">
-        <Card className="parent-dashboard__day-card" variant="glow">
-          <div className="parent-dashboard__orbit" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-
-          <div className="parent-dashboard__section-header">
-            <div>
-              <p className="eyebrow">Today</p>
-              <h3>{childProfile?.name || "Your child"}'s plan</h3>
-            </div>
-            <Badge tone="warm">{activeTasks.length} active</Badge>
-          </div>
-          <div className="parent-dashboard__focus-panel">
-            <div className="parent-dashboard__focus-score" aria-label={`${completionPercent}% complete`}>
-              <strong>{completionPercent}%</strong>
-              <span>done</span>
-            </div>
-            <div className="parent-dashboard__focus-detail">
-              <div className="parent-dashboard__snapshot-row">
-                <h4>{featuredTask ? featuredTask.title : "Create a first task"}</h4>
-                {featuredTask ? (
-                  <Badge tone={getStatusConfig(featuredTask).tone}>
-                    {getStatusConfig(featuredTask).label}
-                  </Badge>
-                ) : (
-                  <Badge tone="warm">New</Badge>
-                )}
-              </div>
-              {featuredTask?.description ? <p>{featuredTask.description}</p> : null}
-              <ProgressBar
-                value={completionPercent}
-                max={100}
-                label="Child task completion progress"
-              />
-            </div>
-          </div>
-        </Card>
-
-        <Card className="parent-dashboard__next-card" variant="soft">
-          <p className="eyebrow">Next step</p>
-          <h3>{nextParentAction.title}</h3>
-          <p className="page-text">{nextParentAction.text}</p>
+      <Card className="parent-dashboard__family-hero" variant="glow">
+        <div className="parent-dashboard__orbit" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div>
+          <p className="eyebrow">Today at a glance</p>
+          <h3>{childProfile?.name || "Your child"} is {completionPercent}% through their tasks.</h3>
+          <p className="page-text">
+            {featuredTask
+              ? `Current focus: ${featuredTask.title}.`
+              : "No current focus yet. Add a small task when ready."}
+          </p>
+        </div>
+        <div className="parent-dashboard__hero-action">
           <Button
             type="button"
             onClick={() => scrollToParentSection(nextParentAction.target)}
           >
             {nextParentAction.cta}
           </Button>
-        </Card>
-      </div>
+          <span>{nextParentAction.title}</span>
+        </div>
+      </Card>
 
-      <div className="parent-dashboard__summary-strip" aria-label="Parent dashboard summary">
-        <div className="parent-dashboard__summary-tile">
-          <span>Active</span>
-          <strong>{activeTasks.length}</strong>
-          <p>tasks</p>
-        </div>
-        <div className="parent-dashboard__summary-tile">
-          <span>Completed</span>
-          <strong>{completedTasks.length}</strong>
-          <p>tasks</p>
-        </div>
-        <div className="parent-dashboard__summary-tile">
-          <span>Points</span>
+      <div className="parent-dashboard__overview-cards" aria-label="Parent overview">
+        <Card className="parent-dashboard__overview-card" variant="soft">
+          <span aria-hidden="true"><OpenMojiIcon name="check" /></span>
+          <p>Tasks completed today</p>
+          <strong>{completedTodayCount}</strong>
+        </Card>
+        <Card className="parent-dashboard__overview-card" variant="soft">
+          <span aria-hidden="true"><OpenMojiIcon name="fire" /></span>
+          <p>Current streak</p>
+          <strong>{currentStreak} day</strong>
+        </Card>
+        <Card className="parent-dashboard__overview-card" variant="soft">
+          <span aria-hidden="true"><OpenMojiIcon name="star" /></span>
+          <p>Rewards earned</p>
           <strong>{totalPoints}</strong>
-          <p>earned</p>
-        </div>
-        <div className="parent-dashboard__summary-tile">
-          <span>Login</span>
-          <strong>{childProfile?.username || "-"}</strong>
-          <p>{childProfile?.name || "No child"}</p>
-        </div>
+        </Card>
+        <Card className="parent-dashboard__overview-card" variant="soft">
+          <span aria-hidden="true"><OpenMojiIcon name="herb" /></span>
+          <p>Routine consistency</p>
+          <strong>{routineConsistency}%</strong>
+        </Card>
       </div>
         </>
       ) : null}
@@ -1171,6 +1188,37 @@ const checkRoutineReminders = useCallback(() => {
       {activeSection === "tasks" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
+            <Card className="parent-dashboard__progress-section" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Child progress</p>
+                  <h3>Progress without pressure</h3>
+                  <p className="page-text">
+                    A simple view of tasks finished, active, and waiting.
+                  </p>
+                </div>
+                <Badge tone="mint">{completionPercent}% complete</Badge>
+              </div>
+              <div className="parent-dashboard__progress-panel">
+                <div className="parent-dashboard__focus-score" aria-label={`${completionPercent}% complete`}>
+                  <strong>{completionPercent}%</strong>
+                  <span>done</span>
+                </div>
+                <div className="parent-dashboard__progress-copy">
+                  <div className="parent-dashboard__snapshot-row">
+                    <h4>{featuredTask ? featuredTask.title : "No task selected"}</h4>
+                    {featuredTask ? (
+                      <Badge tone={getStatusConfig(featuredTask).tone}>
+                        {getStatusConfig(featuredTask).label}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  {featuredTask?.description ? <p>{featuredTask.description}</p> : null}
+                  <ProgressBar value={completionPercent} max={100} label="Child task completion progress" />
+                </div>
+              </div>
+            </Card>
+
             <Card id="task-board-panel" className="parent-dashboard__collection-card parent-dashboard__task-board" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
@@ -1221,6 +1269,7 @@ const checkRoutineReminders = useCallback(() => {
                               await refreshTasks();
                             }}
                           >
+                            <OpenMojiIcon name="hourglass" className="parent-dashboard__button-icon" />
                             Reset
                           </Button>
                           <Button
@@ -1240,6 +1289,7 @@ const checkRoutineReminders = useCallback(() => {
                               await refreshTasks();
                             }}
                           >
+                            <OpenMojiIcon name="trash" className="parent-dashboard__button-icon" />
                             Delete
                           </Button>
                         </div>
@@ -1256,7 +1306,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : (
                 <div className="parent-dashboard__empty-state">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4DD}"}
+                    <OpenMojiIcon name="memo" />
                   </div>
                   <h4>No tasks yet</h4>
                   <p>Create the first task.</p>
@@ -1264,9 +1314,93 @@ const checkRoutineReminders = useCallback(() => {
               )}
             </Card>
 
+            <Card className="parent-dashboard__routine-section" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Routine management</p>
+                  <h3>Predictable routines</h3>
+                  <p className="page-text">
+                    Keep daily routines visible without adding clutter.
+                  </p>
+                </div>
+                <Badge tone="sky">{routineBlocks.length} routines</Badge>
+              </div>
+
+              {routineBlocks.length > 0 ? (
+                <div className="parent-dashboard__routine-grid">
+                  {routineBlocks.slice(0, 3).map((routine) => (
+                    <div key={routine.routine_id} className="parent-dashboard__routine-card">
+                      <div>
+                        <strong>{routine.title}</strong>
+                        <p>{routine.description || "Routine ready."}</p>
+                      </div>
+                      <Badge tone="mint">
+                        {routine.completed_count || 0}/{routine.total_count || 0}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state parent-dashboard__empty-state--compact">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    <OpenMojiIcon name="herb" />
+                  </div>
+                  <p>No routines yet. Add one from Support when you are ready.</p>
+                </div>
+              )}
+            </Card>
+
           </div>
 
           <div className="parent-dashboard__side-column">
+            <Card className="parent-dashboard__insight-panel" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Helpful insights</p>
+                  <h3>Small signals</h3>
+                </div>
+              </div>
+              <div className="parent-dashboard__insight-card-list">
+                {parentInsightCards.map((insight) => (
+                  <div key={insight.title} className="parent-dashboard__insight-mini-card">
+                    <span aria-hidden="true"><OpenMojiIcon name={insight.icon} /></span>
+                    <div>
+                      <strong>{insight.title}</strong>
+                      <p>{insight.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="parent-dashboard__activity-card" variant="soft">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Recent activity</p>
+                  <h3>Latest updates</h3>
+                </div>
+              </div>
+              {recentActivity.length > 0 ? (
+                <div className="parent-dashboard__activity-list">
+                  {recentActivity.map((task) => (
+                    <div key={task.task_id} className="parent-dashboard__activity-item">
+                      <span aria-hidden="true">
+                        <OpenMojiIcon
+                          name={getStatusConfig(task).label === "Completed" ? "check" : "hourglass"}
+                        />
+                      </span>
+                      <div>
+                        <strong>{task.title}</strong>
+                        <p>{getStatusConfig(task).label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="page-text">No activity yet.</p>
+              )}
+            </Card>
+
             <Card
               id="create-task-panel"
               className="parent-dashboard__form-card parent-dashboard__form-card--feature parent-dashboard__quick-create"
@@ -1381,7 +1515,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : (
                 <div className="parent-dashboard__empty-state">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F381}"}
+                    <OpenMojiIcon name="gift" />
                   </div>
                   <h4>No rewards yet</h4>
                   <p>Add the first reward.</p>
@@ -1589,7 +1723,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : (
                 <div className="parent-dashboard__empty-state parent-dashboard__empty-state--compact">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F9E0}"}
+                    <OpenMojiIcon name="brain" />
                   </div>
                   <p>
                     {isLoadingInsights
@@ -1699,7 +1833,7 @@ const checkRoutineReminders = useCallback(() => {
                   }}
                 >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F50E}"}
+                    <OpenMojiIcon name="magnifier" />
                   </div>
                   <h4>No triggers yet</h4>
                   <p>Add the first trigger.</p>
@@ -1736,7 +1870,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : (
                 <div className="parent-dashboard__empty-state">
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4A1}"}
+                    <OpenMojiIcon name="lightbulb" />
                   </div>
                   <h4>No suggestions yet</h4>
                   <p>Add triggers or emotion logs first.</p>
@@ -1889,7 +2023,7 @@ const checkRoutineReminders = useCallback(() => {
                   }}
                 >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4C5}"}
+                    <OpenMojiIcon name="calendar" />
                   </div>
                   <h4>No routines yet</h4>
                   <p>Create the first routine.</p>
@@ -1933,7 +2067,7 @@ const checkRoutineReminders = useCallback(() => {
                   }}
                 >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4AC}"}
+                    <OpenMojiIcon name="speech" />
                   </div>
                   <h4>No prompts yet</h4>
                   <p>Add the first prompt.</p>
@@ -1984,7 +2118,7 @@ const checkRoutineReminders = useCallback(() => {
                   }}
                 >
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4DA}"}
+                    <OpenMojiIcon name="books" />
                   </div>
                   <h4>No resources yet</h4>
                   <p>Add the first resource.</p>

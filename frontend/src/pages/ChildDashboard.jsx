@@ -23,6 +23,8 @@ function ChildDashboard() {
   const [characterStyle, setCharacterStyle] = useState("dog");
   const [savedCharacterStyle, setSavedCharacterStyle] = useState("dog");
   const [preferenceMessage, setPreferenceMessage] = useState("");
+  const [showAllQuests, setShowAllQuests] = useState(false);
+  const [showBuddyPicker, setShowBuddyPicker] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -131,8 +133,6 @@ function ChildDashboard() {
   const completedCount = completedTasks.length;
   const pointsBalance = points?.points_balance ?? 0;
   const totalQuestCount = childTasks.length;
-  const progressPercent =
-    totalQuestCount > 0 ? Math.round((completedCount / totalQuestCount) * 100) : 0;
 
   const characterOptions = [
     { value: "bear", label: "Bear" },
@@ -269,15 +269,16 @@ function ChildDashboard() {
           )}
         </Card>
 
+        {showAllQuests ? (
         <Card className="child-dashboard__missions-list nf-enter-card nf-enter-card--3" variant="default">
           <div className="child-dashboard__section-row">
             <div>
               <p className="eyebrow">Quests</p>
               <h3>Today&apos;s quests</h3>
             </div>
-            <Badge tone="sky">
-              {totalQuestCount > 0 ? `${totalQuestCount} total` : "Clear"}
-            </Badge>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setShowAllQuests(false)}>
+              Hide
+            </Button>
           </div>
 
           <div className="child-dashboard__mini-missions">
@@ -321,48 +322,49 @@ function ChildDashboard() {
             ) : null}
           </div>
         </Card>
-
-        <Card className="child-dashboard__path-card nf-enter-card nf-enter-card--2" variant="soft">
-          <div className="child-dashboard__section-row">
+        ) : (
+          <Card className="child-dashboard__collapsed-card nf-enter-card nf-enter-card--3" variant="soft">
             <div>
-              <p className="eyebrow">Path</p>
-              <h3>Quest progress</h3>
+              <p className="eyebrow">Quests</p>
+              <h3>{readyTasks.length} ready, {completedCount} done</h3>
+              <p className="page-text">Only open this if you want to see everything.</p>
             </div>
-            <Badge tone="mint">{progressPercent}%</Badge>
-          </div>
-          <div className="child-dashboard__progress-path" aria-label={`${progressPercent}% of quests completed`}>
-            {[0, 1, 2, 3].map((step) => (
-              <span
-                key={step}
-                className={step < Math.ceil(progressPercent / 25) ? "is-complete" : ""}
-              />
-            ))}
-          </div>
-          <p className="page-text">
-            {completedCount > 0 ? "Great job! Keep going gently." : "One step at a time!"}
-          </p>
-        </Card>
+            <Button type="button" variant="secondary" onClick={() => setShowAllQuests(true)}>
+              See All Quests
+            </Button>
+          </Card>
+        )}
 
         <Card className="child-dashboard__reward-card nf-enter-card nf-enter-card--4" variant="soft">
           <div className="child-dashboard__reward-head">
             <div>
-              <p className="eyebrow">Rewards</p>
-              <h3>Stars and points</h3>
+              <p className="eyebrow">Treasure jar</p>
+              <h3>Your quest stars</h3>
             </div>
             <div className="child-dashboard__reward-count" aria-hidden="true">
               <BuddyIcon
-                type={savedCharacterStyle}
-                label={`${savedCharacterLabel} buddy`}
+                type="star"
+                label="Star points"
                 decorative
               />
             </div>
           </div>
-          <div className="child-dashboard__points-display" aria-label={`${pointsBalance} reward points`}>
-            <strong>{pointsBalance}</strong>
-            <span>star points</span>
+          <div className="child-dashboard__treasure-jar" aria-label={`${pointsBalance} star points`}>
+            <div className="child-dashboard__jar-glow" aria-hidden="true" />
+            <div className="child-dashboard__jar-stars" aria-hidden="true">
+              {Array.from({ length: Math.min(Math.max(pointsBalance, 3), 9) }).map((_, index) => (
+                <span key={index}>
+                  <BuddyIcon type="star" label="" decorative />
+                </span>
+              ))}
+            </div>
+            <div className="child-dashboard__jar-label">
+              <strong>{pointsBalance}</strong>
+              <span>quest stars</span>
+            </div>
           </div>
           <Button as={Link} to="/rewards" variant="secondary">
-            See Rewards
+            Open Rewards
           </Button>
         </Card>
 
@@ -378,6 +380,7 @@ function ChildDashboard() {
             </div>
           </div>
 
+          {showBuddyPicker ? (
           <div className="child-dashboard__style-form">
             <div className="child-dashboard__buddy-grid" role="radiogroup" aria-label="Pick a helper">
               {characterOptions.map((option) => (
@@ -410,8 +413,18 @@ function ChildDashboard() {
               </p>
             ) : null}
 
-            <Button onClick={handleSavePreferences}>Keep This Buddy</Button>
+            <div className="child-dashboard__focus-action-row">
+              <Button onClick={handleSavePreferences}>Keep This Buddy</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowBuddyPicker(false)}>
+                Close
+              </Button>
+            </div>
           </div>
+          ) : (
+            <Button type="button" variant="secondary" onClick={() => setShowBuddyPicker(true)}>
+              Change Buddy
+            </Button>
+          )}
         </Card>
       </div>
     </section>

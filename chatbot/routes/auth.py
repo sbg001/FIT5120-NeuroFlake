@@ -3,7 +3,13 @@ import uuid
 import psycopg2.extras
 
 from core import get_db_connection
-from schemas import CreateChildRequest, RegisterParentRequest, SignInRequest, UpdateChildPasswordRequest
+from schemas import (
+    CreateChildRequest,
+    RegisterParentRequest,
+    SignInRequest,
+    UpdateChildPasswordRequest,
+    UpdateParentPasswordRequest,
+)
 from serializers import user_row_to_dict
 
 router = APIRouter()
@@ -322,3 +328,49 @@ async def update_child_password(child_id: str, request: UpdateChildPasswordReque
     except Exception as e:
         print(f"Update child password error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not update the child password.")
+
+
+@router.put("/api/auth/parents/{parent_id}/password")
+async def update_parent_password(parent_id: str, request: UpdateParentPasswordRequest):
+    request_parent_id = request.parentId
+    password = request.password
+
+    if not request_parent_id or not password:
+        raise HTTPException(status_code=400, detail="Please complete the parent password fields.")
+
+    if str(parent_id) != str(request_parent_id):
+        raise HTTPException(status_code=400, detail="Parent account details do not match.")
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            UPDATE users
+            SET password = %s
+            WHERE user_id = %s AND role = 'parent'
+            RETURNING *
+            """,
+            (password, parent_id),
+        )
+
+        updated_parent = cur.fetchone()
+
+        if not updated_parent:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Parent account not found.")
+
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return user_row_to_dict(updated_parent)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Update parent password error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not update the parent password.")

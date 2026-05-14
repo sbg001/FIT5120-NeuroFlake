@@ -22,6 +22,7 @@ function TopNav() {
     { to: "/parent/rewards", label: "Rewards" },
     { to: "/parent/insights", label: "Insights" },
     { to: "/parent/support", label: "Support" },
+    { to: "/settings", label: "Settings" },
   ];
 
   const guestNavItems = [

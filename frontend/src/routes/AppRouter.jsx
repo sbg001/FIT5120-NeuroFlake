@@ -7,6 +7,7 @@ import ChildDashboard from "../pages/ChildDashboard";
 import TaskFlow from "../pages/TaskFlow";
 import Rewards from "../pages/Rewards";
 import ParentDashboard from "../pages/ParentDashboard";
+import Settings from "../pages/Settings";
 import NotFound from "../pages/NotFound";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import TermsConditions from "../pages/TermsConditions";
@@ -50,6 +51,7 @@ function AppRouter() {
           <Route path="/parent/rewards" element={<ParentDashboard />} />
           <Route path="/parent/insights" element={<ParentDashboard />} />
           <Route path="/parent/support" element={<ParentDashboard />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

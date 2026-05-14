@@ -50,6 +50,11 @@ class UpdateChildPasswordRequest(BaseModel):
     childId: str
     password: str
 
+
+class UpdateParentPasswordRequest(BaseModel):
+    parentId: str
+    password: str
+
 class CreateTaskRequest(BaseModel):
     child_id: str
     created_by: str

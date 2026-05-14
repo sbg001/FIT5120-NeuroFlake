@@ -347,6 +347,16 @@ export async function updateChildPassword({ parentId, childId, password }) {
   });
 }
 
+export async function updateParentPassword({ parentId, password }) {
+  return apiRequest(`/api/auth/parents/${parentId}/password`, {
+    method: "PUT",
+    body: JSON.stringify({
+      parentId,
+      password,
+    }),
+  });
+}
+
 // =======================
 // GET CHILDREN BY PARENT
 // =======================

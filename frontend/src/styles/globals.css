@@ -1114,7 +1114,7 @@ a:focus-visible {
 }
 
 .parent-dashboard {
-  gap: 24px;
+  gap: 20px;
 }
 
 .parent-dashboard__hero-grid,
@@ -1122,7 +1122,7 @@ a:focus-visible {
 .parent-dashboard__workspace-grid,
 .parent-dashboard__control-grid {
   display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
 .parent-dashboard__hero-grid {
@@ -1138,10 +1138,197 @@ a:focus-visible {
   align-items: start;
 }
 
+.parent-dashboard__overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+  gap: 16px;
+}
+
+.parent-dashboard__day-card {
+  position: relative;
+  overflow: hidden;
+  align-items: stretch;
+  gap: 18px;
+  padding: 30px;
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(126, 216, 188, 0.28), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(248, 201, 107, 0.24), transparent 30%),
+    linear-gradient(140deg, rgba(248, 251, 255, 0.68), rgba(255, 255, 255, 0.38));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+.parent-dashboard__day-card::before {
+  content: none;
+}
+
+.parent-dashboard__orbit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.parent-dashboard__orbit span {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(77, 142, 247, 0.16);
+  animation: demoBubbleFloat 6s ease-in-out infinite;
+}
+
+.parent-dashboard__orbit span:nth-child(1) {
+  top: 18%;
+  right: 18%;
+}
+
+.parent-dashboard__orbit span:nth-child(2) {
+  bottom: 14%;
+  left: 8%;
+  width: 26px;
+  height: 26px;
+  background: rgba(125, 223, 191, 0.2);
+  animation-delay: -1.8s;
+}
+
+.parent-dashboard__orbit span:nth-child(3) {
+  bottom: 22%;
+  right: 10%;
+  width: 22px;
+  height: 22px;
+  background: rgba(248, 201, 107, 0.22);
+  animation-delay: -3.2s;
+}
+
+.parent-dashboard__day-card h3 {
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.05;
+}
+
+.parent-dashboard__day-card > *:not(.parent-dashboard__orbit) {
+  position: relative;
+  z-index: 1;
+}
+
+.parent-dashboard__focus-panel {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: 26px;
+  background: var(--glass-surface-strong);
+  box-shadow:
+    0 18px 38px rgba(48, 76, 93, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.parent-dashboard__focus-score {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 98px;
+  height: 98px;
+  border-radius: 999px;
+  border: 8px solid rgba(119, 216, 187, 0.36);
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.78));
+  box-shadow:
+    0 12px 26px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.parent-dashboard__focus-score strong {
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.parent-dashboard__focus-score span,
+.parent-dashboard__focus-detail p {
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.parent-dashboard__focus-detail {
+  display: grid;
+  gap: 12px;
+}
+
+.parent-dashboard__focus-detail h4,
+.parent-dashboard__focus-detail p {
+  margin: 0;
+}
+
+.parent-dashboard__next-card {
+  position: relative;
+  overflow: hidden;
+  align-content: center;
+  min-height: 100%;
+  border: 2px solid rgba(36, 114, 103, 0.2);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(125, 223, 191, 0.28), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(234, 248, 243, 0.42));
+  box-shadow:
+    0 12px 26px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -2px 0 rgba(74, 108, 161, 0.06);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+}
+
+.parent-dashboard__next-card h3 {
+  font-size: 1.28rem;
+  line-height: 1.15;
+}
+
+.parent-dashboard__summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+.parent-dashboard__summary-tile {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.parent-dashboard__summary-tile span,
+.parent-dashboard__summary-tile p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.parent-dashboard__summary-tile strong {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 1.55rem;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .parent-dashboard__main-column,
 .parent-dashboard__side-column {
   display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
 .parent-dashboard__hero-card,
@@ -1150,7 +1337,7 @@ a:focus-visible {
 .parent-dashboard__tabs-card,
 .parent-dashboard__collection-card,
 .parent-dashboard__form-card {
-  padding: 26px;
+  padding: 22px;
 }
 
 .parent-dashboard__hero-card,
@@ -1159,7 +1346,7 @@ a:focus-visible {
 .parent-dashboard__collection-card,
 .parent-dashboard__form-card {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .parent-dashboard__hero-top,
@@ -1178,22 +1365,22 @@ a:focus-visible {
 .parent-dashboard__hero-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
 .parent-dashboard__metric-card,
 .parent-dashboard__summary-card,
 .parent-dashboard__task-item,
 .parent-dashboard__reward-item {
-  border: 1px solid rgba(126, 158, 202, 0.16);
-  background: rgba(255, 255, 255, 0.78);
-  border-radius: 24px;
+  border: 1px solid rgba(126, 158, 202, 0.2);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 14px;
 }
 
 .parent-dashboard__metric-card {
   display: grid;
-  gap: 6px;
-  padding: 16px;
+  gap: 4px;
+  padding: 14px;
 }
 
 .parent-dashboard__metric-card span,
@@ -1209,7 +1396,7 @@ a:focus-visible {
 
 .parent-dashboard__metric-card strong,
 .parent-dashboard__summary-card strong {
-  font-size: 1.8rem;
+  font-size: 1.65rem;
   line-height: 1;
 }
 
@@ -1228,8 +1415,8 @@ a:focus-visible {
 }
 
 .parent-dashboard__summary-card {
-  padding: 20px;
-  gap: 8px;
+  padding: 16px;
+  gap: 6px;
 }
 
 .parent-dashboard__tabs {
@@ -1270,16 +1457,88 @@ a:focus-visible {
   gap: 18px;
 }
 
+.parent-dashboard__task-board {
+  border-color: var(--glass-border);
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
 .parent-dashboard__task-list,
 .parent-dashboard__reward-grid,
 .parent-dashboard__form-grid {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .parent-dashboard__task-item,
 .parent-dashboard__reward-item {
-  padding: 18px;
+  padding: 16px;
+}
+
+.parent-dashboard__task-board .parent-dashboard__task-item:first-child {
+  border-color: rgba(36, 114, 103, 0.36);
+  background:
+    radial-gradient(circle at top right, rgba(125, 223, 191, 0.2), transparent 38%),
+    rgba(255, 255, 255, 0.74);
+  box-shadow:
+    0 16px 34px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.parent-dashboard__mini-task-list {
+  display: grid;
+  gap: 10px;
+}
+
+.parent-dashboard__mini-task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow:
+    0 10px 20px rgba(74, 108, 161, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.parent-dashboard__mini-task div {
+  display: grid;
+  gap: 2px;
+}
+
+.parent-dashboard__mini-task span {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.parent-dashboard__management-card {
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.3));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+.parent-dashboard__account-card,
+.parent-dashboard__edit-card {
+  border-color: var(--glass-border);
+  border-radius: 28px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34));
+  box-shadow:
+    0 12px 26px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
 }
 
 .parent-dashboard__task-item h4,
@@ -1297,6 +1556,19 @@ a:focus-visible {
   font-weight: 700;
 }
 
+.parent-dashboard__task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.parent-dashboard__task-actions .nf-button {
+  min-height: 36px;
+  padding: 8px 14px;
+}
+
 .parent-dashboard__reward-suggestions,
 .parent-dashboard__reward-suggestion-grid,
 .parent-dashboard__reward-suggestion {
@@ -1305,10 +1577,10 @@ a:focus-visible {
 }
 
 .parent-dashboard__reward-suggestions {
-  padding: 16px;
-  border: 1px solid rgba(126, 158, 202, 0.14);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
+  padding: 14px;
+  border: 1px solid rgba(126, 158, 202, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.84);
 }
 
 .parent-dashboard__reward-suggestions-copy h4,
@@ -1317,10 +1589,10 @@ a:focus-visible {
 }
 
 .parent-dashboard__reward-suggestion {
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(126, 158, 202, 0.14);
-  background: rgba(250, 252, 255, 0.96);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 158, 202, 0.18);
+  background: rgba(250, 252, 255, 0.98);
 }
 
 .parent-dashboard__reward-suggestion p {
@@ -1343,15 +1615,20 @@ a:focus-visible {
 }
 
 .parent-dashboard__form-card--feature {
+  border-color: rgba(36, 114, 103, 0.24);
+  border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(255, 233, 176, 0.3), transparent 26%),
-    radial-gradient(circle at left center, rgba(123, 217, 188, 0.18), transparent 22%),
-    rgba(255, 255, 255, 0.94);
+    radial-gradient(circle at top right, rgba(125, 223, 191, 0.28), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(234, 248, 243, 0.44));
+  box-shadow:
+    0 16px 32px rgba(36, 114, 103, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
 }
 
 .parent-dashboard__quick-create {
-  border-color: rgba(77, 142, 247, 0.24);
-  box-shadow: 0 26px 54px rgba(74, 108, 161, 0.14);
+  border-color: rgba(36, 114, 103, 0.28);
 }
 
 .parent-dashboard__quick-create-grid {
@@ -1423,11 +1700,11 @@ a:focus-visible {
 .parent-dashboard__empty-state {
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 26px;
-  border: 1px dashed rgba(126, 158, 202, 0.28);
-  border-radius: 24px;
-  background: rgba(250, 252, 255, 0.84);
+  gap: 8px;
+  padding: 22px;
+  border: 1px dashed rgba(126, 158, 202, 0.34);
+  border-radius: 14px;
+  background: rgba(250, 252, 255, 0.92);
   text-align: center;
 }
 /* Prevent long text from breaking cards and modals */
@@ -1584,21 +1861,21 @@ a:focus-visible {
 .parent-dashboard__reward-icon {
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 12px 24px rgba(74, 108, 161, 0.1);
-  font-size: 1.5rem;
+  box-shadow: 0 8px 18px rgba(74, 108, 161, 0.08);
+  font-size: 1.25rem;
 }
 
 .parent-dashboard__insight-callout {
   display: grid;
   gap: 8px;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid rgba(126, 158, 202, 0.18);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .parent-dashboard__legend {
@@ -1654,11 +1931,11 @@ a:focus-visible {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 180px;
-  padding: 18px 14px;
-  border-radius: 24px;
-  background: rgba(248, 251, 255, 0.9);
-  border: 1px solid rgba(126, 158, 202, 0.16);
+  min-height: 160px;
+  padding: 16px 12px;
+  border-radius: 14px;
+  background: rgba(248, 251, 255, 0.95);
+  border: 1px solid rgba(126, 158, 202, 0.2);
 }
 
 .parent-dashboard__chart-bar {
@@ -1681,8 +1958,8 @@ a:focus-visible {
 }
 
 .parent-dashboard__insight-notes p {
-  padding: 14px 16px;
-  border-radius: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.82);
   color: var(--text-soft);
   font-weight: 700;
@@ -1697,10 +1974,10 @@ a:focus-visible {
 .parent-dashboard__insight-metrics div {
   display: grid;
   gap: 4px;
-  padding: 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(126, 158, 202, 0.16);
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(126, 158, 202, 0.2);
 }
 
 .parent-dashboard__insight-metrics strong {
@@ -1712,6 +1989,38 @@ a:focus-visible {
   color: var(--text-soft);
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.settings-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.settings-page__card {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+  border-color: var(--glass-border);
+  border-radius: 30px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34));
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+}
+
+.settings-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.settings-page__form {
+  display: grid;
+  gap: 12px;
 }
 
 .focus-experience {
@@ -3835,11 +4144,26 @@ a:focus-visible {
   .child-dashboard__board,
   .reward-overview-grid,
   .reward-overview-grid--simple,
+  .settings-page__grid,
+  .parent-dashboard__overview-grid,
+  .parent-dashboard__day-card,
   .parent-dashboard__hero-grid,
   .parent-dashboard__summary-grid,
   .parent-dashboard__workspace-grid,
   .parent-dashboard__control-grid {
     grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .parent-dashboard__focus-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__focus-score {
+    justify-self: start;
   }
 
   .parent-dashboard__hero-metrics {
@@ -4072,6 +4396,8 @@ a:focus-visible {
   .child-dashboard__missions-list,
   .child-dashboard__reward-card,
   .child-dashboard__style-card,
+  .parent-dashboard__day-card,
+  .parent-dashboard__next-card,
   .parent-dashboard__hero-card,
   .parent-dashboard__snapshot-card,
   .parent-dashboard__summary-card,
@@ -4088,6 +4414,14 @@ a:focus-visible {
 
   .parent-dashboard__tab {
     min-width: 100%;
+  }
+
+  .parent-dashboard__summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__focus-panel {
+    padding: 14px;
   }
 
   .focus-step-card {

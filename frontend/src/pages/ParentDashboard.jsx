@@ -23,7 +23,6 @@ import {
   getTasks,
   resetTaskStatus,
   updateParentReward,
-  updateChildPassword,
   updateTask,
   updateTaskStepCount,
   getParentDashboardCore,
@@ -78,10 +77,8 @@ function ParentDashboard() {
   const [editDescription, setEditDescription] = useState("");
   const [editMessage, setEditMessage] = useState("");
 
-  const [deleteTaskId, setDeleteTaskId] = useState("");
   const [deleteTaskMessage, setDeleteTaskMessage] = useState("");
 
-  const [resetTaskId, setResetTaskId] = useState("");
   const [resetTaskMessage, setResetTaskMessage] = useState("");
 
   const [rewards, setRewards] = useState([]);
@@ -132,9 +129,6 @@ function ParentDashboard() {
   const [childAccountUsername, setChildAccountUsername] = useState("");
   const [childAccountPassword, setChildAccountPassword] = useState("");
   const [childAccountMessage, setChildAccountMessage] = useState("");
-  const [childPassword, setChildPassword] = useState("");
-  const [childPasswordConfirm, setChildPasswordConfirm] = useState("");
-  const [childPasswordMessage, setChildPasswordMessage] = useState("");
 
   const [emotionLogs, setEmotionLogs] = useState([]);
   const [selectedRoutineId, setSelectedRoutineId] = useState("");
@@ -182,6 +176,17 @@ function ParentDashboard() {
 
     if (resourceForm) {
       resourceForm.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  const scrollToParentSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+
+    if (section) {
+      section.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
@@ -536,45 +541,6 @@ const checkRoutineReminders = useCallback(() => {
     setEditMessage("Task updated successfully.");
   };
 
-  const handleDeleteTask = async () => {
-    setDeleteTaskMessage("");
-
-    if (!deleteTaskId) {
-      setDeleteTaskMessage("Please select a task to delete.");
-      return;
-    }
-
-    const result = await deleteTask(deleteTaskId);
-
-    if (result.error) {
-      setDeleteTaskMessage("Failed to delete task.");
-      return;
-    }
-
-    await refreshTasks();
-    setDeleteTaskId("");
-    setDeleteTaskMessage("Task deleted successfully.");
-  };
-
-  const handleResetTask = async () => {
-    setResetTaskMessage("");
-
-    if (!resetTaskId) {
-      setResetTaskMessage("Please select a task to reset.");
-      return;
-    }
-
-    const result = await resetTaskStatus(resetTaskId);
-
-    if (result.error) {
-      setResetTaskMessage("Failed to reset task.");
-      return;
-    }
-
-    await refreshTasks();
-    setResetTaskMessage("Task reset successfully.");
-  };
-
   const handleCreateReward = async () => {
     setRewardMessage("");
 
@@ -673,40 +639,6 @@ const checkRoutineReminders = useCallback(() => {
     setChildAccountMessage(
       "Child account created successfully. The child can now sign in with their username and password."
     );
-  };
-
-  const handleUpdateChildPassword = async () => {
-    setChildPasswordMessage("");
-
-    if (!hasChildAccount) {
-      setChildPasswordMessage("Create a child profile first.");
-      return;
-    }
-
-    if (!childPassword || !childPasswordConfirm) {
-      setChildPasswordMessage("Please enter and confirm the new password.");
-      return;
-    }
-
-    if (childPassword !== childPasswordConfirm) {
-      setChildPasswordMessage("The passwords do not match.");
-      return;
-    }
-
-    const result = await updateChildPassword({
-      parentId: parentProfile.user_id,
-      childId: childProfile.user_id,
-      password: childPassword,
-    });
-
-    if (result.error) {
-      setChildPasswordMessage(result.error);
-      return;
-    }
-
-    setChildPassword("");
-    setChildPasswordConfirm("");
-    setChildPasswordMessage("Child password updated successfully.");
   };
 
   const handleSelectEditReward = (rewardId) => {
@@ -983,6 +915,26 @@ const checkRoutineReminders = useCallback(() => {
         )
       : 0;
   const featuredTask = activeTasks[0] || completedTasks[0] || null;
+  const nextParentAction = !featuredTask
+    ? {
+        title: "Create the first task",
+        text: "Start with one clear task. Steps will be created for you.",
+        cta: "Add Task",
+        target: "create-task-panel",
+      }
+    : activeTasks.length > 0
+      ? {
+          title: "Check the active list",
+          text: `${activeTasks.length} task${activeTasks.length === 1 ? "" : "s"} still need attention.`,
+          cta: "View Tasks",
+          target: "task-board-panel",
+        }
+      : {
+          title: "Plan the next task",
+          text: "Everything is complete. Add one task when you are ready.",
+          cta: "Add Task",
+          target: "create-task-panel",
+        };
 
   const getStatusConfig = (task) => {
     const completed = String(task.status) === "completed";
@@ -993,7 +945,6 @@ const checkRoutineReminders = useCallback(() => {
       return {
         label: "Completed",
         tone: "mint",
-        detail: "Finished and ready to celebrate",
       };
     }
 
@@ -1001,14 +952,12 @@ const checkRoutineReminders = useCallback(() => {
       return {
         label: "In progress",
         tone: "sky",
-        detail: `${doneSteps} of ${totalSteps} steps done`,
       };
     }
 
     return {
       label: "Ready",
       tone: "warm",
-      detail: `${totalSteps} steps prepared`,
     };
   };
 
@@ -1040,32 +989,32 @@ const checkRoutineReminders = useCallback(() => {
 
   const sectionHeader = {
     tasks: {
-      eyebrow: "Parent Dashboard",
-      title: `Welcome, ${parentProfile.name}`,
+      eyebrow: "Parent",
+      title: `${parentProfile.name}'s dashboard`,
       description: hasChildAccount
-        ? `A calm control center for managing ${childProfile.name}'s tasks and progress.`
-        : "Create a child account first to start managing tasks and progress.",
+        ? `Manage ${childProfile.name}'s tasks, points, and login.`
+        : "Create a child account to begin.",
     },
     rewards: {
       eyebrow: "Rewards",
-      title: "Reward management",
+      title: "Rewards",
       description: hasChildAccount
-        ? `Manage ${childProfile.name}'s rewards in one place.`
-        : "Create a child account first to start managing rewards.",
+        ? `Set rewards for ${childProfile.name}.`
+        : "Create a child account to add rewards.",
     },
     insights: {
       eyebrow: "Insights",
-      title: "Behavior and progress insights",
+      title: "Insights",
       description: hasChildAccount
-        ? `Review patterns, triggers, and emotional trends for ${childProfile.name}.`
-        : "Create a child account first to start viewing insights.",
+        ? `Review patterns for ${childProfile.name}.`
+        : "Create a child account to view insights.",
     },
     support: {
       eyebrow: "Support",
-      title: "Support tools and routines",
+      title: "Support tools",
       description: hasChildAccount
-        ? `Manage routines, prompts, and support resources for ${childProfile.name}.`
-        : "Create a child account first to start managing support tools.",
+        ? `Keep routines, prompts, and resources in one place.`
+        : "Create a child account to use support tools.",
     },
   }[activeSection];
 
@@ -1080,10 +1029,10 @@ const checkRoutineReminders = useCallback(() => {
                 {"\u{1F476}"}
               </div>
               <div className="parent-setup-modal__copy">
-                <p className="eyebrow">First Step</p>
-                <h3 id="child-setup-title">Create your child profile</h3>
+                <p className="eyebrow">First step</p>
+                <h3 id="child-setup-title">Create a child profile</h3>
                 <p className="page-text">
-                  Add one child account so tasks, rewards, and support tools stay simple and easy to manage.
+                  Add one child account for tasks, rewards, and support tools.
                 </p>
               </div>
 
@@ -1118,7 +1067,7 @@ const checkRoutineReminders = useCallback(() => {
                 ) : null}
 
                 <Button onClick={handleCreateChildAccount}>
-                  Save Child Profile
+                  Save Profile
                 </Button>
               </div>
             </div>
@@ -1140,88 +1089,81 @@ const checkRoutineReminders = useCallback(() => {
 
       {isTasksPage ? (
         <>
-      <div className="parent-dashboard__hero-grid">
-        <Card className="parent-dashboard__hero-card" variant="glow">
-          <div className="parent-dashboard__hero-top">
+      <div className="parent-dashboard__overview-grid">
+        <Card className="parent-dashboard__day-card" variant="glow">
+          <div className="parent-dashboard__orbit" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+
+          <div className="parent-dashboard__section-header">
             <div>
-              <p className="eyebrow">Child Progress Summary</p>
-              <h3>{childProfile?.name || "Your child"}'s week at a glance</h3>
+              <p className="eyebrow">Today</p>
+              <h3>{childProfile?.name || "Your child"}'s plan</h3>
             </div>
-            <Badge tone="warm">{activeTasks.length} active tasks</Badge>
+            <Badge tone="warm">{activeTasks.length} active</Badge>
           </div>
-
-          <div className="parent-dashboard__hero-metrics">
-            <div className="parent-dashboard__metric-card">
-              <span>Completion</span>
+          <div className="parent-dashboard__focus-panel">
+            <div className="parent-dashboard__focus-score" aria-label={`${completionPercent}% complete`}>
               <strong>{completionPercent}%</strong>
+              <span>done</span>
             </div>
-            <div className="parent-dashboard__metric-card">
-              <span>Reward points</span>
-              <strong>{totalPoints}</strong>
+            <div className="parent-dashboard__focus-detail">
+              <div className="parent-dashboard__snapshot-row">
+                <h4>{featuredTask ? featuredTask.title : "Create a first task"}</h4>
+                {featuredTask ? (
+                  <Badge tone={getStatusConfig(featuredTask).tone}>
+                    {getStatusConfig(featuredTask).label}
+                  </Badge>
+                ) : (
+                  <Badge tone="warm">New</Badge>
+                )}
+              </div>
+              {featuredTask?.description ? <p>{featuredTask.description}</p> : null}
+              <ProgressBar
+                value={completionPercent}
+                max={100}
+                label="Child task completion progress"
+              />
             </div>
-            <div className="parent-dashboard__metric-card">
-              <span>Average steps</span>
-              <strong>{averageSteps}</strong>
-            </div>
-          </div>
-
-          <div className="parent-dashboard__hero-progress">
-            <div className="parent-dashboard__hero-progress-label">
-              <span>{completedTasks.length} completed tasks</span>
-              <span>{totalTasks} total tasks</span>
-            </div>
-            <ProgressBar
-              value={completionPercent}
-              max={100}
-              label="Child task completion progress"
-            />
           </div>
         </Card>
 
-        <Card className="parent-dashboard__snapshot-card" variant="soft">
-          <p className="eyebrow">Focus Snapshot</p>
-          {featuredTask ? (
-            <div className="parent-dashboard__snapshot-body">
-              <div className="parent-dashboard__snapshot-row">
-                <h3>{featuredTask.title}</h3>
-                <Badge tone={getStatusConfig(featuredTask).tone}>
-                  {getStatusConfig(featuredTask).label}
-                </Badge>
-              </div>
-              <p className="page-text">
-                {featuredTask.description || getStatusConfig(featuredTask).detail}
-              </p>
-              <p className="parent-dashboard__snapshot-note">
-                {getStatusConfig(featuredTask).detail}
-              </p>
-            </div>
-          ) : (
-            <div className="parent-dashboard__empty-state parent-dashboard__empty-state--compact">
-              <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                {"\u{1F33F}"}
-              </div>
-              <p>No tasks yet. Create the first one to start building structure.</p>
-            </div>
-          )}
+        <Card className="parent-dashboard__next-card" variant="soft">
+          <p className="eyebrow">Next step</p>
+          <h3>{nextParentAction.title}</h3>
+          <p className="page-text">{nextParentAction.text}</p>
+          <Button
+            type="button"
+            onClick={() => scrollToParentSection(nextParentAction.target)}
+          >
+            {nextParentAction.cta}
+          </Button>
         </Card>
       </div>
 
-      <div className="parent-dashboard__summary-grid">
-        <Card className="parent-dashboard__summary-card" variant="soft">
-          <span>Task overview</span>
-          <strong>{totalTasks}</strong>
-          <p>{activeTasks.length} active and {completedTasks.length} completed</p>
-        </Card>
-        <Card className="parent-dashboard__summary-card" variant="soft">
-          <span>Reward management</span>
-          <strong>{totalRewards}</strong>
-          <p>{rewards.filter((reward) => reward.approved).length} approved rewards ready</p>
-        </Card>
-        <Card className="parent-dashboard__summary-card" variant="soft">
-          <span>Support flow</span>
-          <strong>{childProfile?.name || "No child yet"}</strong>
-          <p>Tasks are broken into small steps after creation</p>
-        </Card>
+      <div className="parent-dashboard__summary-strip" aria-label="Parent dashboard summary">
+        <div className="parent-dashboard__summary-tile">
+          <span>Active</span>
+          <strong>{activeTasks.length}</strong>
+          <p>tasks</p>
+        </div>
+        <div className="parent-dashboard__summary-tile">
+          <span>Completed</span>
+          <strong>{completedTasks.length}</strong>
+          <p>tasks</p>
+        </div>
+        <div className="parent-dashboard__summary-tile">
+          <span>Points</span>
+          <strong>{totalPoints}</strong>
+          <p>earned</p>
+        </div>
+        <div className="parent-dashboard__summary-tile">
+          <span>Login</span>
+          <strong>{childProfile?.username || "-"}</strong>
+          <p>{childProfile?.name || "No child"}</p>
+        </div>
       </div>
         </>
       ) : null}
@@ -1229,19 +1171,115 @@ const checkRoutineReminders = useCallback(() => {
       {activeSection === "tasks" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
+            <Card id="task-board-panel" className="parent-dashboard__collection-card parent-dashboard__task-board" variant="default">
+              <div className="parent-dashboard__section-header">
+                <div>
+                  <p className="eyebrow">Task board</p>
+                  <h3>What needs attention</h3>
+                </div>
+                <Badge tone="sky">{totalTasks} tasks</Badge>
+              </div>
+
+              {childTasks.length > 0 ? (
+                <div className="parent-dashboard__task-list">
+                  {childTasks.map((task) => {
+                    const totalSteps = Math.max(Number(task.total_steps || 0), 1);
+                    const doneSteps = Math.min(Number(task.completed_steps || 0), totalSteps);
+                    const status = getStatusConfig(task);
+
+                    return (
+                      <div key={task.task_id} className="parent-dashboard__task-item">
+                        <div className="parent-dashboard__task-item-top">
+                          <div>
+                            <h4>{task.title}</h4>
+                            <p>{task.description || "No note."}</p>
+                          </div>
+                          <Badge tone={status.tone}>{status.label}</Badge>
+                        </div>
+
+                        <ProgressBar
+                          value={doneSteps}
+                          max={totalSteps}
+                          label={`${task.title} progress`}
+                        />
+
+                        <div className="parent-dashboard__task-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={async () => {
+                              setResetTaskMessage("");
+                              const result = await resetTaskStatus(task.task_id);
+
+                              if (result.error) {
+                                setResetTaskMessage(result.error);
+                                return;
+                              }
+
+                              setResetTaskMessage(`${task.title} was reset.`);
+                              await refreshTasks();
+                            }}
+                          >
+                            Reset
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={async () => {
+                              setDeleteTaskMessage("");
+                              const result = await deleteTask(task.task_id);
+
+                              if (result.error) {
+                                setDeleteTaskMessage(result.error);
+                                return;
+                              }
+
+                              setDeleteTaskMessage(`${task.title} was deleted.`);
+                              await refreshTasks();
+                            }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {resetTaskMessage || deleteTaskMessage ? (
+                    <p className="parent-dashboard__message">
+                      {resetTaskMessage || deleteTaskMessage}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    {"\u{1F4DD}"}
+                  </div>
+                  <h4>No tasks yet</h4>
+                  <p>Create the first task.</p>
+                </div>
+              )}
+            </Card>
+
+          </div>
+
+          <div className="parent-dashboard__side-column">
             <Card
+              id="create-task-panel"
               className="parent-dashboard__form-card parent-dashboard__form-card--feature parent-dashboard__quick-create"
               variant="glow"
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Main Action</p>
-                  <h3>Create a task in one step</h3>
+                  <p className="eyebrow">Add task</p>
+                  <h3>Create task</h3>
                   <p className="page-text">
-                    Start with a clear task title. NeuroFlake will turn it into smaller steps automatically.
+                    Write it once. NeuroFlake builds the steps.
                   </p>
                 </div>
-                <Badge tone="warm">Quick create</Badge>
               </div>
 
               <div className="parent-dashboard__quick-create-grid">
@@ -1261,171 +1299,20 @@ const checkRoutineReminders = useCallback(() => {
                   <p className="parent-dashboard__message">{createMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    Example: Pack the school bag, Brush teeth, or Put toys away.
+                    Try: Pack school bag, brush teeth, put toys away.
                   </p>
                 )}
                 <Button onClick={handleCreateTask} disabled={isCreatingTask || !hasChildAccount}>
-                  {isCreatingTask ? "Creating Steps..." : "Create Task"}
+                  {isCreatingTask ? "Creating..." : "Create Task"}
                 </Button>
               </div>
             </Card>
 
-            <Card className="parent-dashboard__collection-card" variant="default">
+            <Card className="parent-dashboard__form-card parent-dashboard__edit-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Task Library</p>
-                  <h3>Current assignments</h3>
-                </div>
-                <Badge tone="sky">{totalTasks} tasks</Badge>
-              </div>
-
-              {childTasks.length > 0 ? (
-                <div className="parent-dashboard__task-list">
-                  {childTasks.map((task) => {
-                    const totalSteps = Math.max(Number(task.total_steps || 0), 1);
-                    const doneSteps = Math.min(Number(task.completed_steps || 0), totalSteps);
-                    const status = getStatusConfig(task);
-
-                    return (
-                      <div key={task.task_id} className="parent-dashboard__task-item">
-                        <div className="parent-dashboard__task-item-top">
-                          <div>
-                            <h4>{task.title}</h4>
-                            <p>{task.description || "No description yet."}</p>
-                          </div>
-                          <Badge tone={status.tone}>{status.label}</Badge>
-                        </div>
-
-                        <div className="parent-dashboard__task-meta">
-                          <span>{status.detail}</span>
-                          <span>
-                            {task.priority_type || "Priority"} {task.priority_rank || "-"}
-                          </span>
-                        </div>
-
-                        <ProgressBar
-                          value={doneSteps}
-                          max={totalSteps}
-                          label={`${task.title} progress`}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="parent-dashboard__empty-state">
-                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    {"\u{1F4DD}"}
-                  </div>
-                  <h4>No tasks yet</h4>
-                  <p>Create a task and NeuroFlake will break it into smaller steps.</p>
-                </div>
-              )}
-            </Card>
-
-            <Card className="parent-dashboard__collection-card" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Task Controls</p>
-                  <h3>Reset or remove with care</h3>
-                </div>
-              </div>
-
-              <div className="parent-dashboard__control-grid">
-                <div className="parent-dashboard__form-card">
-                  <h4>Reset task status</h4>
-                  <p className="page-text">
-                    Make a task pending again and clear completed steps.
-                  </p>
-                  <div className="parent-dashboard__form-grid">
-                    <select value={resetTaskId} onChange={(e) => setResetTaskId(e.target.value)}>
-                      <option value="">Select task to reset</option>
-                      {childTasks.map((task) => (
-                        <option key={task.task_id} value={task.task_id}>
-                          {renderTaskOption(task)}
-                        </option>
-                      ))}
-                    </select>
-                    {resetTaskMessage ? (
-                      <p className="parent-dashboard__message">{resetTaskMessage}</p>
-                    ) : null}
-                    <Button variant="secondary" onClick={handleResetTask}>
-                      Reset Task
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="parent-dashboard__form-card">
-                  <h4>Delete task</h4>
-                  <p className="page-text">
-                    Removing a task deletes its step list. Past mood and reward history stays saved.
-                  </p>
-                  <div className="parent-dashboard__form-grid">
-                    <select value={deleteTaskId} onChange={(e) => setDeleteTaskId(e.target.value)}>
-                      <option value="">Select task to delete</option>
-                      {childTasks.map((task) => (
-                        <option key={task.task_id} value={task.task_id}>
-                          {renderTaskOption(task)}
-                        </option>
-                      ))}
-                    </select>
-                    {deleteTaskMessage ? (
-                      <p className="parent-dashboard__message">{deleteTaskMessage}</p>
-                    ) : null}
-                    <Button variant="secondary" onClick={handleDeleteTask}>
-                      Delete Task
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="parent-dashboard__side-column">
-            <Card className="parent-dashboard__form-card" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Child Sign-In</p>
-                  <h3>Update child login password</h3>
-                </div>
-              </div>
-
-              <div className="parent-dashboard__form-grid">
-                <input
-                  type="text"
-                  value={childProfile?.username || ""}
-                  readOnly
-                  aria-label="Child username"
-                  placeholder="Child username"
-                />
-                <input
-                  type="password"
-                  placeholder="New child password"
-                  value={childPassword}
-                  onChange={(e) => setChildPassword(e.target.value)}
-                  disabled={!hasChildAccount}
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm new password"
-                  value={childPasswordConfirm}
-                  onChange={(e) => setChildPasswordConfirm(e.target.value)}
-                  disabled={!hasChildAccount}
-                />
-                {childPasswordMessage ? (
-                  <p className="parent-dashboard__message">{childPasswordMessage}</p>
-                ) : null}
-                <Button onClick={handleUpdateChildPassword} disabled={!hasChildAccount}>
-                  Update Child Password
-                </Button>
-              </div>
-            </Card>
-
-            <Card className="parent-dashboard__form-card" variant="default">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Edit Task</p>
-                  <h3>Adjust the plan</h3>
+                  <p className="eyebrow">Edit task</p>
+                  <h3>Update details</h3>
                 </div>
               </div>
 
@@ -1464,7 +1351,7 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Reward Management</p>
+                  <p className="eyebrow">Rewards</p>
                   <h3>Available rewards</h3>
                 </div>
                 <Badge tone="warm">
@@ -1486,7 +1373,7 @@ const checkRoutineReminders = useCallback(() => {
                         </Badge>
                       </div>
                       <div className="parent-dashboard__reward-meta">
-                        <span>Parent-managed reward</span>
+                        <span>{reward.theme || "Custom"}</span>
                       </div>
                     </div>
                   ))}
@@ -1497,7 +1384,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F381}"}
                   </div>
                   <h4>No rewards yet</h4>
-                  <p>Add a reward so points can connect to something meaningful.</p>
+                  <p>Add the first reward.</p>
                 </div>
               )}
             </Card>
@@ -1505,8 +1392,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Reward Controls</p>
-                  <h3>Remove old options when needed</h3>
+                  <p className="eyebrow">Controls</p>
+                  <h3>Manage rewards</h3>
                 </div>
               </div>
 
@@ -1514,7 +1401,7 @@ const checkRoutineReminders = useCallback(() => {
                 <div className="parent-dashboard__form-card">
                   <h4>Delete reward</h4>
                   <p className="page-text">
-                    Use this when a reward is no longer part of the routine.
+                    Remove a reward from the list.
                   </p>
                   <div className="parent-dashboard__form-grid">
                     <select
@@ -1547,8 +1434,8 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Create Reward</p>
-                  <h3>Add a simple reward</h3>
+                  <p className="eyebrow">Add reward</p>
+                  <h3>Create reward</h3>
                 </div>
               </div>
 
@@ -1556,7 +1443,7 @@ const checkRoutineReminders = useCallback(() => {
                 <div className="parent-dashboard__reward-suggestions-copy">
                   <h4>Starter ideas</h4>
                   <p className="page-text">
-                    Start with a few realistic rewards that match small, medium, and bigger point goals.
+                    Pick one or create your own.
                   </p>
                 </div>
 
@@ -1610,7 +1497,7 @@ const checkRoutineReminders = useCallback(() => {
                   <p className="parent-dashboard__message">{rewardMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    Tip: 20 to 40 points works well for smaller rewards. 60+ points suits bigger treats.
+                    Small rewards: 20-40 points. Bigger rewards: 60+.
                   </p>
                 )}
                 <Button onClick={handleCreateReward}>Create Reward</Button>
@@ -1620,8 +1507,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__form-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Edit Reward</p>
-                  <h3>Keep the catalog current</h3>
+                  <p className="eyebrow">Edit reward</p>
+                  <h3>Update reward</h3>
                 </div>
               </div>
 
@@ -1663,8 +1550,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="glow">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Behavioral Insights</p>
-                  <h3>Sensory Overload Forecast</h3>
+                  <p className="eyebrow">Forecast</p>
+                  <h3>Sensory risk</h3>
                 </div>
                 {isLoadingInsights ? (
                   <Badge tone="default">Analyzing</Badge>
@@ -1691,12 +1578,12 @@ const checkRoutineReminders = useCallback(() => {
               </div>
 
               {isLoadingSupport ? (
-                <p className="page-text">Loading support insights...</p>
+                <p className="page-text">Loading insights...</p>
               ) : null}
 
               {riskForecast ? (
                 <div className="parent-dashboard__insight-callout">
-                  <strong>AI advisory</strong>
+                  <strong>Suggestion</strong>
                   <p>{riskForecast.advisory_text}</p>
                 </div>
               ) : (
@@ -1706,8 +1593,8 @@ const checkRoutineReminders = useCallback(() => {
                   </div>
                   <p>
                     {isLoadingInsights
-                      ? "Loading today's insight forecast."
-                      : "No insight forecast is available yet."}
+                      ? "Loading forecast."
+                      : "No forecast yet."}
                   </p>
                 </div>
               )}
@@ -1716,18 +1603,17 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Weekly Emotional Regulation</p>
-                  <h3>Pattern snapshot</h3>
+                  <p className="eyebrow">Emotions</p>
+                  <h3>Weekly pattern</h3>
                 </div>
               </div>
 
               {isLoadingSupport ? (
-                <p className="page-text">Loading emotion patterns...</p>
+                <p className="page-text">Loading emotions...</p>
               ) : null}
 
               <p className="page-text">
-                Tracking reported happy moments and overwhelmed moments can help
-                surface gentle patterns over time.
+                Saved emotion check-ins for this week.
               </p>
 
               <div className="parent-dashboard__legend">
@@ -1762,15 +1648,15 @@ const checkRoutineReminders = useCallback(() => {
                 ))}
               </div>
               <p className="page-text">
-                This chart is calculated from saved emotion check-ins.
+                Based on saved check-ins.
               </p>
             </Card>
 
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Trigger Tracking</p>
-                  <h3>Recorded friction points</h3>
+                  <p className="eyebrow">Triggers</p>
+                  <h3>Logged triggers</h3>
                 </div>
                 <Badge tone="warm">{triggers.length} triggers</Badge>
               </div>
@@ -1816,7 +1702,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F50E}"}
                   </div>
                   <h4>No triggers yet</h4>
-                  <p>Add a trigger to start seeing repeated patterns. Click here to add one.</p>
+                  <p>Add the first trigger.</p>
                 </div>
               )}
             </Card>
@@ -1824,8 +1710,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="glow">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Personalised Suggestions</p>
-                  <h3>Actionable parent guidance</h3>
+                  <p className="eyebrow">Suggestions</p>
+                  <h3>Next steps</h3>
                 </div>
                 <Badge tone="mint">{suggestions.length} suggestions</Badge>
               </div>
@@ -1853,7 +1739,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F4A1}"}
                   </div>
                   <h4>No suggestions yet</h4>
-                  <p>Add triggers or emotion logs to generate support guidance.</p>
+                  <p>Add triggers or emotion logs first.</p>
                 </div>
               )}
             </Card>
@@ -1863,14 +1749,14 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">How To Use This</p>
-                  <h3>Support, not alarm</h3>
+                  <p className="eyebrow">Use this</p>
+                  <h3>Simple check</h3>
                 </div>
               </div>
             <div className="parent-dashboard__insight-notes">
               <p>1. Check repeated triggers.</p>
               <p>2. Simplify the next task.</p>
-              <p>3. Adjust routines or rewards.</p>
+              <p>3. Adjust routines.</p>
             </div>
               <Button variant="secondary" onClick={loadInsights} disabled={isLoadingInsights}>
                 {isLoadingInsights ? "Refreshing..." : "Refresh Insights"}
@@ -1884,10 +1770,10 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add Trigger</p>
-                  <h3>Log a support signal</h3>
+                  <p className="eyebrow">Add trigger</p>
+                  <h3>Log trigger</h3>
                   <p className="page-text">
-                    A trigger is something that may make the child feel stressed, stuck, or overwhelmed.
+                    Note what made the moment harder.
                   </p>
                 </div>
               </div>
@@ -1938,12 +1824,12 @@ const checkRoutineReminders = useCallback(() => {
               <Card className="parent-dashboard__collection-card" variant="soft">
                 <div className="parent-dashboard__section-header">
                   <div>
-                    <p className="eyebrow">Support Tools</p>
-                    <h3>Loading routines, prompts, and resources</h3>
+                    <p className="eyebrow">Support</p>
+                    <h3>Loading tools</h3>
                   </div>
                 </div>
                 <p className="page-text">
-                  We are getting the support tools ready so parents can see only the most useful information.
+                  Loading routines, prompts, and resources.
                 </p>
               </Card>
             ) : null}
@@ -1951,8 +1837,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Routine Planner</p>
-                  <h3>Saved routines and reminders</h3>
+                  <p className="eyebrow">Routines</p>
+                  <h3>Saved routines</h3>
                 </div>
                 <Badge tone="sky">{routineBlocks.length} routines</Badge>
               </div>
@@ -2006,7 +1892,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F4C5}"}
                   </div>
                   <h4>No routines yet</h4>
-                  <p>Create a routine and reminder to support a consistent schedule. Click here to create one.</p>
+                  <p>Create the first routine.</p>
                 </div>
               )}
             </Card>
@@ -2014,8 +1900,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Communication Prompts</p>
-                  <h3>Conversation support</h3>
+                  <p className="eyebrow">Prompts</p>
+                  <h3>Conversation prompts</h3>
                 </div>
                 <Badge tone="warm">{communicationPrompts.length} prompts</Badge>
               </div>
@@ -2050,7 +1936,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F4AC}"}
                   </div>
                   <h4>No prompts yet</h4>
-                  <p>Add prompts to help parents stay updated with the child's activities. Click here to add one.</p>
+                  <p>Add the first prompt.</p>
                 </div>
               )}
             </Card>
@@ -2058,7 +1944,7 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card" variant="glow">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Resources & Expert Tips</p>
+                  <p className="eyebrow">Resources</p>
                   <h3>Support library</h3>
                 </div>
                 <Badge tone="mint">{supportResources.length} resources</Badge>
@@ -2101,7 +1987,7 @@ const checkRoutineReminders = useCallback(() => {
                     {"\u{1F4DA}"}
                   </div>
                   <h4>No resources yet</h4>
-                  <p>Add support resources or expert tips for parents. Click here to add one.</p>
+                  <p>Add the first resource.</p>
                 </div>
               )}
             </Card>
@@ -2111,13 +1997,13 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Reminder Notifications</p>
-                  <h3>Enable browser reminders</h3>
+                  <p className="eyebrow">Reminders</p>
+                  <h3>Browser reminders</h3>
                 </div>
               </div>
 
               <p className="page-text">
-                This prototype sends a browser notification when the page is open and the reminder time is reached.
+                Sends a browser notification when this page is open.
               </p>
 
               {reminderNotificationMessage ? (
@@ -2125,7 +2011,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : null}
 
               <Button variant="secondary" onClick={handleEnableReminderNotifications}>
-                Enable Reminder Notifications
+                Enable Reminders
               </Button>
             </Card>
             <Card
@@ -2135,8 +2021,8 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Create Routine</p>
-                  <h3>Plan a consistent schedule</h3>
+                  <p className="eyebrow">Add routine</p>
+                  <h3>Create routine</h3>
                 </div>
               </div>
 
@@ -2180,8 +2066,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__form-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add Routine Item</p>
-                  <h3>Extend an existing routine</h3>
+                  <p className="eyebrow">Add item</p>
+                  <h3>Routine item</h3>
                 </div>
               </div>
 
@@ -2230,8 +2116,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card id="add-prompt-form" className="parent-dashboard__form-card" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add Prompt</p>
-                  <h3>Support communication</h3>
+                  <p className="eyebrow">Add prompt</p>
+                  <h3>Create prompt</h3>
                 </div>
               </div>
 
@@ -2270,8 +2156,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card id="add-resource-form" className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add Resource</p>
-                  <h3>Save expert tips</h3>
+                  <p className="eyebrow">Add resource</p>
+                  <h3>Create resource</h3>
                 </div>
               </div>
             

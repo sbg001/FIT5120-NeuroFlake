@@ -4,7 +4,18 @@ from fastapi import APIRouter, HTTPException
 import psycopg2.extras
 
 from core import get_db_connection
-from serializers import build_dashboard_suggestions, communication_prompt_row_to_dict, routine_item_row_to_dict, routine_row_to_dict, support_resource_row_to_dict, trigger_row_to_dict, user_row_to_dict
+from serializers import (
+    communication_prompt_row_to_dict,
+    emotion_row_to_dict,
+    points_row_to_dict,
+    reward_row_to_dict,
+    routine_item_row_to_dict,
+    routine_row_to_dict,
+    support_resource_row_to_dict,
+    task_row_to_dict,
+    trigger_row_to_dict,
+    user_row_to_dict,
+)
 
 router = APIRouter()
 # ==========================================

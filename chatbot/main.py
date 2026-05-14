@@ -11,6 +11,7 @@ from routes.rewards import router as rewards_router
 from routes.routines import router as routines_router
 from routes.support import router as support_router
 from routes.tasks import router as tasks_router
+from routes import emotion_engine
 
 app = FastAPI()
 
@@ -43,6 +44,7 @@ app.include_router(parent_dashboard_router)
 app.include_router(support_router)
 app.include_router(assistant_router)
 app.include_router(rewards_router)
+app.include_router(emotion_engine.router)
 
 
 if __name__ == "__main__":

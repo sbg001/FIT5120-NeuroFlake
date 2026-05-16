@@ -504,42 +504,27 @@ function Rewards() {
             </div>
 
             <div className="reward-celebration-modal__content">
-              <Badge tone="warm" className="reward-openmoji-badge">
-                <span className="reward-inline-openmoji" aria-hidden="true">
-                  <OpenMojiIcon name="sparkles" />
-                </span>
-                <span>Celebration</span>
-              </Badge>
               <div className="reward-celebration-modal__hero" aria-hidden="true">
-                <OpenMojiIcon name="gift" />
+                <OpenMojiIcon name="star" />
               </div>
-              <h3 id="reward-celebration-title">Great effort!</h3>
-              <p className="page-text">
-                {latestRewardSummary.celebration_message ||
-                  "You earned more quest stars."}
-              </p>
-
-              {latestRewardSummary.task_title ? (
-                <p className="reward-celebration-modal__task">
-                  You finished <strong>{latestRewardSummary.task_title}</strong>.
-                </p>
-              ) : null}
+              <h3 id="reward-celebration-title">Quest complete</h3>
+              <p className="page-text">Stars added to your jar.</p>
 
               <div className="reward-celebration-modal__stats">
                 <div>
+                  <span className="reward-celebration-modal__stat-icon" aria-hidden="true">
+                    <OpenMojiIcon name="star" />
+                  </span>
                   <strong>+{latestPointsEarned}</strong>
-                  <span>stars earned</span>
+                  <span>earned</span>
                 </div>
                 <div>
+                  <span className="reward-celebration-modal__stat-icon" aria-hidden="true">
+                    <OpenMojiIcon name="gift" />
+                  </span>
                   <strong>{updatedPointsBalance}</strong>
-                  <span>stars ready</span>
+                  <span>in jar</span>
                 </div>
-              </div>
-
-              <div className="reward-celebration-modal__messages">
-                {celebrationMessages.map((message) => (
-                  <span key={message}>{message}</span>
-                ))}
               </div>
 
               <div className="reward-celebration-modal__actions">

@@ -1070,6 +1070,13 @@ textarea::placeholder {
   align-content: start;
 }
 
+.child-dashboard__buddy-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
 .child-dashboard__section-row,
 .child-dashboard__mission-progress-label {
   display: flex;
@@ -3451,8 +3458,9 @@ textarea::placeholder {
   inset: 0;
   z-index: 40;
   display: grid;
-  place-items: center;
-  padding: 20px;
+  align-items: center;
+  justify-items: center;
+  padding: 96px 20px 20px;
 }
 
 .reward-celebration-modal__backdrop {
@@ -3465,8 +3473,13 @@ textarea::placeholder {
 .reward-celebration-modal__panel {
   position: relative;
   z-index: 1;
-  width: min(720px, 100%);
+  width: min(500px, 100%);
   overflow: hidden;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at 24% 12%, rgba(255, 232, 166, 0.34), transparent 30%),
+    radial-gradient(circle at 88% 82%, rgba(119, 216, 187, 0.18), transparent 30%),
+    rgba(255, 255, 255, 0.96);
 }
 
 .reward-celebration-modal__close {
@@ -3486,21 +3499,32 @@ textarea::placeholder {
 .reward-celebration-modal__content {
   position: relative;
   display: grid;
-  gap: 16px;
+  gap: 12px;
   justify-items: center;
-  padding: 32px;
+  padding: 26px 28px 28px;
   text-align: center;
 }
 
 .reward-celebration-modal__hero {
   display: grid;
   place-items: center;
-  width: 92px;
-  height: 92px;
+  width: 82px;
+  height: 82px;
+  padding: 14px;
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 16px 30px rgba(74, 108, 161, 0.14);
-  font-size: 2.4rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 232, 166, 0.6), transparent 58%),
+    rgba(255, 255, 255, 0.84);
+  box-shadow:
+    0 18px 34px rgba(74, 108, 161, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  animation: breatheFloat 3.8s ease-in-out infinite;
+}
+
+.reward-celebration-modal__content h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.65rem);
+  line-height: 1.05;
 }
 
 .reward-celebration-modal__task {
@@ -3517,15 +3541,22 @@ textarea::placeholder {
 
 .reward-celebration-modal__stats div {
   display: grid;
+  justify-items: center;
   gap: 4px;
-  padding: 16px;
-  border-radius: 20px;
+  padding: 12px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.8);
 }
 
 .reward-celebration-modal__stats strong {
-  font-size: 1.8rem;
+  font-size: 1.55rem;
   line-height: 1;
+}
+
+.reward-celebration-modal__stat-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
 }
 
 .reward-celebration-modal__confetti {
@@ -3537,8 +3568,8 @@ textarea::placeholder {
 .reward-celebration-modal__spark {
   position: absolute;
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   animation: driftSpark 7s ease-in-out infinite;
 }
 
@@ -5125,6 +5156,10 @@ textarea::placeholder {
 
   .child-dashboard__intro-pills {
     justify-content: flex-start;
+  }
+
+  .child-dashboard__buddy-panel {
+    grid-template-columns: 1fr;
   }
 
   .focus-experience__top-card,

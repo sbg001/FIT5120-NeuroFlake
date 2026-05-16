@@ -32,32 +32,37 @@
 
 .companion-avatar__hint {
   position: absolute;
-  right: 78px;
-  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  left: 50%;
+  bottom: calc(100% - 18px);
   width: max-content;
-  max-width: 120px;
-  transform: translateY(-50%);
-  padding: 8px 12px;
+  max-width: 110px;
+  transform: translateX(-50%);
+  padding: 7px 11px;
   border: 1px solid rgba(126, 158, 202, 0.28);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.94);
   color: #17263d;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 900;
   line-height: 1.1;
+  text-align: center;
   box-shadow: 0 12px 26px rgba(74, 108, 161, 0.14);
+  z-index: 20;
 }
 
 .companion-avatar__hint::after {
   content: "";
   position: absolute;
-  top: 50%;
-  right: -7px;
+  left: 50%;
+  bottom: -7px;
   width: 12px;
   height: 12px;
-  transform: translateY(-50%) rotate(45deg);
-  border-top: 1px solid rgba(126, 158, 202, 0.28);
+  transform: translateX(-50%) rotate(45deg);
   border-right: 1px solid rgba(126, 158, 202, 0.28);
+  border-bottom: 1px solid rgba(126, 158, 202, 0.28);
   background: rgba(255, 255, 255, 0.94);
 }
 

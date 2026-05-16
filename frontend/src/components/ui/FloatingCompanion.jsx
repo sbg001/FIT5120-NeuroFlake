@@ -33,27 +33,27 @@ async function analyseAndStore(messageText, taskContext = null) {
 const petConfig = {
   cat: { 
     images: { awake: "/pets/cat_awake.gif", happy: "/pets/cat_happy.gif", asleep: "/pets/cat_asleep.gif" },
-    greetings: ["*Meow!*", "*Prrr...* Ready?", "Hi there, *meow*!"] 
+    greetings: ["*Meow!*", "*Prrr...* Ready?", "Hi there, *meow*!"]
   },
   dog: { 
     images: { awake: "/pets/dog_awake.gif", happy: "/pets/dog_happy.gif", asleep: "/pets/dog_asleep.gif" }, 
-    greetings: ["*Woof!*", "*Arf!* Let's do this!", "*Pant pant*"] 
+    greetings: ["*Woof!*", "*Arf!* Let's do this!", "*Pant pant*"]
   },
   bear: { 
     images: { awake: "/pets/bear_awake.gif", happy: "/pets/bear_happy.gif", asleep: "/pets/bear_asleep.gif" }, 
-    greetings: ["*Rawr!*", "Big bear hug!", "*Grrr...* Let's go!"] 
+    greetings: ["*Rawr!*", "Big bear hug!", "*Grrr...* Let's go!"]
   },
   turtle: { 
     images: { awake: "/pets/turtle_awake.gif", happy: "/pets/turtle_happy.gif", asleep: "/pets/turtle_asleep.gif" }, 
-    greetings: ["*Snap!*", "Slow and steady!", "Shell yeah!"] 
+    greetings: ["*Snap!*", "Slow and steady!", "Shell yeah!"]
   },
   robot: { 
     images: { awake: "/pets/robot_awake.gif", happy: "/pets/robot_happy.gif", asleep: "/pets/robot_asleep.gif" }, 
-    greetings: ["*Beep boop!*", "System ready.", "*Whirrr...*"] 
+    greetings: ["*Beep boop!*", "System ready.", "*Whirrr...*"]
   },
   star: { 
     images: { awake: "/pets/star_awake.gif", happy: "/pets/star_happy.gif", asleep: "/pets/star_asleep.gif" }, 
-    greetings: ["*Twinkle!*", "Shine bright!", "*Sparkle sparkle*"] 
+    greetings: ["*Twinkle!*", "Shine bright!", "*Sparkle sparkle*"]
   },
   guide: { 
     // Fallback for the parent dashboard
@@ -308,6 +308,11 @@ function FloatingCompanion() {
       ) : null}
 
       <div className="companion-avatar" onClick={handlePetInteraction}>
+        {!isParent && !isOpen ? (
+          <div className="companion-avatar__hint" role="note">
+            <span>Your AI buddy</span>
+          </div>
+        ) : null}
         <div className={`greeting-bubble ${isGreeting ? 'visible' : ''}`}>
           {currentGreeting}
         </div>

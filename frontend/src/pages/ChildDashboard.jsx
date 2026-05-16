@@ -437,21 +437,20 @@ function ChildDashboard() {
         </Card>
 
         <Card className="child-dashboard__style-card nf-enter-card nf-enter-card--5" variant="soft">
-          <div className="child-dashboard__section-row">
+          <div className="child-dashboard__buddy-panel">
             <div>
               <p className="eyebrow child-dashboard__eyebrow-icon">
                 <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="herb" />
                 </span>
-                Companion
+                AI Buddy
               </p>
               <h3 className="child-dashboard__section-title">
                 <span className="child-dashboard__section-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="speech" />
                 </span>
-                Your calm buddy
+                {savedCharacterLabel} is here
               </h3>
-              <p className="page-text">Your buddy says: “You&apos;ve got this.”</p>
             </div>
             <div className="child-dashboard__style-identity">
               <BuddyIcon type={savedCharacterStyle} label={`${savedCharacterLabel} buddy`} />

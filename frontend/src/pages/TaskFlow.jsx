@@ -160,20 +160,11 @@ function TaskFlow() {
   const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
   const isLastStep = currentStepIndex === steps.length - 1;
   const modeIcon = isFocusActive ? "target" : "compass";
-  const emotionMeta = {
-    happy: {
-      icon: "grinning",
-      text: "I love that energy. Let's tackle these steps together.",
-    },
-    tired: {
-      icon: "sleeping",
-      text: "We can go slowly and keep this light.",
-    },
-    overwhelmed: {
-      icon: "worried",
-      text: "It's okay to feel big things. We will take this gently.",
-    },
-  };
+  const focusDurationSeconds = Math.max(durationMinutes * 60, 1);
+  const timerProgress = Math.min(
+    100,
+    Math.max(0, ((focusDurationSeconds - secondsLeft) / focusDurationSeconds) * 100)
+  );
 
   const triggerCompanionEmotion = (state) => {
     window.dispatchEvent(new CustomEvent("companionEmotion", { detail: state }));
@@ -539,12 +530,14 @@ function TaskFlow() {
       {currentStep ? (
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
-            <span className="focus-step-card__eyebrow">
-              <span className="task-flow__tiny-openmoji" aria-hidden="true">
-                <OpenMojiIcon name={isFocusActive ? "target" : "seedling"} />
+            <div className="focus-step-card__mode">
+              <span className="focus-step-card__eyebrow">
+                <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name={isFocusActive ? "target" : "seedling"} />
+                </span>
+                {isFocusActive ? "Focus Session" : "One Step At A Time"}
               </span>
-              {isFocusActive ? "Focus Session" : "One Step At A Time"}
-            </span>
+            </div>
             <div className="focus-step-card__status-row">
               {stepCelebration ? (
                 <Badge tone="warm" className="task-flow__badge-icon">
@@ -565,93 +558,96 @@ function TaskFlow() {
             </div>
           </div>
 
-          {isFocusActive ? (
-            <div className="focus-timer-panel task-flow-focus-panel">
-              <div className="focus-timer-panel__readout">
-                <p className="focus-timer-panel__label task-flow__eyebrow-icon">
-                  <span className="task-flow__tiny-openmoji" aria-hidden="true">
-                    <OpenMojiIcon name="hourglass" />
-                  </span>
-                  Calm timer
-                </p>
-                <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
-                <span>{isRunning ? "Timer is running" : "Timer is ready"}</span>
-              </div>
-
-              <div className="focus-timer-panel__controls">
-                <Button
-                  variant={isRunning ? "secondary" : "primary"}
-                  onClick={isRunning ? handlePauseFocus : handleContinueFocus}
-                >
-                  <span className="task-flow__button-icon" aria-hidden="true">
-                    <OpenMojiIcon name={isRunning ? "herb" : "hourglass"} />
-                  </span>
-                  <span>{isRunning ? "Pause" : "Start Timer"}</span>
-                </Button>
-                <select
-                  aria-label="Timer length"
-                  value={durationMinutes}
-                  onChange={handleDurationChange}
-                >
-                  <option value="10">10 min</option>
-                  <option value="15">15 min</option>
-                  <option value="25">25 min</option>
-                  <option value="35">35 min</option>
-                </select>
-                <Button variant="secondary" onClick={handleResetFocusTimer}>
-                  <span className="task-flow__button-icon" aria-hidden="true">
-                    <OpenMojiIcon name="sparkles" />
-                  </span>
-                  <span>Reset</span>
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
-          {emotion ? (
-            <div className="focus-step-card__emotion-note">
-              <span className="task-flow__note-openmoji" aria-hidden="true">
-                <OpenMojiIcon name={emotionMeta[emotion]?.icon || "speech"} />
-              </span>
-              <span>{emotionMeta[emotion]?.text}</span>
-            </div>
-          ) : null}
-
-          <div className="focus-step-card__body">
-            {currentStep.visual_hint ? (
-              <div className="focus-step-card__visual" aria-hidden="true">
-                {currentStep.visual_hint}
-              </div>
-            ) : null}
-
-            <h3 className="focus-step-card__title">
-              {currentStep.step_description || currentStep.step_title}
-            </h3>
-
-            {currentStep.step_description &&
-            currentStep.step_description !== currentStep.step_title ? (
-              <p className="focus-step-card__support-text">{currentStep.step_title}</p>
-            ) : null}
-
-            {currentStep.example_text ? (
-              <div className="focus-step-card__example">
-                <span className="task-flow__note-openmoji" aria-hidden="true">
-                  <OpenMojiIcon name="lightbulb" />
-                </span>
-                <span>Try this: {currentStep.example_text}</span>
-              </div>
-            ) : null}
-
-            {stepCelebration ? (
-              <div className="focus-step-card__celebration" role="status" aria-live="polite">
-                <div className="focus-step-card__celebration-stars" aria-hidden="true">
-                  <span><OpenMojiIcon name="star" /></span>
-                  <span><OpenMojiIcon name="sparkles" /></span>
-                  <span><OpenMojiIcon name="star" /></span>
+          <div className={isFocusActive ? "focus-step-card__body focus-step-card__body--with-timer" : "focus-step-card__body"}>
+            <div className="focus-step-card__step-content">
+              {currentStep.visual_hint ? (
+                <div className="focus-step-card__visual" aria-hidden="true">
+                  {currentStep.visual_hint}
                 </div>
-                <div className="focus-step-card__celebration-copy">
-                  <strong>{stepCelebration.title}</strong>
-                  <p>{stepCelebration.detail}</p>
+              ) : null}
+
+              <h3 className="focus-step-card__title">
+                {currentStep.step_description || currentStep.step_title}
+              </h3>
+
+              {currentStep.step_description &&
+              currentStep.step_description !== currentStep.step_title ? (
+                <p className="focus-step-card__support-text">{currentStep.step_title}</p>
+              ) : null}
+
+              {currentStep.example_text ? (
+                <div className="focus-step-card__example">
+                  <span className="task-flow__note-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name="lightbulb" />
+                  </span>
+                  <span>Try this: {currentStep.example_text}</span>
+                </div>
+              ) : null}
+
+              {stepCelebration ? (
+                <div className="focus-step-card__celebration" role="status" aria-live="polite">
+                  <div className="focus-step-card__celebration-stars" aria-hidden="true">
+                    <span><OpenMojiIcon name="star" /></span>
+                    <span><OpenMojiIcon name="sparkles" /></span>
+                    <span><OpenMojiIcon name="star" /></span>
+                  </div>
+                  <div className="focus-step-card__celebration-copy">
+                    <strong>{stepCelebration.title}</strong>
+                    <p>{stepCelebration.detail}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {isFocusActive ? (
+              <div className="focus-timer-panel task-flow-focus-panel">
+                <div className="focus-timer-panel__readout">
+                  <p className="focus-timer-panel__label task-flow__eyebrow-icon">
+                    <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                      <OpenMojiIcon name="hourglass" />
+                    </span>
+                    Focus timer
+                  </p>
+                  <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
+                  <span>{isRunning ? "Keep going." : "Ready when you are."}</span>
+                  <div
+                    className="focus-timer-panel__progress"
+                    role="progressbar"
+                    aria-label="Focus timer progress"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow={Math.round(timerProgress)}
+                  >
+                    <span style={{ width: `${timerProgress}%` }} />
+                  </div>
+                </div>
+
+                <div className="focus-timer-panel__controls">
+                  <Button
+                    variant={isRunning ? "secondary" : "primary"}
+                    onClick={isRunning ? handlePauseFocus : handleContinueFocus}
+                  >
+                    <span className="task-flow__button-icon" aria-hidden="true">
+                      <OpenMojiIcon name={isRunning ? "herb" : "hourglass"} />
+                    </span>
+                    <span>{isRunning ? "Pause" : "Start"}</span>
+                  </Button>
+                  <select
+                    aria-label="Timer length"
+                    value={durationMinutes}
+                    onChange={handleDurationChange}
+                  >
+                    <option value="10">10 min</option>
+                    <option value="15">15 min</option>
+                    <option value="25">25 min</option>
+                    <option value="35">35 min</option>
+                  </select>
+                  <Button variant="secondary" onClick={handleResetFocusTimer}>
+                    <span className="task-flow__button-icon" aria-hidden="true">
+                      <OpenMojiIcon name="sparkles" />
+                    </span>
+                    <span>Reset</span>
+                  </Button>
                 </div>
               </div>
             ) : null}

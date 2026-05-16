@@ -3,13 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import PageHeader from "../components/ui/PageHeader";
 import {
   claimReward,
   getPointsBalance,
   getRewardTransactions,
   getRewardMilestoneMessage,
-  getEncouragingMessage,
   getParentApprovedRewards,
   getTasks,
   getChildProfile,
@@ -22,8 +22,8 @@ function Rewards() {
   const showCelebration = location.state?.showCelebration === true;
   const celebrationMessages = [
     "Great effort!",
-    "You completed a step!",
-    "Your focus is growing!",
+    "Quest complete!",
+    "Stars added!",
   ];
 
   const [childId, setChildId] = useState("");
@@ -46,11 +46,11 @@ function Rewards() {
     if (!latestTransaction) {
       return {
         task_id: null,
-        task_title: "No reward activity yet",
+        task_title: "No star activity yet",
         points_earned: 0,
         steps_completed: 0,
         updated_points_balance: safePointsBalance,
-        celebration_message: "Complete a task to start earning points.",
+        celebration_message: "Finish a quest to earn stars.",
       };
     }
 
@@ -63,13 +63,13 @@ function Rewards() {
       task_title:
         latestTransaction.reward_title ||
         latestTransaction.task_title ||
-        (isClaim ? "Reward claimed" : "Task reward"),
+        (isClaim ? "Reward chosen" : "Quest reward"),
       points_earned: latestTransaction.points_earned || 0,
       steps_completed: latestTransaction.steps_completed || 0,
       updated_points_balance: safePointsBalance,
       celebration_message: isClaim
-        ? "You used your points for a reward."
-        : "Amazing work! You earned more points today.",
+        ? "You used stars for a reward."
+        : "You earned more quest stars.",
     };
   };
 
@@ -161,10 +161,6 @@ function Rewards() {
 
   const pointsBalance = pointsData.points_balance ?? 0;
   const milestoneMessage = getRewardMilestoneMessage(pointsBalance);
-  const encouragingMessage = getEncouragingMessage(
-    pointsBalance,
-    rewardTransactions.length
-  );
   const recentTransactions = rewardTransactions.slice(0, 5);
   const latestPointsEarned = latestRewardSummary?.points_earned ?? 0;
   const updatedPointsBalance =
@@ -172,6 +168,11 @@ function Rewards() {
   const nextMilestoneTarget =
     pointsBalance >= 300 ? 400 : pointsBalance >= 200 ? 300 : pointsBalance >= 100 ? 200 : 100;
   const pointsToNextMilestone = Math.max(nextMilestoneTarget - pointsBalance, 0);
+  const milestoneProgress = Math.min(
+    100,
+    Math.round((pointsBalance / Math.max(nextMilestoneTarget, 1)) * 100)
+  );
+  const treasureStarCount = Math.min(Math.max(pointsBalance, 4), 10);
 
   const handleClaimReward = async (reward) => {
     setClaimMessage("");
@@ -188,7 +189,7 @@ function Rewards() {
     }
 
     if (pointsBalance < Number(reward.cost || 0)) {
-      setClaimError("You do not have enough points for this reward yet.");
+      setClaimError("You need more stars for this reward.");
       return;
     }
 
@@ -230,19 +231,19 @@ function Rewards() {
       }));
     }
 
-    setClaimMessage(result.data?.message || "Reward claimed successfully.");
+    setClaimMessage(result.data?.message || "Reward chosen.");
     setClaimingRewardId("");
   };
 
   return (
     <section className="page-section rewards-experience">
       <PageHeader
-        eyebrow="Rewards"
-        title={showCelebration ? "You did it!" : "My Rewards"}
+        eyebrow="Treasure"
+        title={showCelebration ? "You did it!" : "Treasure Jar"}
         description={
           showCelebration
-            ? "Every completed task is a step forward. Let's celebrate your progress."
-            : "See your points, available rewards, and recent progress in one place."
+            ? "Your quest stars are ready."
+            : "Collect quest stars and choose rewards."
         }
       />
 
@@ -255,56 +256,79 @@ function Rewards() {
       {showCelebration && !celebrationDismissed ? (
         <Card className="reward-celebration-banner" variant="glow">
           <div className="reward-celebration-banner__stars" aria-hidden="true">
-            <span>★</span>
-            <span>✦</span>
-            <span>★</span>
+            <span><OpenMojiIcon name="star" /></span>
+            <span><OpenMojiIcon name="sparkles" /></span>
+            <span><OpenMojiIcon name="star" /></span>
           </div>
           <div className="reward-celebration-banner__copy">
-            <Badge tone="warm">Well done</Badge>
-            <h3>Great job!</h3>
+            <Badge tone="warm" className="reward-openmoji-badge">
+              <span className="reward-inline-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="check" />
+              </span>
+              <span>Well done</span>
+            </Badge>
+            <h3>Quest complete</h3>
             <p className="page-text">
-              {latestRewardSummary.celebration_message ||
-                "Amazing work! You completed your task."}
+              {latestRewardSummary.celebration_message || "You earned more quest stars."}
             </p>
           </div>
           <div className="reward-celebration-banner__score">
             <strong>+{latestPointsEarned}</strong>
-            <span>points earned</span>
+            <span>quest stars</span>
           </div>
         </Card>
       ) : null}
 
       <div className="reward-overview-grid reward-overview-grid--simple">
-        <Card className="reward-points-card" variant="glow">
+        <Card className="reward-points-card reward-points-card--treasure" variant="glow">
           <div className="reward-points-card__content">
             <div>
-              <p className="eyebrow">Reward Points</p>
-              <h3>My points</h3>
+              <p className="eyebrow reward-eyebrow-icon">
+                <span className="reward-tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="gift" />
+                </span>
+                Treasure jar
+              </p>
+              <h3>Your quest stars</h3>
             </div>
             <div className="reward-points-card__count">{pointsBalance}</div>
-            <p className="page-text">
-              Each completed task adds points you can use for rewards.
-            </p>
             <div className="reward-points-card__footer">
-              <Badge tone="warm">+{latestPointsEarned} latest points</Badge>
-              <span>{pointsToNextMilestone} to next milestone</span>
+              <Badge tone="warm" className="reward-openmoji-badge">
+                <span className="reward-inline-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="star" />
+                </span>
+                <span>+{latestPointsEarned} latest</span>
+              </Badge>
+              <span>{pointsToNextMilestone} to next treasure</span>
             </div>
           </div>
-          <div className="reward-points-card__sparkles" aria-hidden="true">
-            <span>★</span>
-            <span>✦</span>
-            <span>★</span>
+          <div className="reward-treasure-jar" aria-hidden="true">
+            {Array.from({ length: treasureStarCount }).map((_, index) => (
+              <span key={index}>
+                <OpenMojiIcon name={index % 3 === 1 ? "sparkles" : "star"} />
+              </span>
+            ))}
           </div>
         </Card>
 
         <Card className="reward-milestone-card" variant="soft">
           <div className="reward-milestone-card__icon" aria-hidden="true">
-            🏆
+            <OpenMojiIcon name="target" />
           </div>
           <div className="reward-milestone-card__copy">
-            <p className="eyebrow">Milestone</p>
-            <h3>Keep going</h3>
+            <p className="eyebrow">Next treasure</p>
+            <h3>{pointsToNextMilestone} stars away</h3>
             <p className="page-text">{milestoneMessage}</p>
+            <div
+              className="reward-milestone-progress"
+              role="progressbar"
+              aria-label="Next treasure progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={milestoneProgress}
+            >
+              <span style={{ width: `${milestoneProgress}%` }} />
+            </div>
           </div>
         </Card>
       </div>
@@ -312,11 +336,22 @@ function Rewards() {
       <Card className="reward-shelf-card" variant="default">
         <div className="reward-section-heading">
           <div>
-            <p className="eyebrow">Available Rewards</p>
-            <h3>Rewards you can choose from</h3>
+            <p className="eyebrow reward-eyebrow-icon">
+              <span className="reward-tiny-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="gift" />
+              </span>
+              Reward shelf
+            </p>
+            <h3>Choose a reward</h3>
           </div>
-          <Badge tone="mint">{parentRewards.length} options</Badge>
+          <Badge tone="mint" className="reward-openmoji-badge">
+            <span className="reward-inline-openmoji" aria-hidden="true">
+              <OpenMojiIcon name="sparkles" />
+            </span>
+            <span>{parentRewards.length} choices</span>
+          </Badge>
         </div>
+
         {parentRewards.length > 0 ? (
           <div className="reward-shelf-grid">
             {parentRewards.map((reward) => (
@@ -325,9 +360,19 @@ function Rewards() {
                 className="reward-item-card reward-item-card--simple"
                 variant="soft"
               >
-                <h4>{reward.title}</h4>
+                <div className="reward-item-card__top">
+                  <span className="reward-item-card__emoji" aria-hidden="true">
+                    <OpenMojiIcon name="gift" />
+                  </span>
+                  <h4>{reward.title}</h4>
+                </div>
                 <div className="reward-item-card__meta">
-                  <span>{reward.cost} points</span>
+                  <span className="reward-openmoji-badge">
+                    <span className="reward-inline-openmoji" aria-hidden="true">
+                      <OpenMojiIcon name="star" />
+                    </span>
+                    <span>{reward.cost} stars</span>
+                  </span>
                 </div>
                 <Button
                   onClick={() => handleClaimReward(reward)}
@@ -336,19 +381,25 @@ function Rewards() {
                     pointsBalance < Number(reward.cost || 0)
                   }
                 >
-                  {claimingRewardId === String(reward.id) ? "Claiming..." : "Claim Reward"}
+                  {claimingRewardId === String(reward.id) ? "Getting..." : "Choose"}
                 </Button>
                 {pointsBalance < Number(reward.cost || 0) ? (
                   <p className="reward-helper-text">
-                    You need {Number(reward.cost || 0) - pointsBalance} more points.
+                    {Number(reward.cost || 0) - pointsBalance} more stars needed.
                   </p>
                 ) : null}
               </Card>
             ))}
           </div>
         ) : (
-          <p className="page-text">No rewards have been added yet.</p>
+          <div className="reward-empty-state">
+            <span className="reward-empty-state__icon" aria-hidden="true">
+              <OpenMojiIcon name="seedling" />
+            </span>
+            <p className="page-text">No rewards yet.</p>
+          </div>
         )}
+
         {claimError ? <p className="parent-dashboard__message">{claimError}</p> : null}
         {claimMessage ? <p className="reward-success-message">{claimMessage}</p> : null}
       </Card>
@@ -356,65 +407,61 @@ function Rewards() {
       <Card className="reward-activity-card" variant="default">
         <div className="reward-section-heading">
           <div>
-            <p className="eyebrow">Recent Reward Activity</p>
-            <h3>Progress you can look back on</h3>
+            <p className="eyebrow reward-eyebrow-icon">
+              <span className="reward-tiny-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="memo" />
+              </span>
+              Star trail
+            </p>
+            <h3>Recent stars</h3>
           </div>
         </div>
-        {recentTransactions.length > 0 ? (
-          recentTransactions.map((transaction) => (
-            <div
-              key={
-                transaction.transaction_id ||
-                `${transaction.task_id}-${transaction.created_at}`
-              }
-              className="reward-activity-item"
-            >
-              <div className="reward-activity-item__icon" aria-hidden="true">
-                {transaction.transaction_type === "claim" ||
-                transaction.transaction_type === "redeem"
-                  ? "🎁"
-                  : "✓"}
-              </div>
-              <p>
-                {transaction.transaction_type === "claim" ||
-                transaction.transaction_type === "redeem" ? (
-                  <>
-                    <strong>{Math.abs(transaction.points_earned)} points used</strong>
-                    {transaction.reward_title
-                      ? ` for ${transaction.reward_title}`
-                      : " for a reward"}
-                  </>
-                ) : (
-                  <>
-                    <strong>+{transaction.points_earned} points</strong>
-                    {transaction.task_title
-                      ? ` from ${transaction.task_title}`
-                      : " from a completed task"}
-                  </>
-                )}
-              </p>
-            </div>
-          ))
-        ) : (
-          <p className="page-text">No reward activity yet.</p>
-        )}
-      </Card>
 
-      <Card className="reward-encouragement-card" variant="soft">
-        <div className="reward-section-heading">
-          <div>
-            <p className="eyebrow">Encouragement</p>
-            <h3>Kind words for your progress</h3>
+        {recentTransactions.length > 0 ? (
+          recentTransactions.map((transaction) => {
+            const isClaim =
+              transaction.transaction_type === "claim" ||
+              transaction.transaction_type === "redeem";
+
+            return (
+              <div
+                key={
+                  transaction.transaction_id ||
+                  `${transaction.task_id}-${transaction.created_at}`
+                }
+                className="reward-activity-item"
+              >
+                <div className="reward-activity-item__icon" aria-hidden="true">
+                  <OpenMojiIcon name={isClaim ? "gift" : "check"} />
+                </div>
+                <p>
+                  {isClaim ? (
+                    <>
+                      <strong>{Math.abs(transaction.points_earned)} stars used</strong>
+                      {transaction.reward_title
+                        ? ` for ${transaction.reward_title}`
+                        : " for a reward"}
+                    </>
+                  ) : (
+                    <>
+                      <strong>+{transaction.points_earned} stars</strong>
+                      {transaction.task_title
+                        ? ` from ${transaction.task_title}`
+                        : " from a quest"}
+                    </>
+                  )}
+                </p>
+              </div>
+            );
+          })
+        ) : (
+          <div className="reward-empty-state">
+            <span className="reward-empty-state__icon" aria-hidden="true">
+              <OpenMojiIcon name="star" />
+            </span>
+            <p className="page-text">No star activity yet.</p>
           </div>
-        </div>
-        <div className="reward-encouragement-list">
-          {celebrationMessages.map((message) => (
-            <div key={message} className="reward-encouragement-pill">
-              {message}
-            </div>
-          ))}
-        </div>
-        <p className="page-text">{encouragingMessage}</p>
+        )}
       </Card>
 
       {isCelebrationOpen ? (
@@ -440,31 +487,36 @@ function Rewards() {
 
             <div className="reward-celebration-modal__confetti" aria-hidden="true">
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--1">
-                {"\u2605"}
+                <OpenMojiIcon name="star" />
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--2">
-                {"\u2726"}
+                <OpenMojiIcon name="sparkles" />
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--3">
-                {"\u2605"}
+                <OpenMojiIcon name="star" />
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--4">
-                {"\u2726"}
+                <OpenMojiIcon name="sparkles" />
               </span>
               <span className="reward-celebration-modal__spark reward-celebration-modal__spark--5">
-                {"\u2605"}
+                <OpenMojiIcon name="star" />
               </span>
             </div>
 
             <div className="reward-celebration-modal__content">
-              <Badge tone="warm">Celebration moment</Badge>
+              <Badge tone="warm" className="reward-openmoji-badge">
+                <span className="reward-inline-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="sparkles" />
+                </span>
+                <span>Celebration</span>
+              </Badge>
               <div className="reward-celebration-modal__hero" aria-hidden="true">
-                🎉
+                <OpenMojiIcon name="gift" />
               </div>
               <h3 id="reward-celebration-title">Great effort!</h3>
               <p className="page-text">
                 {latestRewardSummary.celebration_message ||
-                  "Amazing work! You completed your task."}
+                  "You earned more quest stars."}
               </p>
 
               {latestRewardSummary.task_title ? (
@@ -476,11 +528,11 @@ function Rewards() {
               <div className="reward-celebration-modal__stats">
                 <div>
                   <strong>+{latestPointsEarned}</strong>
-                  <span>points earned</span>
+                  <span>stars earned</span>
                 </div>
                 <div>
                   <strong>{updatedPointsBalance}</strong>
-                  <span>points available</span>
+                  <span>stars ready</span>
                 </div>
               </div>
 
@@ -491,9 +543,9 @@ function Rewards() {
               </div>
 
               <div className="reward-celebration-modal__actions">
-                <Button onClick={handleGoToMyTasks}>Back to Child Dashboard</Button>
+                <Button onClick={handleGoToMyTasks}>Back to Quest Hub</Button>
                 <Button variant="secondary" onClick={handleStartAnotherTask}>
-                  Start Another Task
+                  Start Another Quest
                 </Button>
               </div>
             </div>

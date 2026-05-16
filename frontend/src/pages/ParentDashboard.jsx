@@ -24,7 +24,6 @@ import {
   getSensoryRiskPrediction,
   getTasks,
   resetTaskStatus,
-  updateParentReward,
   updateTask,
   updateTaskStepCount,
   getParentDashboardCore,
@@ -37,24 +36,28 @@ function ParentDashboard() {
       id: "story-time",
       title: "Extra story time",
       cost: 20,
+      icon: "books",
       note: "A quick, easy reward for steady effort.",
     },
     {
       id: "choose-snack",
       title: "Choose a special snack",
       cost: 35,
+      icon: "gift",
       note: "Good for a mid-level milestone.",
     },
     {
       id: "park-visit",
       title: "Choose the next park visit",
       cost: 60,
+      icon: "seedling",
       note: "Works well as a bigger weekly reward.",
     },
     {
       id: "movie-night",
       title: "Family movie night pick",
       cost: 80,
+      icon: "star",
       note: "A meaningful reward for strong consistency.",
     },
   ];
@@ -82,18 +85,14 @@ function ParentDashboard() {
   const [deleteTaskMessage, setDeleteTaskMessage] = useState("");
 
   const [resetTaskMessage, setResetTaskMessage] = useState("");
+  const [taskPage, setTaskPage] = useState(1);
 
   const [rewards, setRewards] = useState([]);
   const [rewardTitle, setRewardTitle] = useState("");
   const [rewardCost, setRewardCost] = useState("");
   const [rewardMessage, setRewardMessage] = useState("");
+  const [rewardPage, setRewardPage] = useState(1);
 
-  const [editRewardId, setEditRewardId] = useState("");
-  const [editRewardTitle, setEditRewardTitle] = useState("");
-  const [editRewardCost, setEditRewardCost] = useState("");
-  const [editRewardMessage, setEditRewardMessage] = useState("");
-
-  const [deleteRewardId, setDeleteRewardId] = useState("");
   const [deleteRewardMessage, setDeleteRewardMessage] = useState("");
 
   const [riskForecast, setRiskForecast] = useState(null);
@@ -201,6 +200,11 @@ function ParentDashboard() {
     if (location.pathname === "/parent/support") return "support";
     return "tasks";
   }, [location.pathname]);
+
+  useEffect(() => {
+    const totalRewardPages = Math.max(1, Math.ceil(rewards.length / 5));
+    setRewardPage((currentPage) => Math.min(currentPage, totalRewardPages));
+  }, [rewards.length]);
 
   const hasChildAccount = Boolean(childProfile?.user_id);
   const buildWeeklyEmotionData = (logs) => {
@@ -564,12 +568,6 @@ const checkRoutineReminders = useCallback(() => {
     setRewardMessage("Reward created successfully.");
   };
 
-  const handleUseRewardSuggestion = (rewardOption) => {
-    setRewardTitle(rewardOption.title);
-    setRewardCost(String(rewardOption.cost));
-    setRewardMessage("");
-  };
-
   const handleQuickCreateReward = async (rewardOption) => {
     setRewardMessage("");
 
@@ -640,48 +638,16 @@ const checkRoutineReminders = useCallback(() => {
     );
   };
 
-  const handleSelectEditReward = (rewardId) => {
-    setEditRewardId(rewardId);
-
-    const reward = rewards.find((item) => String(item.id) === String(rewardId));
-    if (!reward) return;
-
-    setEditRewardTitle(reward.title || "");
-    setEditRewardCost(String(reward.cost || ""));
-    setEditRewardMessage("");
-  };
-
-  const handleUpdateReward = async () => {
-    setEditRewardMessage("");
-
-    if (!editRewardId || !editRewardTitle || !editRewardCost) {
-      setEditRewardMessage("Please complete the required edit reward fields.");
-      return;
-    }
-
-    const result = await updateParentReward(editRewardId, {
-      title: editRewardTitle,
-      cost: Number(editRewardCost),
-    });
-
-    if (result.error) {
-      setEditRewardMessage("Failed to update reward.");
-      return;
-    }
-
-    await refreshRewards();
-    setEditRewardMessage("Reward updated successfully.");
-  };
-
-  const handleDeleteReward = async () => {
+  const handleDeleteReward = async (rewardId) => {
     setDeleteRewardMessage("");
 
-    if (!deleteRewardId) {
-      setDeleteRewardMessage("Please select a reward to delete.");
+    if (!rewardId) {
+      setDeleteRewardMessage("Choose a reward to delete.");
       return;
     }
 
-    const result = await deleteParentReward(deleteRewardId);
+    const rewardToDelete = rewards.find((reward) => String(reward.id) === String(rewardId));
+    const result = await deleteParentReward(rewardId);
 
     if (result.error) {
       setDeleteRewardMessage("Failed to delete reward.");
@@ -689,8 +655,9 @@ const checkRoutineReminders = useCallback(() => {
     }
 
     await refreshRewards();
-    setDeleteRewardId("");
-    setDeleteRewardMessage("Reward deleted successfully.");
+    setDeleteRewardMessage(
+      rewardToDelete?.title ? `${rewardToDelete.title} deleted.` : "Reward deleted."
+    );
   };
 
   const handleCreateTrigger = async () => {
@@ -976,6 +943,22 @@ const checkRoutineReminders = useCallback(() => {
   const renderTaskOption = (task) =>
     `${task.title} (${getStatusConfig(task).label.toLowerCase()})`;
 
+  const taskPageSize = 3;
+  const totalTaskPages = Math.max(1, Math.ceil(childTasks.length / taskPageSize));
+  const currentTaskPage = Math.min(taskPage, totalTaskPages);
+  const visibleChildTasks = childTasks.slice(
+    (currentTaskPage - 1) * taskPageSize,
+    currentTaskPage * taskPageSize
+  );
+
+  const rewardPageSize = 3;
+  const totalRewardPages = Math.max(1, Math.ceil(rewards.length / rewardPageSize));
+  const currentRewardPage = Math.min(rewardPage, totalRewardPages);
+  const visibleRewards = rewards.slice(
+    (currentRewardPage - 1) * rewardPageSize,
+    currentRewardPage * rewardPageSize
+  );
+
   const riskTone =
     riskForecast?.risk_level === "Low"
       ? "mint"
@@ -1231,7 +1214,7 @@ const checkRoutineReminders = useCallback(() => {
 
               {childTasks.length > 0 ? (
                 <div className="parent-dashboard__task-list">
-                  {childTasks.map((task) => {
+                  {visibleChildTasks.map((task) => {
                     const totalSteps = Math.max(Number(task.total_steps || 0), 1);
                     const doneSteps = Math.min(Number(task.completed_steps || 0), totalSteps);
                     const status = getStatusConfig(task);
@@ -1302,6 +1285,32 @@ const checkRoutineReminders = useCallback(() => {
                     <p className="parent-dashboard__message">
                       {resetTaskMessage || deleteTaskMessage}
                     </p>
+                  ) : null}
+
+                  {childTasks.length > taskPageSize ? (
+                    <div className="parent-dashboard__pagination" aria-label="Task pages">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={currentTaskPage === 1}
+                        onClick={() => setTaskPage((page) => Math.max(1, page - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <span>
+                        Page {currentTaskPage} of {totalTaskPages}
+                      </span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={currentTaskPage === totalTaskPages}
+                        onClick={() =>
+                          setTaskPage((page) => Math.min(totalTaskPages, page + 1))
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
               ) : (
@@ -1481,144 +1490,26 @@ const checkRoutineReminders = useCallback(() => {
           </div>
         </div>
       ) : activeSection === "rewards" ? (
-        <div className="parent-dashboard__workspace-grid">
+        <div className="parent-dashboard__workspace-grid parent-dashboard__rewards-workspace">
           <div className="parent-dashboard__main-column">
-            <Card className="parent-dashboard__collection-card" variant="default">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Rewards</p>
-                  <h3>Available rewards</h3>
-                </div>
-                <Badge tone="warm">
-                  {rewards.filter((reward) => reward.approved).length} approved
-                </Badge>
-              </div>
-
-              {rewards.length > 0 ? (
-                <div className="parent-dashboard__reward-grid">
-                  {rewards.map((reward) => (
-                    <div key={reward.id} className="parent-dashboard__reward-item">
-                      <div className="parent-dashboard__reward-top">
-                        <div>
-                          <h4>{reward.title}</h4>
-                          <p>{reward.cost} points</p>
-                        </div>
-                        <Badge tone={reward.approved ? "mint" : "default"}>
-                          {reward.approved ? "Active" : "Hidden"}
-                        </Badge>
-                      </div>
-                      <div className="parent-dashboard__reward-meta">
-                        <span>{reward.theme || "Custom"}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="parent-dashboard__empty-state">
-                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    <OpenMojiIcon name="gift" />
-                  </div>
-                  <h4>No rewards yet</h4>
-                  <p>Add the first reward.</p>
-                </div>
-              )}
-            </Card>
-
-            <Card className="parent-dashboard__collection-card" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Controls</p>
-                  <h3>Manage rewards</h3>
-                </div>
-              </div>
-
-              <div className="parent-dashboard__control-grid">
-                <div className="parent-dashboard__form-card">
-                  <h4>Delete reward</h4>
-                  <p className="page-text">
-                    Remove a reward from the list.
-                  </p>
-                  <div className="parent-dashboard__form-grid">
-                    <select
-                      value={deleteRewardId}
-                      onChange={(e) => setDeleteRewardId(e.target.value)}
-                    >
-                      <option value="">Select reward to delete</option>
-                      {rewards.map((reward) => (
-                        <option key={reward.id} value={reward.id}>
-                          {reward.title}
-                        </option>
-                      ))}
-                    </select>
-                    {deleteRewardMessage ? (
-                      <p className="parent-dashboard__message">{deleteRewardMessage}</p>
-                    ) : null}
-                    <Button variant="secondary" onClick={handleDeleteReward}>
-                      Delete Reward
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="parent-dashboard__side-column">
             <Card
-              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
+              className="parent-dashboard__form-card parent-dashboard__form-card--feature parent-dashboard__reward-create-card"
               variant="glow"
             >
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Add reward</p>
-                  <h3>Create reward</h3>
+                  <h3>Make a reward</h3>
+                </div>
+                <div className="parent-dashboard__reward-icon" aria-hidden="true">
+                  <OpenMojiIcon name="gift" />
                 </div>
               </div>
 
-              <div className="parent-dashboard__reward-suggestions">
-                <div className="parent-dashboard__reward-suggestions-copy">
-                  <h4>Starter ideas</h4>
-                  <p className="page-text">
-                    Pick one or create your own.
-                  </p>
-                </div>
-
-                <div className="parent-dashboard__reward-suggestion-grid">
-                  {starterRewardOptions.map((rewardOption) => (
-                    <div
-                      key={rewardOption.id}
-                      className="parent-dashboard__reward-suggestion"
-                    >
-                      <div>
-                        <strong>{rewardOption.title}</strong>
-                        <p>{rewardOption.note}</p>
-                      </div>
-                      <div className="parent-dashboard__reward-suggestion-meta">
-                        <Badge tone="warm">{rewardOption.cost} points</Badge>
-                        <div className="parent-dashboard__reward-suggestion-actions">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleUseRewardSuggestion(rewardOption)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleQuickCreateReward(rewardOption)}
-                          >
-                            Quick Add
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="parent-dashboard__form-grid">
+              <div className="parent-dashboard__form-grid parent-dashboard__reward-form-grid">
                 <input
                   type="text"
-                  placeholder="Reward title"
+                  placeholder="Reward name"
                   value={rewardTitle}
                   onChange={(e) => setRewardTitle(e.target.value)}
                 />
@@ -1635,47 +1526,135 @@ const checkRoutineReminders = useCallback(() => {
                     Small rewards: 20-40 points. Bigger rewards: 60+.
                   </p>
                 )}
-                <Button onClick={handleCreateReward}>Create Reward</Button>
+                <Button onClick={handleCreateReward}>
+                  <OpenMojiIcon name="star" className="parent-dashboard__button-icon" />
+                  Add Reward
+                </Button>
+              </div>
+
+              <div className="parent-dashboard__reward-suggestions">
+                <div className="parent-dashboard__reward-suggestions-copy">
+                  <h4>Quick adds</h4>
+                  <p className="page-text">Tap one to add it now.</p>
+                </div>
+
+                <div className="parent-dashboard__reward-suggestion-grid">
+                  {starterRewardOptions.map((rewardOption) => (
+                    <div
+                      key={rewardOption.id}
+                      className="parent-dashboard__reward-suggestion"
+                    >
+                      <div className="parent-dashboard__reward-suggestion-copy">
+                        <span className="parent-dashboard__reward-suggestion-icon" aria-hidden="true">
+                          <OpenMojiIcon name={rewardOption.icon} />
+                        </span>
+                        <div>
+                          <strong>{rewardOption.title}</strong>
+                          <p>{rewardOption.note}</p>
+                        </div>
+                      </div>
+                      <div className="parent-dashboard__reward-suggestion-meta">
+                        <Badge tone="warm">{rewardOption.cost} points</Badge>
+                        <Button
+                          size="sm"
+                          onClick={() => handleQuickCreateReward(rewardOption)}
+                        >
+                          Quick Add
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </Card>
 
-            <Card className="parent-dashboard__form-card" variant="default">
+          </div>
+
+          <div className="parent-dashboard__side-column">
+            <Card className="parent-dashboard__collection-card parent-dashboard__reward-board" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Edit reward</p>
-                  <h3>Update reward</h3>
+                  <p className="eyebrow">Rewards</p>
+                  <h3>Available rewards</h3>
                 </div>
+                <Badge tone="warm">
+                  {rewards.filter((reward) => reward.approved).length} active
+                </Badge>
               </div>
 
-              <div className="parent-dashboard__form-grid">
-                <select
-                  value={editRewardId}
-                  onChange={(e) => handleSelectEditReward(e.target.value)}
-                >
-                  <option value="">Select reward to edit</option>
-                  {rewards.map((reward) => (
-                    <option key={reward.id} value={reward.id}>
-                      {reward.title}
-                    </option>
+              {deleteRewardMessage ? (
+                <p className="parent-dashboard__message">{deleteRewardMessage}</p>
+              ) : null}
+
+              {rewards.length > 0 ? (
+                <div className="parent-dashboard__reward-grid">
+                  {visibleRewards.map((reward) => (
+                    <div key={reward.id} className="parent-dashboard__reward-item">
+                      <div className="parent-dashboard__reward-top">
+                        <div className="parent-dashboard__reward-title-row">
+                          <span className="parent-dashboard__reward-icon" aria-hidden="true">
+                            <OpenMojiIcon name="gift" />
+                          </span>
+                          <div>
+                            <h4>{reward.title}</h4>
+                            <p>{reward.cost} points</p>
+                          </div>
+                        </div>
+                        <Badge tone={reward.approved ? "mint" : "default"}>
+                          {reward.approved ? "Active" : "Hidden"}
+                        </Badge>
+                      </div>
+                      <div className="parent-dashboard__reward-meta">
+                        <span>{reward.theme || "Custom reward"}</span>
+                      </div>
+                      <div className="parent-dashboard__task-actions">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDeleteReward(reward.id)}
+                        >
+                          <OpenMojiIcon name="trash" className="parent-dashboard__button-icon" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
                   ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Edit reward title"
-                  value={editRewardTitle}
-                  onChange={(e) => setEditRewardTitle(e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Edit points cost"
-                  value={editRewardCost}
-                  onChange={(e) => setEditRewardCost(e.target.value)}
-                />
-                {editRewardMessage ? (
-                  <p className="parent-dashboard__message">{editRewardMessage}</p>
-                ) : null}
-                <Button onClick={handleUpdateReward}>Update Reward</Button>
-              </div>
+                </div>
+              ) : (
+                <div className="parent-dashboard__empty-state">
+                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
+                    <OpenMojiIcon name="gift" />
+                  </div>
+                  <h4>No rewards yet</h4>
+                  <p>Add the first reward.</p>
+                </div>
+              )}
+
+              {rewards.length > rewardPageSize ? (
+                <div className="parent-dashboard__pagination" aria-label="Reward pages">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={currentRewardPage === 1}
+                    onClick={() => setRewardPage((page) => Math.max(1, page - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span>
+                    Page {currentRewardPage} of {totalRewardPages}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={currentRewardPage === totalRewardPages}
+                    onClick={() =>
+                      setRewardPage((page) => Math.min(totalRewardPages, page + 1))
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
+              ) : null}
             </Card>
           </div>
         </div>

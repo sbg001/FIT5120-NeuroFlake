@@ -1216,6 +1216,11 @@ textarea::placeholder {
   gap: 12px;
 }
 
+.child-dashboard__mini-missions {
+  grid-template-rows: repeat(3, minmax(106px, auto)) auto;
+  align-content: start;
+}
+
 .child-dashboard__buddy-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
@@ -1330,6 +1335,20 @@ textarea::placeholder {
   justify-items: end;
   gap: 12px;
   flex-shrink: 0;
+}
+
+.child-dashboard__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.child-dashboard__pagination span {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 900;
 }
 
 .child-dashboard__quest-card--completed {
@@ -2035,6 +2054,43 @@ textarea::placeholder {
   -webkit-backdrop-filter: blur(24px) saturate(150%);
 }
 
+.parent-dashboard__reward-create-card,
+.parent-dashboard__reward-board {
+  border-radius: 32px;
+}
+
+.parent-dashboard__reward-create-card {
+  overflow: hidden;
+  gap: 20px;
+}
+
+.parent-dashboard__reward-form-grid {
+  grid-template-columns: minmax(0, 1.5fr) minmax(140px, 0.6fr) auto;
+  align-items: center;
+}
+
+.parent-dashboard__reward-form-grid .parent-dashboard__message,
+.parent-dashboard__reward-form-grid .parent-dashboard__helper-text {
+  grid-column: 1 / -1;
+}
+
+.parent-dashboard__reward-board {
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.38));
+  box-shadow: var(--glass-shadow);
+  min-height: 100%;
+}
+
+.parent-dashboard__rewards-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.82fr);
+}
+
+.parent-dashboard__reward-create-card,
+.parent-dashboard__reward-board {
+  align-content: start;
+}
+
 .parent-dashboard__task-list,
 .parent-dashboard__reward-grid,
 .parent-dashboard__form-grid {
@@ -2042,9 +2098,25 @@ textarea::placeholder {
   gap: 12px;
 }
 
+.parent-dashboard__task-list {
+  grid-template-rows: repeat(3, minmax(148px, auto)) auto auto;
+  align-content: start;
+}
+
+.parent-dashboard__reward-grid {
+  grid-template-rows: repeat(3, minmax(126px, auto));
+  align-content: start;
+}
+
 .parent-dashboard__task-item,
 .parent-dashboard__reward-item {
   padding: 16px;
+}
+
+.parent-dashboard__reward-item {
+  display: grid;
+  gap: 12px;
+  min-height: 126px;
 }
 
 .parent-dashboard__task-board .parent-dashboard__task-item:first-child {
@@ -2055,6 +2127,56 @@ textarea::placeholder {
   box-shadow:
     0 16px 34px rgba(74, 108, 161, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.parent-dashboard__reward-board .parent-dashboard__reward-item:first-child {
+  border-color: rgba(245, 178, 70, 0.36);
+  background:
+    radial-gradient(circle at top right, rgba(255, 222, 145, 0.24), transparent 40%),
+    rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 16px 34px rgba(74, 108, 161, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.parent-dashboard__reward-title-row,
+.parent-dashboard__reward-suggestion-copy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.parent-dashboard__reward-title-row h4,
+.parent-dashboard__reward-title-row p {
+  margin: 0;
+}
+
+.parent-dashboard__reward-title-row p {
+  color: var(--text-soft);
+  font-weight: 800;
+}
+
+.parent-dashboard__reward-icon,
+.parent-dashboard__reward-suggestion-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 9px;
+  border-radius: 16px;
+  border: 1px solid rgba(126, 158, 202, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    0 10px 18px rgba(74, 108, 161, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.parent-dashboard__reward-icon .openmoji-icon,
+.parent-dashboard__reward-suggestion-icon .openmoji-icon {
+  width: 100%;
+  height: 100%;
 }
 
 .parent-dashboard__mini-task-list {
@@ -2132,9 +2254,18 @@ textarea::placeholder {
   padding-top: 2px;
 }
 
+.parent-dashboard__reward-item .parent-dashboard__task-actions {
+  justify-content: flex-start;
+  padding-top: 4px;
+}
+
 .parent-dashboard__task-actions .nf-button {
   min-height: 36px;
   padding: 8px 14px;
+}
+
+.parent-dashboard .nf-button {
+  gap: 8px;
 }
 
 .parent-dashboard__button-icon {
@@ -2150,10 +2281,10 @@ textarea::placeholder {
 }
 
 .parent-dashboard__reward-suggestions {
-  padding: 14px;
+  padding: 16px;
   border: 1px solid rgba(126, 158, 202, 0.18);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.84);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.74);
 }
 
 .parent-dashboard__reward-suggestions-copy h4,
@@ -2162,10 +2293,18 @@ textarea::placeholder {
 }
 
 .parent-dashboard__reward-suggestion {
+  align-content: space-between;
   padding: 12px;
-  border-radius: 12px;
+  min-height: 142px;
+  border-radius: 18px;
   border: 1px solid rgba(126, 158, 202, 0.18);
-  background: rgba(250, 252, 255, 0.98);
+  background:
+    radial-gradient(circle at top right, rgba(125, 223, 191, 0.12), transparent 36%),
+    rgba(250, 252, 255, 0.98);
+}
+
+.parent-dashboard__reward-create-card .parent-dashboard__reward-suggestion-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .parent-dashboard__reward-suggestion p {
@@ -2809,6 +2948,20 @@ textarea::placeholder {
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.parent-dashboard__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.parent-dashboard__pagination span {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .focus-step-card__mode {
@@ -5087,6 +5240,11 @@ textarea::placeholder {
     justify-self: start;
   }
 
+  .parent-dashboard__reward-form-grid,
+  .parent-dashboard__reward-create-card .parent-dashboard__reward-suggestion-grid {
+    grid-template-columns: 1fr;
+  }
+
   .parent-dashboard__hero-metrics {
     grid-template-columns: 1fr;
   }
@@ -5367,6 +5525,16 @@ textarea::placeholder {
 
   .parent-dashboard__focus-panel {
     padding: 14px;
+  }
+
+  .parent-dashboard__pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .child-dashboard__pagination {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .focus-step-card {

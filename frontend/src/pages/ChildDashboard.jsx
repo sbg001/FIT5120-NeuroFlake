@@ -25,6 +25,7 @@ function ChildDashboard() {
   const [savedCharacterStyle, setSavedCharacterStyle] = useState("dog");
   const [preferenceMessage, setPreferenceMessage] = useState("");
   const [showAllQuests, setShowAllQuests] = useState(false);
+  const [questPage, setQuestPage] = useState(1);
   const [showBuddyPicker, setShowBuddyPicker] = useState(false);
 
   useEffect(() => {
@@ -134,6 +135,14 @@ function ChildDashboard() {
   const completedCount = completedTasks.length;
   const pointsBalance = points?.points_balance ?? 0;
   const totalQuestCount = childTasks.length;
+  const allQuestTasks = [...readyTasks, ...completedTasks];
+  const questPageSize = 3;
+  const totalQuestPages = Math.max(1, Math.ceil(allQuestTasks.length / questPageSize));
+  const currentQuestPage = Math.min(questPage, totalQuestPages);
+  const visibleQuestTasks = allQuestTasks.slice(
+    (currentQuestPage - 1) * questPageSize,
+    currentQuestPage * questPageSize
+  );
 
   const characterOptions = [
     { value: "bear", label: "Bear" },
@@ -324,7 +333,7 @@ function ChildDashboard() {
           </div>
 
           <div className="child-dashboard__mini-missions">
-            {(readyTasks.length > 0 ? readyTasks : completedTasks.slice(0, 3)).map((task) => {
+            {visibleQuestTasks.map((task) => {
               const status = getQuestStatus(task);
               const totalSteps = Math.max(Number(task.total_steps || 0), 1);
               const doneSteps = Math.min(Number(task.completed_steps || 0), totalSteps);
@@ -362,7 +371,7 @@ function ChildDashboard() {
               );
             })}
 
-            {readyTasks.length === 0 && completedTasks.length === 0 ? (
+            {allQuestTasks.length === 0 ? (
               <div className="child-dashboard__empty-state">
                 <span className="child-dashboard__empty-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="herb" />
@@ -370,6 +379,34 @@ function ChildDashboard() {
                 <p className="page-text">
                   No quests right now. Nice and calm.
                 </p>
+              </div>
+            ) : null}
+
+            {allQuestTasks.length > questPageSize ? (
+              <div className="child-dashboard__pagination" aria-label="Quest pages">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={currentQuestPage === 1}
+                  onClick={() => setQuestPage((page) => Math.max(1, page - 1))}
+                >
+                  Previous
+                </Button>
+                <span>
+                  Page {currentQuestPage} of {totalQuestPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={currentQuestPage === totalQuestPages}
+                  onClick={() =>
+                    setQuestPage((page) => Math.min(totalQuestPages, page + 1))
+                  }
+                >
+                  Next
+                </Button>
               </div>
             ) : null}
           </div>
@@ -391,7 +428,14 @@ function ChildDashboard() {
               </h3>
               <p className="page-text">Only open this if you want to see everything.</p>
             </div>
-            <Button type="button" variant="secondary" onClick={() => setShowAllQuests(true)}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setQuestPage(1);
+                setShowAllQuests(true);
+              }}
+            >
               See All Quests
             </Button>
           </Card>

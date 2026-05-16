@@ -21,7 +21,7 @@ function TopNav() {
     { to: "/parent", label: "Parent Dashboard" },
     { to: "/parent/rewards", label: "Rewards" },
     { to: "/parent/insights", label: "Insights" },
-    { to: "/parent/support", label: "Support" },
+    { to: "/parent/support", label: "Routine" },
     { to: "/settings", label: "Settings" },
   ];
 

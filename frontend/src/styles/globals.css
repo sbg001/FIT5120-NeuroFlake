@@ -1900,6 +1900,163 @@ textarea::placeholder {
   font-weight: 800;
 }
 
+.parent-dashboard__routine-workspace {
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.75fr);
+}
+
+.parent-dashboard__routine-board,
+.parent-dashboard__routine-form-card,
+.parent-dashboard__routine-reminder-card,
+.parent-dashboard__routine-note-card {
+  border-radius: 30px;
+}
+
+.parent-dashboard__routine-note-card {
+  border-style: dashed;
+}
+
+.parent-dashboard__routine-board {
+  gap: 18px;
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.36));
+  box-shadow: var(--glass-shadow);
+}
+
+.parent-dashboard__routine-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.parent-dashboard__routine-summary div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(126, 158, 202, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.parent-dashboard__routine-summary span,
+.parent-dashboard__routine-next p,
+.parent-dashboard__routine-block p,
+.parent-dashboard__routine-item-row p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.parent-dashboard__routine-summary strong {
+  color: var(--text-main);
+  font-size: 1.35rem;
+}
+
+.parent-dashboard__routine-next {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(245, 178, 70, 0.28);
+  border-radius: 20px;
+  background: rgba(255, 249, 235, 0.7);
+}
+
+.parent-dashboard__routine-next > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.parent-dashboard__routine-next .openmoji-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.parent-dashboard__routine-list {
+  display: grid;
+  gap: 14px;
+}
+
+.parent-dashboard__routine-block {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(126, 158, 202, 0.18);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 12px 24px rgba(74, 108, 161, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.parent-dashboard__routine-block-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.parent-dashboard__routine-block h4,
+.parent-dashboard__routine-item-row strong {
+  margin: 0;
+}
+
+.parent-dashboard__routine-items {
+  display: grid;
+  gap: 8px;
+}
+
+.parent-dashboard__routine-item-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(126, 158, 202, 0.14);
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.84);
+}
+
+.parent-dashboard__routine-item-row .nf-button {
+  min-height: 36px;
+  padding: 8px 14px;
+}
+
+.parent-dashboard__routine-item-row .nf-button--primary {
+  box-shadow: 0 10px 18px rgba(77, 142, 247, 0.18);
+}
+
+.parent-dashboard__routine-item-status {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(234, 248, 243, 0.82);
+}
+
+.parent-dashboard__routine-item-status .openmoji-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.parent-dashboard__routine-form-grid input[type="time"],
+.parent-dashboard__form-grid input[type="time"] {
+  min-height: 48px;
+  padding: 0 14px;
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 800;
+}
+
 .parent-dashboard__insight-mini-card,
 .parent-dashboard__activity-item {
   justify-content: flex-start;
@@ -1953,6 +2110,14 @@ textarea::placeholder {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+}
+
+.parent-dashboard__section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .parent-dashboard__metric-card,
@@ -3427,9 +3592,10 @@ textarea::placeholder {
 .reward-item-card__emoji {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 22px;
+  width: 58px;
+  height: 58px;
+  padding: 8px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 12px 24px rgba(74, 108, 161, 0.1);
   font-size: 1.8rem;
@@ -3500,25 +3666,40 @@ textarea::placeholder {
 
 .reward-shelf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
 .reward-item-card {
   display: grid;
-  gap: 12px;
-  align-content: start;
+  gap: 14px;
+  align-content: stretch;
+  min-width: 0;
 }
 
 .reward-item-card__top {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 12px;
 }
 
+.reward-item-card__top h4 {
+  margin: 0;
+  line-height: 1.35;
+}
+
 .reward-item-card--simple {
-  min-height: 0;
+  grid-template-rows: auto auto auto minmax(24px, auto);
+  min-height: 232px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.reward-item-card--simple .nf-button {
+  align-self: end;
+  width: 100%;
+  min-height: 50px;
 }
 
 .reward-helper-text,
@@ -3529,6 +3710,9 @@ textarea::placeholder {
 
 .reward-helper-text {
   color: var(--text-soft);
+  align-self: start;
+  max-width: 100%;
+  line-height: 1.35;
 }
 
 .reward-empty-state {
@@ -3568,9 +3752,10 @@ textarea::placeholder {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  min-width: 0;
 }
 
-.reward-item-card__meta span,
+.reward-item-card__meta > span,
 .reward-celebration-modal__messages span,
 .reward-encouragement-pill {
   display: inline-flex;
@@ -3582,6 +3767,17 @@ textarea::placeholder {
   border: 1px solid rgba(126, 158, 202, 0.16);
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.reward-item-card__meta .reward-openmoji-badge {
+  gap: 8px;
+  max-width: 100%;
+  color: var(--text-soft);
+}
+
+.reward-item-card__meta .reward-inline-openmoji {
+  width: 20px;
+  height: 20px;
 }
 .reward-encouragement-pill {
   cursor: default;
@@ -5535,6 +5731,15 @@ textarea::placeholder {
   .child-dashboard__pagination {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .parent-dashboard__routine-summary,
+  .parent-dashboard__routine-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__routine-item-status {
+    justify-self: start;
   }
 
   .focus-step-card {

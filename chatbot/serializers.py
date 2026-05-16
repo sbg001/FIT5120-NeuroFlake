@@ -1,3 +1,24 @@
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+
+APP_TIMEZONE = ZoneInfo("Australia/Sydney")
+
+
+def is_same_app_day(date_value):
+    if not date_value:
+        return False
+
+    if isinstance(date_value, datetime):
+        normalized_value = date_value
+        if normalized_value.tzinfo is None:
+            normalized_value = normalized_value.replace(tzinfo=timezone.utc)
+
+        return normalized_value.astimezone(APP_TIMEZONE).date() == datetime.now(APP_TIMEZONE).date()
+
+    return False
+
+
 def user_row_to_dict(row):
     if not row:
         return None
@@ -69,6 +90,9 @@ def routine_item_row_to_dict(row):
     if not row:
         return None
 
+    completed_at = row.get("completed_at")
+    is_completed_today = bool(row.get("is_completed") and is_same_app_day(completed_at))
+
     return {
         "item_id": str(row.get("item_id")),
         "routine_id": str(row.get("routine_id")),
@@ -76,8 +100,8 @@ def routine_item_row_to_dict(row):
         "title": row.get("title"),
         "description": row.get("description"),
         "reminder_time": row.get("reminder_time"),
-        "is_completed": row.get("is_completed") or False,
-        "completed_at": row["completed_at"].isoformat() if row.get("completed_at") else None,
+        "is_completed": is_completed_today,
+        "completed_at": completed_at.isoformat() if completed_at else None,
         "created_at": row["created_at"].isoformat() if row.get("created_at") else None,
     }
 

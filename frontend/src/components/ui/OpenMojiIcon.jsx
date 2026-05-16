@@ -6,15 +6,21 @@ import checkIcon from "openmoji/color/svg/2705.svg";
 import compassIcon from "openmoji/color/svg/1F9ED.svg";
 import fireIcon from "openmoji/color/svg/1F525.svg";
 import giftIcon from "openmoji/color/svg/1F381.svg";
+import grinningIcon from "openmoji/color/svg/1F600.svg";
 import herbIcon from "openmoji/color/svg/1F33F.svg";
 import hourglassIcon from "openmoji/color/svg/23F3.svg";
 import lightbulbIcon from "openmoji/color/svg/1F4A1.svg";
 import magnifierIcon from "openmoji/color/svg/1F50E.svg";
 import memoIcon from "openmoji/color/svg/1F4DD.svg";
+import musicIcon from "openmoji/color/svg/1F3B5.svg";
+import seedlingIcon from "openmoji/color/svg/1F331.svg";
 import speechIcon from "openmoji/color/svg/1F4AC.svg";
 import sparklesIcon from "openmoji/color/svg/2728.svg";
 import starIcon from "openmoji/color/svg/2B50.svg";
+import sleepingIcon from "openmoji/color/svg/1F634.svg";
+import targetIcon from "openmoji/color/svg/1F3AF.svg";
 import trashIcon from "openmoji/color/svg/1F5D1.svg";
+import worriedIcon from "openmoji/color/svg/1F61F.svg";
 
 const openMojiIcons = {
   baby: babyIcon,
@@ -25,15 +31,21 @@ const openMojiIcons = {
   compass: compassIcon,
   fire: fireIcon,
   gift: giftIcon,
+  grinning: grinningIcon,
   herb: herbIcon,
   hourglass: hourglassIcon,
   lightbulb: lightbulbIcon,
   magnifier: magnifierIcon,
   memo: memoIcon,
+  music: musicIcon,
+  seedling: seedlingIcon,
   speech: speechIcon,
   sparkles: sparklesIcon,
   star: starIcon,
+  sleeping: sleepingIcon,
+  target: targetIcon,
   trash: trashIcon,
+  worried: worriedIcon,
 };
 
 function OpenMojiIcon({ name = "star", label = "", decorative = true, className = "" }) {

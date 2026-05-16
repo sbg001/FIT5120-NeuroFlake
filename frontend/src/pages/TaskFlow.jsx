@@ -4,6 +4,7 @@ import Badge from "../components/ui/Badge";
 import BuddyIcon from "../components/ui/BuddyIcon";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import TaskAssistantModal from "../components/ui/TaskAssistantModal";
@@ -158,6 +159,21 @@ function TaskFlow() {
   const currentStep = steps[currentStepIndex];
   const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
   const isLastStep = currentStepIndex === steps.length - 1;
+  const modeIcon = isFocusActive ? "target" : "compass";
+  const emotionMeta = {
+    happy: {
+      icon: "grinning",
+      text: "I love that energy. Let's tackle these steps together.",
+    },
+    tired: {
+      icon: "sleeping",
+      text: "We can go slowly and keep this light.",
+    },
+    overwhelmed: {
+      icon: "worried",
+      text: "It's okay to feel big things. We will take this gently.",
+    },
+  };
 
   const triggerCompanionEmotion = (state) => {
     window.dispatchEvent(new CustomEvent("companionEmotion", { detail: state }));
@@ -340,12 +356,12 @@ function TaskFlow() {
     setStepCelebration({
       title: celebrationMessages[currentStepIndex % celebrationMessages.length],
       detail: isLastStep
-        ? "That was the final step. When you are ready, finish the mission to see your reward."
+        ? "That was the final step. When you are ready, finish the quest to see your reward."
         : "Nice and steady. You can pause here or move on when it feels right.",
     });
     setSupportMessage(
       isLastStep
-        ? "You finished the last step. One more tap will wrap up the mission."
+        ? "You finished the last step. One more tap will wrap up the quest."
         : "Nice work. This step is done."
     );
   };
@@ -375,7 +391,7 @@ function TaskFlow() {
         setIsNovaOpen(false);
         setTaskReady(false);
         setSaveStepsMessage(
-          "This mission has too many saved steps. Please ask a parent to reset this task before starting again."
+          "This quest has too many saved steps. Please ask a parent to reset this task before starting again."
         );
         return;
       }
@@ -396,7 +412,7 @@ function TaskFlow() {
       }
 
       await updateTaskStepCount(taskId);
-      setSaveStepsMessage("Nova's steps are ready. Your mission can begin now.");
+      setSaveStepsMessage("Nova's steps are ready. Your quest can begin now.");
 
       const [taskResult, stepsResult] = await Promise.all([
         getTaskById(taskId),
@@ -430,9 +446,9 @@ function TaskFlow() {
         <section className="page-section">
           <Card className="content-card" variant="soft">
             <PageHeader
-              eyebrow="Mission Setup"
+              eyebrow="Quest Setup"
               title={task.title}
-              description="This mission needs 2 to 5 simple steps before it can begin."
+              description="This quest needs 2 to 5 simple steps before it can begin."
             />
 
             {loadError ? <p className="page-text">{loadError}</p> : null}
@@ -465,88 +481,86 @@ function TaskFlow() {
         </Card>
       ) : null}
       <Card className="content-card focus-experience__top-card" variant="soft">
-        <PageHeader
-          eyebrow="Mission Flow"
-          title={task.title}
-          description={`Step ${Math.min(currentStepIndex + 1, steps.length)} of ${steps.length}`}
-        />
-        <ProgressBar
-          value={progressValue}
-          max={steps.length}
-          label="Mission progress"
-          className="task-progress"
-        />
-      </Card>
-
-      <Card className="content-card task-flow-mode-card" variant="soft">
-        <div className="task-flow-mode-card__copy">
-          <p className="eyebrow">Choose your way</p>
-          <h3>{isFocusActive ? "Focus is on" : "Do this task your way"}</h3>
-          <p className="page-text">
-            {isFocusActive
-              ? "One step is ready. Start the timer only when you feel ready."
-              : "Use normal steps, or turn on Focus when you want extra help staying with one step."}
-          </p>
+        <div className="focus-experience__mission-summary">
+          <PageHeader
+            eyebrow="Quest Flow"
+            title={task.title}
+            description={`Step ${Math.min(currentStepIndex + 1, steps.length)} of ${steps.length}`}
+          />
+          <ProgressBar
+            value={progressValue}
+            max={steps.length}
+            label="Quest progress"
+            className="task-progress"
+          />
         </div>
-
-        <div className="task-flow-mode-card__actions">
-          {isFocusActive ? (
-            <Button variant="secondary" onClick={handleUseNormalFlow}>
-              Leave Focus
-            </Button>
-          ) : (
-            <Button onClick={handleStartFocus}>
-              Start Focus
-            </Button>
-          )}
-        </div>
-      </Card>
-
-      {!emotion ? (
-        <Card className="content-card focus-emotion-card" variant="glow">
-          <div className="focus-emotion-card__pet" aria-hidden="true">
-            <BuddyIcon type={petPreference} label="Buddy" decorative />
+        <div className="mission-flow-mode" aria-label="Choose quest mode">
+          <div className="mission-flow-mode__icon" aria-hidden="true">
+            <OpenMojiIcon name={modeIcon} />
           </div>
-          <div className="focus-emotion-card__copy">
-            <p className="eyebrow">Check In</p>
-            <h3>How are you feeling right now?</h3>
-            <p className="page-text">
-              We can change the tone of this mission before we begin.
+          <div className="mission-flow-mode__copy">
+            <p className="eyebrow task-flow__eyebrow-icon">
+              <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="brain" />
+              </span>
+              Choose your way
+            </p>
+            <p>
+              {isFocusActive
+                ? "Focus is on. One step at a time."
+                : "Normal steps or Focus help."}
             </p>
           </div>
-          <div className="focus-emotion-card__actions">
+          <div className="mission-flow-mode__actions">
             <Button
-              variant="secondary"
-              onClick={() => handleEmotionCheckIn("happy")}
+              type="button"
+              variant={isFocusActive ? "secondary" : "primary"}
+              onClick={handleUseNormalFlow}
             >
-              Good / Happy
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="compass" />
+              </span>
+              <span>Normal Steps</span>
             </Button>
             <Button
-              variant="secondary"
-              onClick={() => handleEmotionCheckIn("tired")}
+              type="button"
+              variant={isFocusActive ? "primary" : "secondary"}
+              onClick={handleStartFocus}
             >
-              Tired
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => handleEmotionCheckIn("overwhelmed")}
-            >
-              Overwhelmed
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="target" />
+              </span>
+              <span>Focus</span>
             </Button>
           </div>
-        </Card>
-      ) : null}
+        </div>
+      </Card>
 
       {currentStep ? (
         <Card className="hero-card focus-step-card" variant="glow">
           <div className="focus-step-card__meta">
             <span className="focus-step-card__eyebrow">
+              <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                <OpenMojiIcon name={isFocusActive ? "target" : "seedling"} />
+              </span>
               {isFocusActive ? "Focus Session" : "One Step At A Time"}
             </span>
             <div className="focus-step-card__status-row">
-              {stepCelebration ? <Badge tone="warm">Gentle celebration</Badge> : null}
+              {stepCelebration ? (
+                <Badge tone="warm" className="task-flow__badge-icon">
+                  <span className="task-flow__badge-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name="star" />
+                  </span>
+                  <span>Gentle celebration</span>
+                </Badge>
+              ) : null}
               {currentStepDone ? (
-                <span className="focus-step-card__status">Step done</span>
+                <span className="focus-step-card__status task-flow__status-icon">
+                  <span className="task-flow__badge-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name="check" />
+                  </span>
+                  <span>Step done</span>
+                </span>
               ) : null}
             </div>
           </div>
@@ -554,7 +568,12 @@ function TaskFlow() {
           {isFocusActive ? (
             <div className="focus-timer-panel task-flow-focus-panel">
               <div className="focus-timer-panel__readout">
-                <p className="focus-timer-panel__label">Calm timer</p>
+                <p className="focus-timer-panel__label task-flow__eyebrow-icon">
+                  <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name="hourglass" />
+                  </span>
+                  Calm timer
+                </p>
                 <strong className="focus-timer-panel__time">{formatTime(secondsLeft)}</strong>
                 <span>{isRunning ? "Timer is running" : "Timer is ready"}</span>
               </div>
@@ -564,7 +583,10 @@ function TaskFlow() {
                   variant={isRunning ? "secondary" : "primary"}
                   onClick={isRunning ? handlePauseFocus : handleContinueFocus}
                 >
-                  {isRunning ? "Pause" : "Start Timer"}
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name={isRunning ? "herb" : "hourglass"} />
+                  </span>
+                  <span>{isRunning ? "Pause" : "Start Timer"}</span>
                 </Button>
                 <select
                   aria-label="Timer length"
@@ -577,7 +599,10 @@ function TaskFlow() {
                   <option value="35">35 min</option>
                 </select>
                 <Button variant="secondary" onClick={handleResetFocusTimer}>
-                  Reset
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name="sparkles" />
+                  </span>
+                  <span>Reset</span>
                 </Button>
               </div>
             </div>
@@ -585,9 +610,10 @@ function TaskFlow() {
 
           {emotion ? (
             <div className="focus-step-card__emotion-note">
-              {emotion === "happy" && "I love that energy. Let's tackle these steps together."}
-              {emotion === "tired" && "We can go slowly and keep this light."}
-              {emotion === "overwhelmed" && "It's okay to feel big things. We will take this gently."}
+              <span className="task-flow__note-openmoji" aria-hidden="true">
+                <OpenMojiIcon name={emotionMeta[emotion]?.icon || "speech"} />
+              </span>
+              <span>{emotionMeta[emotion]?.text}</span>
             </div>
           ) : null}
 
@@ -609,16 +635,19 @@ function TaskFlow() {
 
             {currentStep.example_text ? (
               <div className="focus-step-card__example">
-                Try this: {currentStep.example_text}
+                <span className="task-flow__note-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="lightbulb" />
+                </span>
+                <span>Try this: {currentStep.example_text}</span>
               </div>
             ) : null}
 
             {stepCelebration ? (
               <div className="focus-step-card__celebration" role="status" aria-live="polite">
                 <div className="focus-step-card__celebration-stars" aria-hidden="true">
-                  <span>{"\u2B50"}</span>
-                  <span>{"\u2728"}</span>
-                  <span>{"\u2B50"}</span>
+                  <span><OpenMojiIcon name="star" /></span>
+                  <span><OpenMojiIcon name="sparkles" /></span>
+                  <span><OpenMojiIcon name="star" /></span>
                 </div>
                 <div className="focus-step-card__celebration-copy">
                   <strong>{stepCelebration.title}</strong>
@@ -629,23 +658,61 @@ function TaskFlow() {
           </div>
 
           <div className="focus-step-card__actions">
-            <Button variant="secondary" onClick={() => setShowSupportPanel((prev) => !prev)}>
-              Help Me
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowSupportPanel(true);
+                setSupportMessage("Pick one helper below.");
+              }}
+              disabled={showSupportPanel}
+            >
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="herb" />
+              </span>
+              <span>{showSupportPanel ? "Help is open" : "Help Me"}</span>
             </Button>
             <Button onClick={handleDone}>
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name={currentStepDone ? (isLastStep ? "gift" : "compass") : "check"} />
+              </span>
+              <span>
               {String(task.status) === "completed"
                 ? "View Rewards"
                 : currentStepDone
                   ? isLastStep
-                    ? "Finish Mission"
+                    ? "Finish Quest"
                     : "Next Step"
                   : "Done"}
+              </span>
             </Button>
           </div>
 
           {showSupportPanel ? (
             <div className="focus-support-panel">
-              <p className="focus-support-panel__title">Let's make this feel smaller.</p>
+              <div className="focus-support-panel__header">
+                <p className="focus-support-panel__title task-flow__eyebrow-icon">
+                  <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name="seedling" />
+                  </span>
+                  Choose a small helper.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowSupportPanel(false);
+                    setSupportMessage("");
+                    setIsSoundPlaying(false);
+                  }}
+                >
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name="check" />
+                  </span>
+                  <span>I'm okay now</span>
+                </Button>
+              </div>
+              <p className="focus-support-panel__hint">
+                You can breathe, pause, or play a calm sound.
+              </p>
               <div className="focus-support-panel__actions">
                 <Button
                   variant="secondary"
@@ -654,7 +721,10 @@ function TaskFlow() {
                     setSupportMessage("Take one slow breath in... and one slow breath out.")
                   }
                 >
-                  Take a breath
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name="herb" />
+                  </span>
+                  <span>Take a breath</span>
                 </Button>
                 <Button
                   variant="secondary"
@@ -666,7 +736,10 @@ function TaskFlow() {
                     );
                   }}
                 >
-                  Small break
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name="sleeping" />
+                  </span>
+                  <span>Small break</span>
                 </Button>
               </div>
               <div className="focus-support-panel__audio">
@@ -680,7 +753,10 @@ function TaskFlow() {
                   <option value="forest">Forest</option>
                 </select>
                 <Button variant="secondary" size="sm" onClick={handleToggleSound}>
-                  {isSoundPlaying ? "Stop Sound" : "Calm Sound"}
+                  <span className="task-flow__button-icon" aria-hidden="true">
+                    <OpenMojiIcon name="music" />
+                  </span>
+                  <span>{isSoundPlaying ? "Stop Sound" : "Calm Sound"}</span>
                 </Button>
               </div>
               {supportMessage ? (
@@ -688,6 +764,53 @@ function TaskFlow() {
               ) : null}
             </div>
           ) : null}
+        </Card>
+      ) : null}
+
+      {!emotion ? (
+        <Card className="content-card focus-emotion-card" variant="glow">
+          <div className="focus-emotion-card__pet" aria-hidden="true">
+            <BuddyIcon type={petPreference} label="Buddy" decorative />
+          </div>
+          <div className="focus-emotion-card__copy">
+            <p className="eyebrow task-flow__eyebrow-icon">
+              <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="speech" />
+              </span>
+              Check In
+            </p>
+            <h3>How do you feel?</h3>
+            <p className="page-text">Pick one feeling.</p>
+          </div>
+          <div className="focus-emotion-card__actions">
+            <Button
+              variant="secondary"
+              onClick={() => handleEmotionCheckIn("happy")}
+            >
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="grinning" />
+              </span>
+              <span>Good</span>
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleEmotionCheckIn("tired")}
+            >
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="sleeping" />
+              </span>
+              <span>Tired</span>
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleEmotionCheckIn("overwhelmed")}
+            >
+              <span className="task-flow__button-icon" aria-hidden="true">
+                <OpenMojiIcon name="worried" />
+              </span>
+              <span>Too much</span>
+            </Button>
+          </div>
         </Card>
       ) : null}
 

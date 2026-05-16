@@ -4,6 +4,7 @@ import Badge from "../components/ui/Badge";
 import BuddyIcon from "../components/ui/BuddyIcon";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
   getTasks,
@@ -165,6 +166,7 @@ function ChildDashboard() {
     if (completed) {
       return {
         label: "Completed",
+        icon: "check",
         tone: "mint",
         className: "child-dashboard__quest-card--completed",
         message: "Great job!",
@@ -174,6 +176,7 @@ function ChildDashboard() {
     if (Number(task.completed_steps || 0) > 0) {
       return {
         label: "In progress",
+        icon: "hourglass",
         tone: "sky",
         className: "child-dashboard__quest-card--active",
         message: "One step at a time!",
@@ -182,6 +185,7 @@ function ChildDashboard() {
 
     return {
       label: "Not started",
+      icon: "sparkles",
       tone: "warm",
       className: "child-dashboard__quest-card--new",
       message: "Ready when you are.",
@@ -192,13 +196,33 @@ function ChildDashboard() {
     <section className="page-section child-dashboard child-dashboard--quest-hub">
       <Card className="child-dashboard__greeting-card nf-enter-card nf-enter-card--1" variant="glow">
         <div>
-          <p className="eyebrow">Today</p>
-          <h2>Hi {displayName}, your quest hub is ready.</h2>
+          <p className="eyebrow child-dashboard__eyebrow-icon">
+            <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+              <OpenMojiIcon name="sparkles" />
+            </span>
+            Today
+          </p>
+          <h2>
+            <span className="child-dashboard__heading-openmoji" aria-hidden="true">
+              <OpenMojiIcon name="compass" />
+            </span>
+            Hi {displayName}, your quest hub is ready.
+          </h2>
           <p className="page-text">Pick one quest. Your buddy will stay with you.</p>
         </div>
         <div className="child-dashboard__intro-pills" aria-label="Today summary">
-          <Badge tone="warm">{readyTasks.length} ready</Badge>
-          <Badge tone="mint">{completedCount} done</Badge>
+          <Badge tone="warm" className="child-dashboard__status-badge">
+            <span className="child-dashboard__status-openmoji" aria-hidden="true">
+              <OpenMojiIcon name="sparkles" />
+            </span>
+            <span>{readyTasks.length} ready</span>
+          </Badge>
+          <Badge tone="mint" className="child-dashboard__status-badge">
+            <span className="child-dashboard__status-openmoji" aria-hidden="true">
+              <OpenMojiIcon name="check" />
+            </span>
+            <span>{completedCount} done</span>
+          </Badge>
         </div>
       </Card>
 
@@ -212,7 +236,12 @@ function ChildDashboard() {
         <Card className="child-dashboard__focus-card nf-enter-card nf-enter-card--1" variant="glow">
           <div className="child-dashboard__focus-head">
             <div>
-              <p className="eyebrow">Start quest</p>
+              <p className="eyebrow child-dashboard__eyebrow-icon">
+                <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="compass" />
+                </span>
+                Start quest
+              </p>
               <h3 className="child-dashboard__mission-title">
                 {featuredTask ? featuredTask.title : "Nothing to do right now"}
               </h3>
@@ -229,8 +258,11 @@ function ChildDashboard() {
                 />
               </div>
               {featuredTask ? (
-                <Badge tone={getQuestStatus(featuredTask).tone}>
-                  {getQuestStatus(featuredTask).label}
+                <Badge tone={getQuestStatus(featuredTask).tone} className="child-dashboard__status-badge">
+                  <span className="child-dashboard__status-openmoji" aria-hidden="true">
+                    <OpenMojiIcon name={getQuestStatus(featuredTask).icon} />
+                  </span>
+                  <span>{getQuestStatus(featuredTask).label}</span>
                 </Badge>
               ) : null}
             </div>
@@ -273,8 +305,18 @@ function ChildDashboard() {
         <Card className="child-dashboard__missions-list nf-enter-card nf-enter-card--3" variant="default">
           <div className="child-dashboard__section-row">
             <div>
-              <p className="eyebrow">Quests</p>
-              <h3>Today&apos;s quests</h3>
+              <p className="eyebrow child-dashboard__eyebrow-icon">
+                <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="memo" />
+                </span>
+                Quests
+              </p>
+              <h3 className="child-dashboard__section-title">
+                <span className="child-dashboard__section-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="books" />
+                </span>
+                Today&apos;s quests
+              </h3>
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={() => setShowAllQuests(false)}>
               Hide
@@ -306,7 +348,12 @@ function ChildDashboard() {
                   <ProgressBar value={doneSteps} max={totalSteps} label={`${task.title} quest progress`} />
                 </div>
                 <div className="child-dashboard__quest-actions">
-                  <Badge tone={status.tone}>{status.label}</Badge>
+                  <Badge tone={status.tone} className="child-dashboard__status-badge">
+                    <span className="child-dashboard__status-openmoji" aria-hidden="true">
+                      <OpenMojiIcon name={status.icon} />
+                    </span>
+                    <span>{status.label}</span>
+                  </Badge>
                   <Button as={Link} to={`/tasks/${task.task_id}`} variant="secondary" size="sm">
                     {status.label === "Completed" ? "View" : "Start"}
                   </Button>
@@ -316,17 +363,32 @@ function ChildDashboard() {
             })}
 
             {readyTasks.length === 0 && completedTasks.length === 0 ? (
-              <p className="page-text">
-                No quests right now. Nice and calm.
-              </p>
+              <div className="child-dashboard__empty-state">
+                <span className="child-dashboard__empty-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="herb" />
+                </span>
+                <p className="page-text">
+                  No quests right now. Nice and calm.
+                </p>
+              </div>
             ) : null}
           </div>
         </Card>
         ) : (
           <Card className="child-dashboard__collapsed-card nf-enter-card nf-enter-card--3" variant="soft">
             <div>
-              <p className="eyebrow">Quests</p>
-              <h3>{readyTasks.length} ready, {completedCount} done</h3>
+              <p className="eyebrow child-dashboard__eyebrow-icon">
+                <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="memo" />
+                </span>
+                Quests
+              </p>
+              <h3 className="child-dashboard__section-title">
+                <span className="child-dashboard__section-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="books" />
+                </span>
+                {readyTasks.length} ready, {completedCount} done
+              </h3>
               <p className="page-text">Only open this if you want to see everything.</p>
             </div>
             <Button type="button" variant="secondary" onClick={() => setShowAllQuests(true)}>
@@ -338,15 +400,21 @@ function ChildDashboard() {
         <Card className="child-dashboard__reward-card nf-enter-card nf-enter-card--4" variant="soft">
           <div className="child-dashboard__reward-head">
             <div>
-              <p className="eyebrow">Treasure jar</p>
-              <h3>Your quest stars</h3>
+              <p className="eyebrow child-dashboard__eyebrow-icon">
+                <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="gift" />
+                </span>
+                Treasure jar
+              </p>
+              <h3 className="child-dashboard__section-title">
+                <span className="child-dashboard__section-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="star" />
+                </span>
+                Your quest stars
+              </h3>
             </div>
             <div className="child-dashboard__reward-count" aria-hidden="true">
-              <BuddyIcon
-                type="star"
-                label="Star points"
-                decorative
-              />
+              <OpenMojiIcon name="star" />
             </div>
           </div>
           <div className="child-dashboard__treasure-jar" aria-label={`${pointsBalance} star points`}>
@@ -354,7 +422,7 @@ function ChildDashboard() {
             <div className="child-dashboard__jar-stars" aria-hidden="true">
               {Array.from({ length: Math.min(Math.max(pointsBalance, 3), 9) }).map((_, index) => (
                 <span key={index}>
-                  <BuddyIcon type="star" label="" decorative />
+                  <OpenMojiIcon name="star" />
                 </span>
               ))}
             </div>
@@ -371,8 +439,18 @@ function ChildDashboard() {
         <Card className="child-dashboard__style-card nf-enter-card nf-enter-card--5" variant="soft">
           <div className="child-dashboard__section-row">
             <div>
-              <p className="eyebrow">Companion</p>
-              <h3>Your calm buddy</h3>
+              <p className="eyebrow child-dashboard__eyebrow-icon">
+                <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="herb" />
+                </span>
+                Companion
+              </p>
+              <h3 className="child-dashboard__section-title">
+                <span className="child-dashboard__section-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="speech" />
+                </span>
+                Your calm buddy
+              </h3>
               <p className="page-text">Your buddy says: “You&apos;ve got this.”</p>
             </div>
             <div className="child-dashboard__style-identity">

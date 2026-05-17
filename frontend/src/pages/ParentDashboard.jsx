@@ -2006,7 +2006,7 @@ const maxWeeklyEmotionValue = Math.max(
 
                 <input
                   type="text"
-                  placeholder="Step name, e.g. Put pyjamas on"
+                  placeholder="Step name, e.g. Get ready for school"
                   value={existingRoutineItemTitle}
                   onChange={(event) => setExistingRoutineItemTitle(event.target.value)}
                 />

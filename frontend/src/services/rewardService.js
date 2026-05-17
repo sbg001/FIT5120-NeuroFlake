@@ -1,5 +1,8 @@
 import { getCachedResource, invalidateCachePrefix } from "./requestCache";
 
+export const MIN_REWARD_COST = 1;
+export const MAX_REWARD_COST = 500;
+
 const API_BASE_URL =
   import.meta.env.VITE_CHATBOT_API_URL || "";
 
@@ -325,9 +328,17 @@ export async function getAllRewardsForParent() {
 
 export async function createParentReward(payload) {
   const parentId = payload.parent_id || getCurrentParentId();
+  const cost = Number(payload.cost);
 
   if (!parentId) {
     return { data: null, error: "Parent reward settings are not ready yet." };
+  }
+
+  if (!Number.isInteger(cost) || cost < MIN_REWARD_COST || cost > MAX_REWARD_COST) {
+    return {
+      data: null,
+      error: `Reward cost must be between ${MIN_REWARD_COST} and ${MAX_REWARD_COST} points.`,
+    };
   }
 
   const result = await apiRequest("/api/rewards", {
@@ -336,7 +347,7 @@ export async function createParentReward(payload) {
       parent_id: parentId,
       title: payload.title,
       emoji: payload.emoji || "🎁",
-      cost: Number(payload.cost),
+      cost,
       approved: payload.approved ?? true,
       theme: payload.theme || "custom",
     }),
@@ -352,9 +363,17 @@ export async function createParentReward(payload) {
 export async function updateParentReward(rewardId, payload) {
   const normalizedRewardId = String(rewardId);
   const parentId = payload.parent_id || getCurrentParentId();
+  const cost = Number(payload.cost);
 
   if (!parentId) {
     return { data: null, error: "Parent reward settings are not ready yet." };
+  }
+
+  if (!Number.isInteger(cost) || cost < MIN_REWARD_COST || cost > MAX_REWARD_COST) {
+    return {
+      data: null,
+      error: `Reward cost must be between ${MIN_REWARD_COST} and ${MAX_REWARD_COST} points.`,
+    };
   }
 
   const result = await apiRequest(`/api/rewards/${normalizedRewardId}`, {
@@ -363,7 +382,7 @@ export async function updateParentReward(rewardId, payload) {
       parent_id: parentId,
       title: payload.title,
       emoji: payload.emoji || "🎁",
-      cost: Number(payload.cost),
+      cost,
       approved: payload.approved ?? true,
       theme: payload.theme || "custom",
     }),

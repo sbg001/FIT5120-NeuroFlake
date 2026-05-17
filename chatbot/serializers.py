@@ -31,6 +31,7 @@ def user_row_to_dict(row):
         "email": row.get("email"),
         "username": row.get("username"),
         "age": row.get("age"),
+        "gender": row.get("gender"),
         "parent_id": str(row["parent_id"]) if row.get("parent_id") else None,
         "pin_code": row.get("pin_code"),
         "created_at": row["created_at"].isoformat() if row.get("created_at") else None,

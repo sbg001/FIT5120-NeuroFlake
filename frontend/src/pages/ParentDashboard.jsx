@@ -28,6 +28,8 @@ import {
   updateTaskStepCount,
   getParentDashboardCore,
   getParentDashboardSupport,
+  MAX_REWARD_COST,
+  MIN_REWARD_COST,
 } from "../services";
 
 function ParentDashboard() {
@@ -122,6 +124,7 @@ function ParentDashboard() {
 
   const [childAccountName, setChildAccountName] = useState("");
   const [childAccountAge, setChildAccountAge] = useState("");
+  const [childAccountGender, setChildAccountGender] = useState("");
   const [childAccountUsername, setChildAccountUsername] = useState("");
   const [childAccountPassword, setChildAccountPassword] = useState("");
   const [childAccountMessage, setChildAccountMessage] = useState("");
@@ -512,9 +515,20 @@ const checkRoutineReminders = useCallback(() => {
       return;
     }
 
+    const normalizedRewardCost = Number(rewardCost);
+
+    if (
+      !Number.isInteger(normalizedRewardCost) ||
+      normalizedRewardCost < MIN_REWARD_COST ||
+      normalizedRewardCost > MAX_REWARD_COST
+    ) {
+      setRewardMessage(`Reward cost must be between ${MIN_REWARD_COST} and ${MAX_REWARD_COST} points.`);
+      return;
+    }
+
     const result = await createParentReward({
       title: rewardTitle,
-      cost: Number(rewardCost),
+      cost: normalizedRewardCost,
     });
 
     if (result.error) {
@@ -558,6 +572,7 @@ const checkRoutineReminders = useCallback(() => {
     if (
       !childAccountName ||
       !childAccountAge ||
+      !childAccountGender ||
       !childAccountUsername ||
       !childAccountPassword
     ) {
@@ -565,10 +580,18 @@ const checkRoutineReminders = useCallback(() => {
       return;
     }
 
+    const normalizedAge = Number(childAccountAge);
+
+    if (!Number.isInteger(normalizedAge) || normalizedAge < 1 || normalizedAge > 17) {
+      setChildAccountMessage("Child age must be between 1 and 17.");
+      return;
+    }
+
     const result = await createChildAccount({
       parentId: parentProfile.user_id,
       name: childAccountName,
-      age: childAccountAge,
+      age: normalizedAge,
+      gender: childAccountGender,
       username: childAccountUsername,
       password: childAccountPassword,
     });
@@ -591,6 +614,7 @@ const checkRoutineReminders = useCallback(() => {
     setEmotionLogs([]);
     setChildAccountName("");
     setChildAccountAge("");
+    setChildAccountGender("");
     setChildAccountUsername("");
     setChildAccountPassword("");
     setChildAccountMessage(
@@ -916,6 +940,13 @@ const checkRoutineReminders = useCallback(() => {
     )[0];
   const completionPercent =
     totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+  const normalizedChildGender = String(childProfile?.gender || "").toLowerCase();
+  const childTaskPronoun =
+    normalizedChildGender === "male"
+      ? "his"
+      : normalizedChildGender === "female"
+        ? "her"
+        : "their";
   const featuredTask = activeTasks[0] || completedTasks[0] || null;
   const nextParentAction = !featuredTask
     ? {
@@ -1006,33 +1037,6 @@ const checkRoutineReminders = useCallback(() => {
       return secondDate - firstDate;
     })
     .slice(0, 4);
-  const parentInsightCards = [
-    {
-      icon: "herb",
-      title: "Keep today simple",
-      text:
-        activeTasks.length > 0
-          ? `${activeTasks.length} task${activeTasks.length === 1 ? "" : "s"} still active. Choose one to focus on first.`
-          : "All tasks are complete. A calm finish matters too.",
-    },
-    {
-      icon: "compass",
-      title: "Routine rhythm",
-      text:
-        routineBlocks.length > 0
-          ? `${routineConsistency}% routine consistency across saved routines.`
-          : "Add a routine when you want mornings or evenings to feel more predictable.",
-    },
-    {
-      icon: "sparkles",
-      title: "Support signal",
-      text:
-        suggestions[0]?.text ||
-        (repeatedTriggerEntry
-          ? `Watch for ${repeatedTriggerEntry[0]} this week.`
-          : "No repeated trigger pattern yet."),
-    },
-  ];
   const shouldShowChildSetup = !isLoadingCore && Boolean(parentProfile) && !hasChildAccount;
   const isTasksPage = activeSection === "tasks";
 
@@ -1097,7 +1101,19 @@ const checkRoutineReminders = useCallback(() => {
                   placeholder="Child age"
                   value={childAccountAge}
                   onChange={(event) => setChildAccountAge(event.target.value)}
+                  min="1"
+                  max="17"
+                  step="1"
                 />
+                <select
+                  value={childAccountGender}
+                  onChange={(event) => setChildAccountGender(event.target.value)}
+                  aria-label="Child gender"
+                >
+                  <option value="">Child gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
                 <input
                   type="text"
                   placeholder="Child username"
@@ -1146,7 +1162,7 @@ const checkRoutineReminders = useCallback(() => {
         </div>
         <div>
           <p className="eyebrow">Today at a glance</p>
-          <h3>{childProfile?.name || "Your child"} is {completionPercent}% through their tasks.</h3>
+          <h3>{childProfile?.name || "Your child"} is {completionPercent}% through {childTaskPronoun} tasks.</h3>
           <p className="page-text">
             {featuredTask
               ? `Current focus: ${featuredTask.title}.`
@@ -1192,37 +1208,6 @@ const checkRoutineReminders = useCallback(() => {
       {activeSection === "tasks" ? (
         <div className="parent-dashboard__workspace-grid">
           <div className="parent-dashboard__main-column">
-            <Card className="parent-dashboard__progress-section" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Child progress</p>
-                  <h3>Progress without pressure</h3>
-                  <p className="page-text">
-                    A simple view of tasks finished, active, and waiting.
-                  </p>
-                </div>
-                <Badge tone="mint">{completionPercent}% complete</Badge>
-              </div>
-              <div className="parent-dashboard__progress-panel">
-                <div className="parent-dashboard__focus-score" aria-label={`${completionPercent}% complete`}>
-                  <strong>{completionPercent}%</strong>
-                  <span>done</span>
-                </div>
-                <div className="parent-dashboard__progress-copy">
-                  <div className="parent-dashboard__snapshot-row">
-                    <h4>{featuredTask ? featuredTask.title : "No task selected"}</h4>
-                    {featuredTask ? (
-                      <Badge tone={getStatusConfig(featuredTask).tone}>
-                        {getStatusConfig(featuredTask).label}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  {featuredTask?.description ? <p>{featuredTask.description}</p> : null}
-                  <ProgressBar value={completionPercent} max={100} label="Child task completion progress" />
-                </div>
-              </div>
-            </Card>
-
             <Card id="task-board-panel" className="parent-dashboard__collection-card parent-dashboard__task-board" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
@@ -1458,25 +1443,6 @@ const checkRoutineReminders = useCallback(() => {
               )}
             </Card>
 
-            <Card className="parent-dashboard__insight-panel" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Helpful insights</p>
-                  <h3>Small signals</h3>
-                </div>
-              </div>
-              <div className="parent-dashboard__insight-card-list">
-                {parentInsightCards.map((insight) => (
-                  <div key={insight.title} className="parent-dashboard__insight-mini-card">
-                    <span aria-hidden="true"><OpenMojiIcon name={insight.icon} /></span>
-                    <div>
-                      <strong>{insight.title}</strong>
-                      <p>{insight.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
           </div>
         </div>
       ) : activeSection === "rewards" ? (
@@ -1508,12 +1474,15 @@ const checkRoutineReminders = useCallback(() => {
                   placeholder="Points cost"
                   value={rewardCost}
                   onChange={(e) => setRewardCost(e.target.value)}
+                  min={MIN_REWARD_COST}
+                  max={MAX_REWARD_COST}
+                  step="1"
                 />
                 {rewardMessage ? (
                   <p className="parent-dashboard__message">{rewardMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    Small rewards: 20-40 points. Bigger rewards: 60+.
+                    Use {MIN_REWARD_COST}-{MAX_REWARD_COST} points.
                   </p>
                 )}
                 <Button onClick={handleCreateReward}>

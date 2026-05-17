@@ -4,6 +4,7 @@ export const mockChildProfile = {
   role: "child",
   name: "Liam",
   age: 10,
+  gender: "male",
   created_at: "2026-04-12T10:00:00Z",
 };
 

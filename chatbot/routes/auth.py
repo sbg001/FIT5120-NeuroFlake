@@ -138,9 +138,16 @@ async def create_child(request: CreateChildRequest):
     username = request.username.strip().lower()
     password = request.password
     age = request.age
+    gender = request.gender.strip().lower()
 
-    if not parent_id or not name or not username or not password or not age:
+    if not parent_id or not name or not username or not password or age is None or not gender:
         raise HTTPException(status_code=400, detail="Please complete all child account fields.")
+
+    if age < 1 or age > 17:
+        raise HTTPException(status_code=400, detail="Child age must be between 1 and 17.")
+
+    if gender not in ("male", "female"):
+        raise HTTPException(status_code=400, detail="Please select Male or Female.")
 
     try:
         conn = get_db_connection()
@@ -192,11 +199,12 @@ async def create_child(request: CreateChildRequest):
                 username,
                 password,
                 age,
+                gender,
                 parent_id,
                 pin_code,
                 created_at
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
             RETURNING *
             """,
             (
@@ -207,6 +215,7 @@ async def create_child(request: CreateChildRequest):
                 username,
                 password,
                 age,
+                gender,
                 parent_id,
                 "",
             ),

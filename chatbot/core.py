@@ -1,6 +1,8 @@
 import os
 
 import psycopg2
+from psycopg2 import extensions
+from psycopg2 import InterfaceError, OperationalError
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from psycopg2.pool import SimpleConnectionPool
@@ -25,15 +27,26 @@ class PooledConnectionProxy:
         if self._is_returned:
             return
         self._is_returned = True
-        self._pool.putconn(self._connection)
+        should_discard = (
+            self._connection.closed
+            or self._connection.get_transaction_status()
+            == extensions.TRANSACTION_STATUS_UNKNOWN
+        )
+        self._pool.putconn(self._connection, close=should_discard)
 
 
-def ensure_rewards_parent_column():
+def ensure_database_columns():
     conn = None
     cur = None
     try:
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
+        cur.execute(
+            """
+            ALTER TABLE users
+            ADD COLUMN IF NOT EXISTS gender TEXT
+            """
+        )
         cur.execute(
             """
             ALTER TABLE rewards_catalog
@@ -58,7 +71,7 @@ def initialize_db_pool():
     global DB_POOL
     if not DATABASE_URL:
         raise RuntimeError("Database URL is not configured.")
-    ensure_rewards_parent_column()
+    ensure_database_columns()
     if DB_POOL is None:
         DB_POOL = SimpleConnectionPool(
             minconn=1,
@@ -77,7 +90,23 @@ def close_db_pool():
 def get_db_connection():
     if DB_POOL is None:
         raise HTTPException(status_code=500, detail="Database URL is not configured.")
-    return PooledConnectionProxy(DB_POOL.getconn(), DB_POOL)
+
+    for _ in range(2):
+        connection = DB_POOL.getconn()
+
+        if connection.closed:
+            DB_POOL.putconn(connection, close=True)
+            continue
+
+        try:
+            with connection.cursor() as cur:
+                cur.execute("SELECT 1")
+            connection.rollback()
+            return PooledConnectionProxy(connection, DB_POOL)
+        except (InterfaceError, OperationalError):
+            DB_POOL.putconn(connection, close=True)
+
+    raise HTTPException(status_code=500, detail="Database connection is not ready.")
 
 
 def get_parent_id_for_child(cur, child_id: str):

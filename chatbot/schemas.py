@@ -43,6 +43,7 @@ class CreateChildRequest(BaseModel):
     username: str
     password: str
     age: int
+    gender: str
 
 
 class UpdateChildPasswordRequest(BaseModel):

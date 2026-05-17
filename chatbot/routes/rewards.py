@@ -9,6 +9,18 @@ from schemas import ClaimRewardRequest, CreateRewardRequest, CreateRewardTransac
 from serializers import points_row_to_dict, reward_row_to_dict, reward_transaction_row_to_dict
 
 router = APIRouter()
+MIN_REWARD_COST = 1
+MAX_REWARD_COST = 500
+
+
+def validate_reward_cost(cost: int):
+    if cost < MIN_REWARD_COST or cost > MAX_REWARD_COST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Reward cost must be between {MIN_REWARD_COST} and {MAX_REWARD_COST} points.",
+        )
+
+
 # ==========================================
 # REWARD AND POINTS ENDPOINTS
 # ==========================================
@@ -485,6 +497,8 @@ async def get_rewards(
 
 @router.post("/api/rewards")
 async def create_reward(request: CreateRewardRequest):
+    validate_reward_cost(request.cost)
+
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -532,6 +546,8 @@ async def create_reward(request: CreateRewardRequest):
 
 @router.patch("/api/rewards/{reward_id}")
 async def update_reward(reward_id: str, request: UpdateRewardRequest):
+    validate_reward_cost(request.cost)
+
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)

@@ -24,6 +24,7 @@ const defaultMockUsers = [
     password: "parent123",
     pin_code: "1111",
     age: null,
+    gender: null,
     parent_id: null,
     created_at: new Date().toISOString(),
   },
@@ -34,6 +35,7 @@ const defaultMockUsers = [
     username: "leo",
     password: "child123",
     age: mockChildProfile.age || 7,
+    gender: mockChildProfile.gender || "male",
     pin_code: "2222",
     parent_id: mockParentProfile.user_id,
     created_at: new Date().toISOString(),
@@ -316,6 +318,7 @@ export async function createChildAccount({
   username,
   password,
   age,
+  gender,
 }) {
   const result = await apiRequest("/api/auth/create-child", {
     method: "POST",
@@ -325,6 +328,7 @@ export async function createChildAccount({
       username,
       password,
       age: Number(age),
+      gender,
     }),
   });
 

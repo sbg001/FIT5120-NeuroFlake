@@ -804,21 +804,38 @@ async def complete_step(task_id: str, step_id: str):
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         cur.execute(
-
             """
-
-            UPDATE task_steps
-
-            SET is_completed = true, completed_at = NOW()
-
-            WHERE task_id = %s AND step_id = %s
-
-            RETURNING *
-
+            WITH updated_step AS (
+                UPDATE task_steps
+                SET is_completed = true, completed_at = COALESCE(completed_at, NOW())
+                WHERE task_id = %s AND step_id = %s
+                RETURNING *
+            ),
+            counts AS (
+                SELECT COUNT(*) AS completed_count
+                FROM task_steps
+                WHERE task_id = %s AND is_completed = true
+            ),
+            updated_task AS (
+                UPDATE tasks
+                SET
+                    completed_steps = counts.completed_count,
+                    status = CASE
+                        WHEN counts.completed_count > 0
+                             AND counts.completed_count >= COALESCE(tasks.total_steps, 0)
+                        THEN 'completed'
+                        ELSE 'in_progress'
+                    END,
+                    updated_at = NOW()
+                FROM counts
+                WHERE tasks.task_id = %s
+                RETURNING tasks.task_id
+            )
+            SELECT updated_step.*
+            FROM updated_step
+            CROSS JOIN updated_task
             """,
-
-            (task_id, step_id),
-
+            (task_id, step_id, task_id, task_id),
         )
 
         step = cur.fetchone()
@@ -830,80 +847,6 @@ async def complete_step(task_id: str, step_id: str):
             conn.close()
 
             raise HTTPException(status_code=404, detail="Task step not found.")
-
-        cur.execute(
-
-            """
-
-            SELECT COUNT(*) AS completed_count
-
-            FROM task_steps
-
-            WHERE task_id = %s AND is_completed = true
-
-            """,
-
-            (task_id,),
-
-        )
-
-        completed_row = cur.fetchone()
-
-        completed_steps = completed_row["completed_count"] if completed_row else 0
-
-        cur.execute(
-
-            """
-
-            SELECT total_steps
-
-            FROM tasks
-
-            WHERE task_id = %s
-
-            LIMIT 1
-
-            """,
-
-            (task_id,),
-
-        )
-
-        task_count_row = cur.fetchone()
-
-        total_steps = task_count_row["total_steps"] if task_count_row else 0
-
-        new_status = (
-
-            "completed"
-
-            if completed_steps > 0 and completed_steps == total_steps
-
-            else "in_progress"
-
-        )
-
-        cur.execute(
-
-            """
-
-            UPDATE tasks
-
-            SET
-
-                completed_steps = %s,
-
-                status = %s,
-
-                updated_at = NOW()
-
-            WHERE task_id = %s
-
-            """,
-
-            (completed_steps, new_status, task_id),
-
-        )
 
         conn.commit()
 

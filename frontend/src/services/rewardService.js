@@ -114,6 +114,45 @@ export async function getRewardTransactions(childId) {
   return { data: result.data, error: null };
 }
 
+export async function getRewardsSummary(childId) {
+  const resolvedChildId = resolveActiveChildId(childId);
+
+  if (!resolvedChildId) {
+    return {
+      data: {
+        points: emptyPoints(null),
+        transactions: [],
+        rewards: [],
+        next_task: null,
+      },
+      error: null,
+    };
+  }
+
+  const result = await getCachedResource(
+    `rewards-summary:${resolvedChildId}`,
+    () =>
+      apiRequest(`/api/rewards/summary/${resolvedChildId}`, {
+        method: "GET",
+      }),
+    { ttlMs: 15000 }
+  );
+
+  if (result.error || !result.data) {
+    return {
+      data: {
+        points: emptyPoints(resolvedChildId),
+        transactions: [],
+        rewards: [],
+        next_task: null,
+      },
+      error: result.error || null,
+    };
+  }
+
+  return { data: result.data, error: null };
+}
+
 export async function getLatestRewardSummary(childId) {
   const resolvedChildId = resolveActiveChildId(childId);
 
@@ -186,6 +225,36 @@ export async function createRewardTransaction({
 
   if (!result.error) {
     invalidateCachePrefix(`reward-transactions:${child_id}`);
+    invalidateCachePrefix(`rewards-summary:${child_id}`);
+  }
+
+  return result;
+}
+
+export async function completeTaskWithReward({
+  child_id,
+  task_id,
+  points_earned = 10,
+  steps_completed = 0,
+}) {
+  const result = await apiRequest("/api/task-rewards/complete", {
+    method: "POST",
+    body: JSON.stringify({
+      child_id,
+      task_id,
+      points_earned,
+      steps_completed,
+    }),
+  });
+
+  if (!result.error) {
+    invalidateCachePrefix(`points:${child_id}`);
+    invalidateCachePrefix(`reward-transactions:${child_id}`);
+    invalidateCachePrefix(`rewards-summary:${child_id}`);
+    invalidateCachePrefix(`task:${task_id}`);
+    invalidateCachePrefix(`task-steps:${task_id}`);
+    invalidateCachePrefix("tasks:");
+    invalidateCachePrefix("today-task:");
   }
 
   return result;
@@ -203,6 +272,7 @@ export async function claimReward({ child_id, reward_id }) {
   if (!result.error) {
     invalidateCachePrefix(`points:${child_id}`);
     invalidateCachePrefix(`reward-transactions:${child_id}`);
+    invalidateCachePrefix(`rewards-summary:${child_id}`);
     invalidateCachePrefix("rewards:");
   }
 
@@ -221,6 +291,7 @@ export async function updatePointsBalance(childId, newPointsBalance) {
 
   if (!result.error) {
     invalidateCachePrefix(`points:${normalizedChildId}`);
+    invalidateCachePrefix(`rewards-summary:${normalizedChildId}`);
   }
 
   return result;

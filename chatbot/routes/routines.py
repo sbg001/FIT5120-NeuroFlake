@@ -181,3 +181,77 @@ async def update_routine_item(item_id: str, request: UpdateRoutineItemRequest):
     except Exception as e:
         print(f"Update routine item error: {str(e)}")
         raise HTTPException(status_code=500, detail="Could not update routine item.")
+
+
+@router.delete("/api/routines/{routine_id}")
+async def delete_routine(routine_id: str):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            DELETE FROM routine_items
+            WHERE routine_id = %s::uuid
+            """,
+            (routine_id,),
+        )
+
+        cur.execute(
+            """
+            DELETE FROM routines
+            WHERE routine_id = %s::uuid
+            RETURNING *
+            """,
+            (routine_id,),
+        )
+
+        routine = cur.fetchone()
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        if not routine:
+            raise HTTPException(status_code=404, detail="Routine not found.")
+
+        return routine_row_to_dict(routine)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete routine error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not delete routine.")
+
+
+@router.delete("/api/routine-items/{item_id}")
+async def delete_routine_item(item_id: str):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            DELETE FROM routine_items
+            WHERE item_id = %s::uuid
+            RETURNING *
+            """,
+            (item_id,),
+        )
+
+        item = cur.fetchone()
+        conn.commit()
+
+        cur.close()
+        conn.close()
+
+        if not item:
+            raise HTTPException(status_code=404, detail="Routine step not found.")
+
+        return routine_item_row_to_dict(item)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete routine item error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not delete routine step.")

@@ -116,6 +116,13 @@ class CreateRewardTransactionRequest(BaseModel):
     transaction_type: str = "earn"
 
 
+class CompleteTaskRewardRequest(BaseModel):
+    child_id: str
+    task_id: str
+    points_earned: int = 10
+    steps_completed: int = 0
+
+
 class ClaimRewardRequest(BaseModel):
     child_id: str
     reward_id: str

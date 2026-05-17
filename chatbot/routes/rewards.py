@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException
 import psycopg2.extras
 
 from core import get_db_connection, get_parent_id_for_child
-from schemas import ClaimRewardRequest, CreateRewardRequest, CreateRewardTransactionRequest, UpdatePointsRequest, UpdateRewardRequest
-from serializers import points_row_to_dict, reward_row_to_dict, reward_transaction_row_to_dict
+from schemas import ClaimRewardRequest, CompleteTaskRewardRequest, CreateRewardRequest, CreateRewardTransactionRequest, UpdatePointsRequest, UpdateRewardRequest
+from serializers import points_row_to_dict, reward_row_to_dict, reward_transaction_row_to_dict, task_row_to_dict
 
 router = APIRouter()
 MIN_REWARD_COST = 1
@@ -148,70 +148,305 @@ async def get_reward_transactions(child_id: str):
             status_code=500,
             detail="Could not load reward transactions."
         )
+
+
+@router.get("/api/rewards/summary/{child_id}")
+async def get_rewards_summary(child_id: str):
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        if request.transaction_type == "earn" and request.task_id:
-            cur.execute(
-                """
-                SELECT
-                    rt.*,
-                    COALESCE(t.title, 'Task reward') AS task_title
-                FROM reward_transactions rt
-                LEFT JOIN tasks t ON t.task_id = rt.task_id
-                WHERE rt.child_id = %s
-                  AND rt.task_id = %s
-                  AND rt.transaction_type = 'earn'
-                LIMIT 1
-                """,
-                (request.child_id, request.task_id),
-            )
-
-            existing_transaction = cur.fetchone()
-
-            if existing_transaction:
-                cur.close()
-                conn.close()
-                return reward_transaction_row_to_dict(existing_transaction)
-
-        transaction_id = str(uuid.uuid4())
+        parent_id = get_parent_id_for_child(cur, child_id)
 
         cur.execute(
             """
-            INSERT INTO reward_transactions (
-                transaction_id,
-                child_id,
-                task_id,
-                points_earned,
-                steps_completed,
-                transaction_type,
-                created_at
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, NOW())
-            RETURNING *
+            SELECT *
+            FROM user_points
+            WHERE child_id = %s
+            LIMIT 1
             """,
-            (
-                transaction_id,
-                request.child_id,
-                request.task_id,
-                request.points_earned,
-                request.steps_completed,
-                request.transaction_type,
-            ),
+            (child_id,),
+        )
+        points = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT
+                rt.transaction_id,
+                rt.child_id,
+                rt.task_id,
+                rt.points_earned,
+                rt.steps_completed,
+                rt.transaction_type,
+                rt.created_at,
+                t.title AS task_title
+            FROM reward_transactions rt
+            LEFT JOIN tasks t
+                ON rt.task_id = t.task_id
+            WHERE rt.child_id = %s
+            ORDER BY rt.created_at DESC
+            """,
+            (child_id,),
+        )
+        transactions = cur.fetchall()
+
+        if parent_id:
+            cur.execute(
+                """
+                SELECT *
+                FROM rewards_catalog
+                WHERE approved = true AND parent_id = %s
+                ORDER BY points_cost ASC
+                """,
+                (parent_id,),
+            )
+            rewards = cur.fetchall()
+
+            if not rewards:
+                cur.execute(
+                    """
+                    SELECT *
+                    FROM rewards_catalog
+                    WHERE approved = true AND parent_id IS NULL
+                    ORDER BY points_cost ASC
+                    """
+                )
+                rewards = cur.fetchall()
+        else:
+            cur.execute(
+                """
+                SELECT *
+                FROM rewards_catalog
+                WHERE approved = true
+                ORDER BY points_cost ASC
+                """
+            )
+            rewards = cur.fetchall()
+
+        latest_task_id = (
+            str(transactions[0].get("task_id"))
+            if transactions and transactions[0].get("task_id")
+            else None
         )
 
-        transaction = cur.fetchone()
-        conn.commit()
+        if latest_task_id:
+            cur.execute(
+                """
+                SELECT *
+                FROM tasks
+                WHERE child_id = %s
+                  AND task_id <> %s
+                  AND status <> 'completed'
+                  AND COALESCE(completed_steps, 0) < COALESCE(total_steps, 0)
+                ORDER BY priority_rank DESC NULLS LAST, created_at DESC
+                LIMIT 1
+                """,
+                (child_id, latest_task_id),
+            )
+        else:
+            cur.execute(
+                """
+                SELECT *
+                FROM tasks
+                WHERE child_id = %s
+                  AND status <> 'completed'
+                  AND COALESCE(completed_steps, 0) < COALESCE(total_steps, 0)
+                ORDER BY priority_rank DESC NULLS LAST, created_at DESC
+                LIMIT 1
+                """,
+                (child_id,),
+            )
+        next_task = cur.fetchone()
 
         cur.close()
         conn.close()
 
-        return reward_transaction_row_to_dict(transaction)
+        return {
+            "points": points_row_to_dict(points, child_id),
+            "transactions": [reward_transaction_row_to_dict(transaction) for transaction in transactions],
+            "rewards": [reward_row_to_dict(reward) for reward in rewards],
+            "next_task": task_row_to_dict(next_task),
+        }
 
     except Exception as e:
-        print(f"Create reward transaction error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Could not create reward transaction.")
+        print(f"Get rewards summary error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not load rewards summary.")
+
+
+@router.post("/api/task-rewards/complete")
+async def complete_task_reward(request: CompleteTaskRewardRequest):
+    conn = None
+    cur = None
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            SELECT *
+            FROM tasks
+            WHERE task_id = %s AND child_id = %s
+            LIMIT 1
+            FOR UPDATE
+            """,
+            (request.task_id, request.child_id),
+        )
+        task = cur.fetchone()
+
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found.")
+
+        total_steps = int(task.get("total_steps") or request.steps_completed or 0)
+        awarded_steps = int(request.steps_completed or total_steps or 0)
+
+        cur.execute(
+            """
+            SELECT
+                rt.*,
+                COALESCE(t.title, 'Task reward') AS task_title
+            FROM reward_transactions rt
+            LEFT JOIN tasks t ON t.task_id = rt.task_id
+            WHERE rt.child_id = %s
+              AND rt.task_id = %s
+              AND rt.transaction_type = 'earn'
+            LIMIT 1
+            """,
+            (request.child_id, request.task_id),
+        )
+        existing_transaction = cur.fetchone()
+
+        if not existing_transaction:
+            cur.execute(
+                """
+                UPDATE task_steps
+                SET is_completed = true, completed_at = COALESCE(completed_at, NOW())
+                WHERE task_id = %s
+                """,
+                (request.task_id,),
+            )
+
+            cur.execute(
+                """
+                UPDATE tasks
+                SET
+                    status = 'completed',
+                    completed_steps = %s,
+                    updated_at = NOW()
+                WHERE task_id = %s
+                RETURNING *
+                """,
+                (total_steps, request.task_id),
+            )
+            task = cur.fetchone()
+
+            cur.execute(
+                """
+                SELECT *
+                FROM user_points
+                WHERE child_id = %s
+                LIMIT 1
+                FOR UPDATE
+                """,
+                (request.child_id,),
+            )
+            points_row = cur.fetchone()
+            current_points = int(points_row.get("points_balance") or 0) if points_row else 0
+            updated_points = current_points + int(request.points_earned)
+
+            if points_row:
+                cur.execute(
+                    """
+                    UPDATE user_points
+                    SET points_balance = %s, updated_at = NOW()
+                    WHERE child_id = %s
+                    RETURNING *
+                    """,
+                    (updated_points, request.child_id),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO user_points (child_id, points_balance, updated_at)
+                    VALUES (%s, %s, NOW())
+                    RETURNING *
+                    """,
+                    (request.child_id, updated_points),
+                )
+            points = cur.fetchone()
+
+            transaction_id = str(uuid.uuid4())
+            cur.execute(
+                """
+                INSERT INTO reward_transactions (
+                    transaction_id,
+                    child_id,
+                    task_id,
+                    points_earned,
+                    steps_completed,
+                    transaction_type,
+                    created_at
+                )
+                VALUES (%s, %s, %s, %s, %s, 'earn', NOW())
+                RETURNING *
+                """,
+                (
+                    transaction_id,
+                    request.child_id,
+                    request.task_id,
+                    request.points_earned,
+                    awarded_steps,
+                ),
+            )
+            transaction = cur.fetchone()
+            transaction["task_title"] = task.get("title")
+        else:
+            if str(task.get("status")) != "completed":
+                cur.execute(
+                    """
+                    UPDATE tasks
+                    SET status = 'completed', completed_steps = %s, updated_at = NOW()
+                    WHERE task_id = %s
+                    RETURNING *
+                    """,
+                    (total_steps, request.task_id),
+                )
+                task = cur.fetchone()
+
+            cur.execute(
+                """
+                SELECT *
+                FROM user_points
+                WHERE child_id = %s
+                LIMIT 1
+                """,
+                (request.child_id,),
+            )
+            points = cur.fetchone()
+            transaction = existing_transaction
+
+        conn.commit()
+
+        return {
+            "task": task_row_to_dict(task),
+            "points": points_row_to_dict(points, request.child_id),
+            "transaction": reward_transaction_row_to_dict(transaction),
+        }
+
+    except HTTPException:
+        if conn:
+            conn.rollback()
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Complete task reward error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not complete task reward.")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 @router.post("/api/reward-transactions")
 async def create_reward_transaction(request: CreateRewardTransactionRequest):

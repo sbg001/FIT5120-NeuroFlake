@@ -16,8 +16,9 @@ import {
   createSupportResource,
   createTask,
   createTaskStep,
-  createTrigger,
   deleteParentReward,
+  deleteRoutine,
+  deleteRoutineItem,
   deleteTask,
   generateTaskSteps,
   getAllRewardsForParent,
@@ -94,16 +95,9 @@ function ParentDashboard() {
 
   const [riskForecast, setRiskForecast] = useState(null);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
-  const [triggers, setTriggers] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
   const [communicationPrompts, setCommunicationPrompts] = useState([]);
   const [supportResources, setSupportResources] = useState([]);
   const [routineBlocks, setRoutineBlocks] = useState([]);
-
-  const [triggerTitle, setTriggerTitle] = useState("");
-  const [triggerType, setTriggerType] = useState("");
-  const [triggerNotes, setTriggerNotes] = useState("");
-  const [triggerMessage, setTriggerMessage] = useState("");
 
   const [routineTitle, setRoutineTitle] = useState("");
   const [routineDescription, setRoutineDescription] = useState("");
@@ -135,20 +129,10 @@ function ParentDashboard() {
   const [existingRoutineItemDescription, setExistingRoutineItemDescription] = useState("");
   const [existingRoutineItemReminder, setExistingRoutineItemReminder] = useState("");
   const [routineItemMessage, setRoutineItemMessage] = useState("");
-  const [reminderNotificationMessage, setReminderNotificationMessage] = useState("");
   const [routineActionMessage, setRoutineActionMessage] = useState("");
   const [updatingRoutineItemId, setUpdatingRoutineItemId] = useState("");
-
-  const scrollToTriggerForm = () => {
-    const triggerForm = document.getElementById("add-trigger-form");
-
-    if (triggerForm) {
-      triggerForm.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  };
+  const [deletingRoutineId, setDeletingRoutineId] = useState("");
+  const [deletingRoutineItemId, setDeletingRoutineItemId] = useState("");
 
   const scrollToRoutineForm = () => {
     const routineForm = document.getElementById("add-routine-form");
@@ -187,7 +171,21 @@ function ParentDashboard() {
     const section = document.getElementById(sectionId);
 
     if (section) {
-      section.scrollIntoView({
+      const sectionTop = section.getBoundingClientRect().top;
+      const stickyHeaderOffset = 140;
+
+      window.scrollTo({
+        behavior: "smooth",
+        top: window.scrollY + sectionTop - stickyHeaderOffset,
+      });
+    }
+  };
+
+  const scrollToRoutineItemForm = () => {
+    const routineItemForm = document.getElementById("add-routine-item-form");
+
+    if (routineItemForm) {
+      routineItemForm.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
@@ -247,54 +245,6 @@ const maxWeeklyEmotionValue = Math.max(
   ...weeklyEmotionData.map((data) => Math.max(data.happy, data.overwhelmed))
 );
 
-const getTodayReminderKey = (itemId) => {
-  const today = new Date().toISOString().slice(0, 10);
-  return `neuroflake_reminder_${today}_${itemId}`;
-};
-
-const showRoutineReminderNotification = useCallback((item, routineTitle) => {
-  if (!("Notification" in window)) {
-    return;
-  }
-
-  if (Notification.permission !== "granted") {
-    return;
-  }
-
-  const reminderKey = getTodayReminderKey(item.item_id);
-
-  if (localStorage.getItem(reminderKey)) {
-    return;
-  }
-
-  new Notification("NeuroFlake routine reminder", {
-    body: `${routineTitle}: ${item.title}`,
-  });
-
-  localStorage.setItem(reminderKey, "shown");
-}, []);
-
-const checkRoutineReminders = useCallback(() => {
-  if (!routineBlocks.length || !("Notification" in window)) {
-    return;
-  }
-
-  const now = new Date();
-  const currentTime = now.toTimeString().slice(0, 5);
-
-  routineBlocks.forEach((routine) => {
-    (routine.items || []).forEach((item) => {
-      if (!item.reminder_time || item.is_completed) {
-        return;
-      }
-
-      if (String(item.reminder_time).slice(0, 5) === currentTime) {
-        showRoutineReminderNotification(item, routine.title);
-      }
-    });
-  });
-}, [routineBlocks, showRoutineReminderNotification]);
-
   useEffect(() => {
     async function loadCoreDashboardData() {
       setIsLoadingCore(true);
@@ -325,8 +275,6 @@ const checkRoutineReminders = useCallback(() => {
 
   const loadSupportData = useCallback(async (childId) => {
     if (!childId) {
-      setTriggers([]);
-      setSuggestions([]);
       setRoutineBlocks([]);
       setCommunicationPrompts([]);
       setSupportResources([]);
@@ -340,8 +288,6 @@ const checkRoutineReminders = useCallback(() => {
     const supportResult = await getParentDashboardSupport(childId);
     const supportData = supportResult.data || {};
 
-    setTriggers(supportData.triggers || []);
-    setSuggestions(supportData.suggestions || []);
     setRoutineBlocks(supportData.routineBlocks || []);
     setCommunicationPrompts(supportData.communicationPrompts || []);
     setSupportResources(supportData.supportResources || []);
@@ -396,20 +342,6 @@ const checkRoutineReminders = useCallback(() => {
     loadSupportData,
     riskForecast,
   ]);
-
-  useEffect(() => {
-    if (!routineBlocks.length) return;
-
-    checkRoutineReminders();
-
-    const reminderInterval = window.setInterval(() => {
-      checkRoutineReminders();
-    }, 30000);
-
-    return () => {
-      window.clearInterval(reminderInterval);
-    };
-  }, [routineBlocks, checkRoutineReminders]);
 
   const refreshTasks = async () => {
     const refreshedTasks = await getTasks(childProfile?.user_id);
@@ -606,8 +538,6 @@ const checkRoutineReminders = useCallback(() => {
     setPointsData({ points_balance: 0 });
     setTasks([]);
     setHasLoadedSupport(false);
-    setTriggers([]);
-    setSuggestions([]);
     setRoutineBlocks([]);
     setCommunicationPrompts([]);
     setSupportResources([]);
@@ -642,38 +572,6 @@ const checkRoutineReminders = useCallback(() => {
     setDeleteRewardMessage(
       rewardToDelete?.title ? `${rewardToDelete.title} deleted.` : "Reward deleted."
     );
-  };
-
-  const handleCreateTrigger = async () => {
-    setTriggerMessage("");
-
-    if (!hasChildAccount) {
-      setTriggerMessage("Please create a child account before saving triggers.");
-      return;
-    }
-
-    if (!triggerTitle || !triggerType) {
-      setTriggerMessage("Please complete the trigger title and type.");
-      return;
-    }
-
-    const result = await createTrigger({
-      child_id: childProfile.user_id,
-      trigger_title: triggerTitle,
-      trigger_type: triggerType,
-      notes: triggerNotes,
-    });
-
-    if (result.error) {
-      setTriggerMessage(result.error);
-      return;
-    }
-
-    setTriggerTitle("");
-    setTriggerType("");
-    setTriggerNotes("");
-    setTriggerMessage("Trigger saved successfully.");
-    await refreshEpic6Data();
   };
 
   const handleCreateRoutine = async () => {
@@ -719,7 +617,8 @@ const checkRoutineReminders = useCallback(() => {
     setRoutineDescription("");
     setRoutineItemTitle("");
     setRoutineItemReminder("");
-    setRoutineMessage("Routine and reminder saved successfully.");
+    setSelectedRoutineId(String(routineResult.data.routine_id));
+    setRoutineMessage("Routine created. You can add more steps below.");
     await refreshEpic6Data();
   };
   const handleCreateRoutineItemForExistingRoutine = async () => {
@@ -752,7 +651,7 @@ const checkRoutineReminders = useCallback(() => {
     setExistingRoutineItemTitle("");
     setExistingRoutineItemDescription("");
     setExistingRoutineItemReminder("");
-    setRoutineItemMessage("Routine item and reminder saved successfully.");
+    setRoutineItemMessage("Step added to the routine.");
     await refreshEpic6Data();
   };
 
@@ -804,30 +703,85 @@ const checkRoutineReminders = useCallback(() => {
     setUpdatingRoutineItemId("");
   };
 
-  const handleEnableReminderNotifications = async () => {
-    setReminderNotificationMessage("");
+  const handleDeleteRoutine = async (routine) => {
+    if (!routine?.routine_id) return;
 
-    if (!("Notification" in window)) {
-      setReminderNotificationMessage("This browser does not support notifications.");
+    const shouldDelete = window.confirm(
+      `Delete "${routine.title}" and all of its steps?`
+    );
+
+    if (!shouldDelete) {
       return;
     }
 
-    if (Notification.permission === "granted") {
-      setReminderNotificationMessage("Reminder notifications are already enabled.");
-      checkRoutineReminders();
+    setRoutineActionMessage("");
+    setDeletingRoutineId(routine.routine_id);
+
+    const result = await deleteRoutine(routine.routine_id);
+
+    if (result.error) {
+      setRoutineActionMessage(result.error);
+      setDeletingRoutineId("");
       return;
     }
 
-    const permission = await Notification.requestPermission();
+    setRoutineBlocks((currentBlocks) =>
+      currentBlocks.filter(
+        (currentRoutine) => String(currentRoutine.routine_id) !== String(routine.routine_id)
+      )
+    );
 
-    if (permission === "granted") {
-      setReminderNotificationMessage("Reminder notifications enabled for this browser.");
-      checkRoutineReminders();
-      return;
+    if (String(selectedRoutineId) === String(routine.routine_id)) {
+      setSelectedRoutineId("");
     }
 
-    setReminderNotificationMessage("Notifications were not enabled.");
+    setRoutineActionMessage(`${routine.title} deleted.`);
+    setDeletingRoutineId("");
   };
+
+  const handleDeleteRoutineItem = async (routineId, item) => {
+    if (!item?.item_id) return;
+
+    const shouldDelete = window.confirm(`Delete "${item.title}" from this routine?`);
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    setRoutineActionMessage("");
+    setDeletingRoutineItemId(item.item_id);
+
+    const result = await deleteRoutineItem(item.item_id);
+
+    if (result.error) {
+      setRoutineActionMessage(result.error);
+      setDeletingRoutineItemId("");
+      return;
+    }
+
+    setRoutineBlocks((currentBlocks) =>
+      currentBlocks.map((routine) => {
+        if (String(routine.routine_id) !== String(routineId)) {
+          return routine;
+        }
+
+        const updatedItems = (routine.items || []).filter(
+          (routineItem) => String(routineItem.item_id) !== String(item.item_id)
+        );
+
+        return {
+          ...routine,
+          items: updatedItems,
+          completed_count: updatedItems.filter((routineItem) => routineItem.is_completed).length,
+          total_count: updatedItems.length,
+        };
+      })
+    );
+
+    setRoutineActionMessage(`${item.title} deleted.`);
+    setDeletingRoutineItemId("");
+  };
+
   const handleCreatePrompt = async () => {
     setPromptMessage("");
 
@@ -983,7 +937,7 @@ const checkRoutineReminders = useCallback(() => {
 
     if (doneSteps > 0) {
       return {
-        label: "In progress",
+        label: "In Progress",
         tone: "sky",
       };
     }
@@ -1017,19 +971,6 @@ const checkRoutineReminders = useCallback(() => {
         ? "warm"
         : "default";
 
-  const triggerCounts = triggers.reduce((counts, trigger) => {
-    const key = trigger.trigger_type || trigger.trigger_title || "Other";
-    counts[key] = (counts[key] || 0) + 1;
-    return counts;
-  }, {});
-
-  const repeatedTriggerEntry = Object.entries(triggerCounts).sort(
-    (first, second) => second[1] - first[1]
-  )[0];
-
-  const repeatedTriggerLabel = repeatedTriggerEntry
-    ? `${repeatedTriggerEntry[0]} (${repeatedTriggerEntry[1]} times)`
-    : "No repeated trigger yet";
   const recentActivity = [...childTasks]
     .sort((first, second) => {
       const firstDate = new Date(first.updated_at || first.created_at || 0).getTime();
@@ -1043,30 +984,30 @@ const checkRoutineReminders = useCallback(() => {
   const sectionHeader = {
     tasks: {
       eyebrow: "Parent",
-      title: `${parentProfile.name}'s dashboard`,
+      title: `${parentProfile.name}'s Dashboard`,
       description: hasChildAccount
-        ? `Manage ${childProfile.name}'s tasks, points, and login.`
+        ? `Create tasks, check progress, and manage ${childProfile.name}'s account.`
         : "Create a child account to begin.",
     },
     rewards: {
       eyebrow: "Rewards",
       title: "Rewards",
       description: hasChildAccount
-        ? `Set rewards for ${childProfile.name}.`
+        ? `Add rewards ${childProfile.name} can earn with points.`
         : "Create a child account to add rewards.",
     },
     insights: {
       eyebrow: "Insights",
       title: "Insights",
       description: hasChildAccount
-        ? `Review patterns for ${childProfile.name}.`
+        ? `Check mood patterns and today's support needs for ${childProfile.name}.`
         : "Create a child account to view insights.",
     },
     support: {
       eyebrow: "Routine",
-      title: "Routine tools",
+      title: "Routine Tools",
       description: hasChildAccount
-        ? `Build predictable routines for ${childProfile.name}.`
+        ? `Set up daily routine steps for ${childProfile.name}.`
         : "Create a child account to use routine tools.",
     },
   }[activeSection];
@@ -1082,10 +1023,10 @@ const checkRoutineReminders = useCallback(() => {
                 <OpenMojiIcon name="baby" />
               </div>
               <div className="parent-setup-modal__copy">
-                <p className="eyebrow">First step</p>
-                <h3 id="child-setup-title">Create a child profile</h3>
+                <p className="eyebrow">First Step</p>
+                <h3 id="child-setup-title">Create A Child Profile</h3>
                 <p className="page-text">
-                  Add one child account for tasks, rewards, and routine tools.
+                  Add your child so you can create tasks, rewards, and routines for them.
                 </p>
               </div>
 
@@ -1161,12 +1102,12 @@ const checkRoutineReminders = useCallback(() => {
           <span />
         </div>
         <div>
-          <p className="eyebrow">Today at a glance</p>
+          <p className="eyebrow">Today At A Glance</p>
           <h3>{childProfile?.name || "Your child"} is {completionPercent}% through {childTaskPronoun} tasks.</h3>
           <p className="page-text">
             {featuredTask
               ? `Current focus: ${featuredTask.title}.`
-              : "No current focus yet. Add a small task when ready."}
+              : "No task is active yet. Add one when you are ready."}
           </p>
         </div>
         <div className="parent-dashboard__hero-action">
@@ -1211,10 +1152,10 @@ const checkRoutineReminders = useCallback(() => {
             <Card id="task-board-panel" className="parent-dashboard__collection-card parent-dashboard__task-board" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Task board</p>
-                  <h3>What needs attention</h3>
+                  <p className="eyebrow">Task Board</p>
+                  <h3>Task Progress</h3>
                 </div>
-                <Badge tone="sky">{totalTasks} tasks</Badge>
+                <Badge tone="sky">{totalTasks} Tasks</Badge>
               </div>
 
               {childTasks.length > 0 ? (
@@ -1229,7 +1170,7 @@ const checkRoutineReminders = useCallback(() => {
                         <div className="parent-dashboard__task-item-top">
                           <div>
                             <h4>{task.title}</h4>
-                            <p>{task.description || "No note."}</p>
+                            <p>{task.description || "No extra note added."}</p>
                           </div>
                           <Badge tone={status.tone}>{status.label}</Badge>
                         </div>
@@ -1323,7 +1264,7 @@ const checkRoutineReminders = useCallback(() => {
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     <OpenMojiIcon name="memo" />
                   </div>
-                  <h4>No tasks yet</h4>
+                  <h4>No Tasks Yet</h4>
                   <p>Create the first task.</p>
                 </div>
               )}
@@ -1332,14 +1273,14 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__routine-section" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Routine management</p>
-                  <h3>Predictable routines</h3>
+                  <p className="eyebrow">Routine Management</p>
+                  <h3>Predictable Routines</h3>
                   <p className="page-text">
-                    Keep daily routines visible without adding clutter.
+                    See today's routine steps and what has already been done.
                   </p>
                 </div>
                 <div className="parent-dashboard__section-actions">
-                  <Badge tone="sky">{routineBlocks.length} routines</Badge>
+                  <Badge tone="sky">{routineBlocks.length} Routines</Badge>
                   <Button as={Link} to="/parent/support" variant="secondary" size="sm">
                     <OpenMojiIcon name="calendar" className="parent-dashboard__button-icon" />
                     Open Routine
@@ -1353,7 +1294,7 @@ const checkRoutineReminders = useCallback(() => {
                     <div key={routine.routine_id} className="parent-dashboard__routine-card">
                       <div>
                         <strong>{routine.title}</strong>
-                        <p>{routine.description || "Routine ready."}</p>
+                        <p>{routine.description || "No extra note added."}</p>
                       </div>
                       <Badge tone="mint">
                         {routine.completed_count || 0}/{routine.total_count || 0}
@@ -1366,7 +1307,7 @@ const checkRoutineReminders = useCallback(() => {
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     <OpenMojiIcon name="herb" />
                   </div>
-                  <p>No routines yet. Add one from Routine when you are ready.</p>
+                  <p>No routines yet. Open Routine to add the first one.</p>
                 </div>
               )}
             </Card>
@@ -1381,10 +1322,10 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add task</p>
-                  <h3>Create task</h3>
+                  <p className="eyebrow">Add Task</p>
+                  <h3>Create Task</h3>
                   <p className="page-text">
-                    Write it once. NeuroFlake builds the steps.
+                    Add one task and NeuroFlake will break it into smaller steps.
                   </p>
                 </div>
               </div>
@@ -1418,8 +1359,8 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__activity-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Recent activity</p>
-                  <h3>Latest updates</h3>
+                  <p className="eyebrow">Recent Activity</p>
+                  <h3>Latest Updates</h3>
                 </div>
               </div>
               {recentActivity.length > 0 ? (
@@ -1454,8 +1395,8 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add reward</p>
-                  <h3>Make a reward</h3>
+                  <p className="eyebrow">Add Reward</p>
+                  <h3>Create Reward</h3>
                 </div>
                 <div className="parent-dashboard__reward-icon" aria-hidden="true">
                   <OpenMojiIcon name="gift" />
@@ -1493,8 +1434,8 @@ const checkRoutineReminders = useCallback(() => {
 
               <div className="parent-dashboard__reward-suggestions">
                 <div className="parent-dashboard__reward-suggestions-copy">
-                  <h4>Quick adds</h4>
-                  <p className="page-text">Tap one to add it now.</p>
+                  <h4>Quick Adds</h4>
+                  <p className="page-text">Choose a ready-made reward and add it instantly.</p>
                 </div>
 
                 <div className="parent-dashboard__reward-suggestion-grid">
@@ -1513,7 +1454,7 @@ const checkRoutineReminders = useCallback(() => {
                         </div>
                       </div>
                       <div className="parent-dashboard__reward-suggestion-meta">
-                        <Badge tone="warm">{rewardOption.cost} points</Badge>
+                        <Badge tone="warm">{rewardOption.cost} Points</Badge>
                         <Button
                           size="sm"
                           onClick={() => handleQuickCreateReward(rewardOption)}
@@ -1534,10 +1475,10 @@ const checkRoutineReminders = useCallback(() => {
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Rewards</p>
-                  <h3>Available rewards</h3>
+                  <h3>Available Rewards</h3>
                 </div>
                 <Badge tone="warm">
-                  {rewards.filter((reward) => reward.approved).length} active
+                  {rewards.filter((reward) => reward.approved).length} Active
                 </Badge>
               </div>
 
@@ -1564,7 +1505,7 @@ const checkRoutineReminders = useCallback(() => {
                         </Badge>
                       </div>
                       <div className="parent-dashboard__reward-meta">
-                        <span>{reward.theme || "Custom reward"}</span>
+                        <span>{reward.theme || "Parent-created reward"}</span>
                       </div>
                       <div className="parent-dashboard__task-actions">
                         <Button
@@ -1584,7 +1525,7 @@ const checkRoutineReminders = useCallback(() => {
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     <OpenMojiIcon name="gift" />
                   </div>
-                  <h4>No rewards yet</h4>
+                  <h4>No Rewards Yet</h4>
                   <p>Add the first reward.</p>
                 </div>
               )}
@@ -1626,20 +1567,20 @@ const checkRoutineReminders = useCallback(() => {
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Forecast</p>
-                  <h3>Sensory risk</h3>
+                  <h3>Sensory Risk</h3>
                 </div>
                 {isLoadingInsights ? (
                   <Badge tone="default">Analyzing</Badge>
                 ) : riskForecast ? (
-                  <Badge tone={riskTone}>{riskForecast.risk_level} risk</Badge>
+                  <Badge tone={riskTone}>{riskForecast.risk_level} Risk</Badge>
                 ) : (
-                  <Badge tone="default">Engine offline</Badge>
+                  <Badge tone="default">Engine Offline</Badge>
                 )}
               </div>
 
               <div className="parent-dashboard__insight-metrics">
                 <div>
-                  <strong>{riskForecast?.risk_level || "No data"}</strong>
+                  <strong>{riskForecast?.risk_level || "Not ready"}</strong>
                   <span>Risk level</span>
                 </div>
                 <div>
@@ -1658,7 +1599,7 @@ const checkRoutineReminders = useCallback(() => {
 
               {riskForecast ? (
                 <div className="parent-dashboard__insight-callout">
-                  <strong>Suggestion</strong>
+                  <strong>What To Try</strong>
                   <p>{riskForecast.advisory_text}</p>
                 </div>
               ) : (
@@ -1679,7 +1620,7 @@ const checkRoutineReminders = useCallback(() => {
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Emotions</p>
-                  <h3>Weekly pattern</h3>
+                  <h3>Weekly Pattern</h3>
                 </div>
               </div>
 
@@ -1688,7 +1629,7 @@ const checkRoutineReminders = useCallback(() => {
               ) : null}
 
               <p className="page-text">
-                Saved emotion check-ins for this week.
+                See how your child has been feeling across the week.
               </p>
 
               <div className="parent-dashboard__legend">
@@ -1723,172 +1664,28 @@ const checkRoutineReminders = useCallback(() => {
                 ))}
               </div>
               <p className="page-text">
-                Based on saved check-ins.
+                This chart uses the emotion check-ins saved by your child.
               </p>
             </Card>
 
-            <Card className="parent-dashboard__collection-card" variant="default">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Triggers</p>
-                  <h3>Logged triggers</h3>
-                </div>
-                <Badge tone="warm">{triggers.length} triggers</Badge>
-              </div>
-
-              <p className="page-text">
-                Repeated trigger: {repeatedTriggerLabel}
-              </p>
-
-              {triggers.length > 0 ? (
-                <div className="parent-dashboard__task-list">
-                  {triggers.map((trigger) => (
-                    <div key={trigger.trigger_id} className="parent-dashboard__task-item">
-                      <div className="parent-dashboard__task-item-top">
-                        <div>
-                          <h4>{trigger.trigger_title}</h4>
-                          <p>{trigger.notes || "No notes added."}</p>
-                        </div>
-                        <Badge tone="sky">{trigger.trigger_type}</Badge>
-                      </div>
-                      <div className="parent-dashboard__task-meta">
-                        <span>
-                          {trigger.logged_at
-                            ? new Date(trigger.logged_at).toLocaleString()
-                            : "Recently added"}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div
-                  className="parent-dashboard__empty-state"
-                  role="button"
-                  tabIndex={0}
-                  onClick={scrollToTriggerForm}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      scrollToTriggerForm();
-                    }
-                  }}
-                >
-                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    <OpenMojiIcon name="magnifier" />
-                  </div>
-                  <h4>No triggers yet</h4>
-                  <p>Add the first trigger.</p>
-                </div>
-              )}
-            </Card>
-
-            <Card className="parent-dashboard__collection-card" variant="glow">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Suggestions</p>
-                  <h3>Next steps</h3>
-                </div>
-                <Badge tone="mint">{suggestions.length} suggestions</Badge>
-              </div>
-
-              {suggestions.length > 0 ? (
-                <div className="parent-dashboard__task-list">
-                  {suggestions.map((suggestion, index) => (
-                    <div
-                      key={`${suggestion.title}-${index}`}
-                      className="parent-dashboard__task-item"
-                    >
-                      <div className="parent-dashboard__task-item-top">
-                        <div>
-                          <h4>{suggestion.title}</h4>
-                          <p>{suggestion.text}</p>
-                        </div>
-                        <Badge tone="warm">{suggestion.source || "guidance"}</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="parent-dashboard__empty-state">
-                  <div className="parent-dashboard__empty-icon" aria-hidden="true">
-                    <OpenMojiIcon name="lightbulb" />
-                  </div>
-                  <h4>No suggestions yet</h4>
-                  <p>Add triggers or emotion logs first.</p>
-                </div>
-              )}
-            </Card>
           </div>
 
           <div className="parent-dashboard__side-column">
             <Card className="parent-dashboard__form-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Use this</p>
-                  <h3>Simple check</h3>
+                  <p className="eyebrow">Use This</p>
+                  <h3>Simple Check</h3>
                 </div>
               </div>
             <div className="parent-dashboard__insight-notes">
-              <p>1. Check repeated triggers.</p>
-              <p>2. Simplify the next task.</p>
-              <p>3. Adjust routines.</p>
+              <p>1. Review the current risk level.</p>
+              <p>2. Check the weekly emotion pattern.</p>
+              <p>3. Simplify the next task if needed.</p>
             </div>
               <Button variant="secondary" onClick={loadInsights} disabled={isLoadingInsights}>
                 {isLoadingInsights ? "Refreshing..." : "Refresh Insights"}
               </Button>
-            </Card>
-
-            <Card
-              id="add-trigger-form"
-              className="parent-dashboard__form-card parent-dashboard__form-card--feature"
-              variant="glow"
-            >
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Add trigger</p>
-                  <h3>Log trigger</h3>
-                  <p className="page-text">
-                    Note what made the moment harder.
-                  </p>
-                </div>
-              </div>
-
-              <div className="parent-dashboard__form-grid">
-                <input
-                  type="text"
-                  placeholder="Trigger name, e.g. Loud noise or sudden change"
-                  value={triggerTitle}
-                  onChange={(event) => setTriggerTitle(event.target.value)}
-                />
-
-                <select
-                  value={triggerType}
-                  onChange={(event) => setTriggerType(event.target.value)}
-                >
-                  <option value="">What type of trigger is this?</option>
-                  <option value="noise">Noise</option>
-                  <option value="transition">Transition</option>
-                  <option value="routine change">Routine change</option>
-                  <option value="task difficulty">Task difficulty</option>
-                  <option value="sensory overload">Sensory overload</option>
-                  <option value="other">Other</option>
-                </select>
-
-                <textarea
-                  placeholder="Notes"
-                  value={triggerNotes}
-                  onChange={(event) => setTriggerNotes(event.target.value)}
-                  rows={4}
-                />
-
-                {triggerMessage ? (
-                  <p className="parent-dashboard__message">{triggerMessage}</p>
-                ) : null}
-
-                <Button onClick={handleCreateTrigger} disabled={!hasChildAccount}>
-                  Save Trigger
-                </Button>
-              </div>
             </Card>
           </div>
         </div>
@@ -1901,31 +1698,50 @@ const checkRoutineReminders = useCallback(() => {
                 <div className="parent-dashboard__section-header">
                   <div>
                   <p className="eyebrow">Routine</p>
-                    <h3>Loading tools</h3>
+                    <h3>Loading Tools</h3>
                   </div>
                 </div>
                 <p className="page-text">
-                  Loading routines and reminders.
+                  Loading saved routines and today's progress.
                 </p>
               </Card>
             ) : null}
+
+            <Card className="parent-dashboard__routine-hero" variant="glow">
+              <div>
+                <p className="eyebrow">Today&apos;s Routine Check</p>
+                <h3>Use this when the day has repeated steps.</h3>
+                <p className="page-text">
+                  Morning, homework, bedtime, or any daily routine can live here. Add the steps once, then mark what is done today.
+                </p>
+              </div>
+              <div className="parent-dashboard__routine-hero-actions">
+                <Button type="button" onClick={scrollToRoutineForm}>
+                  Create Routine
+                </Button>
+                <span>{routineTotals.complete} of {routineTotals.total} steps done today</span>
+              </div>
+            </Card>
 
             <Card className="parent-dashboard__collection-card parent-dashboard__routine-board" variant="default">
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Routines</p>
-                  <h3>Saved routines</h3>
+                  <h3>Manage Routines</h3>
+                  <p className="page-text">
+                    Open a routine to check off steps, add new steps, or remove routines you no longer use.
+                  </p>
                 </div>
-                <Badge tone="sky">{routineBlocks.length} routines</Badge>
+                <Badge tone="sky">{routineBlocks.length} Routines</Badge>
               </div>
 
               <div className="parent-dashboard__routine-summary">
                 <div>
-                  <span>Total items</span>
+                  <span>Total Items</span>
                   <strong>{totalRoutineItems}</strong>
                 </div>
                 <div>
-                  <span>Done today</span>
+                  <span>Done Today</span>
                   <strong>{routineTotals.complete}</strong>
                 </div>
                 <div>
@@ -1944,6 +1760,7 @@ const checkRoutineReminders = useCallback(() => {
                     <OpenMojiIcon name="hourglass" />
                   </span>
                   <div>
+                    <p>Next step to help with</p>
                     <strong>{nextRoutineItem.title}</strong>
                     <p>
                       {nextRoutineItem.routineTitle}
@@ -1953,59 +1770,115 @@ const checkRoutineReminders = useCallback(() => {
                     </p>
                   </div>
                 </div>
+              ) : routineTotals.total > 0 ? (
+                <div className="parent-dashboard__routine-next parent-dashboard__routine-next--done">
+                  <span aria-hidden="true">
+                    <OpenMojiIcon name="check" />
+                  </span>
+                  <div>
+                    <strong>All routine steps are done today.</strong>
+                    <p>Use Undo on any step if it was marked done by mistake.</p>
+                  </div>
+                </div>
               ) : null}
 
               {routineBlocks.length > 0 ? (
                 <div className="parent-dashboard__routine-list">
-                  {routineBlocks.map((routine) => (
-                    <div key={routine.routine_id} className="parent-dashboard__routine-block">
-                      <div className="parent-dashboard__routine-block-header">
-                        <div>
-                          <h4>{routine.title}</h4>
-                          <p>{routine.description || "No description added."}</p>
-                        </div>
-                        <Badge tone="mint">
-                          {routine.completed_count || 0}/{routine.total_count || 0}
-                        </Badge>
-                      </div>
+                  {routineBlocks.map((routine) => {
+                    const routineTotal = Number(routine.total_count || routine.items?.length || 0);
+                    const routineDone = Number(routine.completed_count || 0);
 
-                      {routine.items?.length > 0 ? (
-                        <div className="parent-dashboard__routine-items">
-                          {routine.items.map((item) => (
-                            <div key={item.item_id} className="parent-dashboard__routine-item-row">
-                              <span className="parent-dashboard__routine-item-status" aria-hidden="true">
-                                <OpenMojiIcon name={item.is_completed ? "check" : "calendar"} />
-                              </span>
-                              <div>
-                                <strong>{item.title}</strong>
-                                {item.description ? <p>{item.description}</p> : null}
-                              </div>
-                              <Badge tone={item.reminder_time ? "warm" : "default"}>
-                                {item.reminder_time
-                                  ? String(item.reminder_time).slice(0, 5)
-                                  : "No reminder"}
-                              </Badge>
-                              <Button
-                                type="button"
-                                variant={item.is_completed ? "secondary" : "primary"}
-                                size="sm"
-                                onClick={() => handleToggleRoutineItem(routine.routine_id, item)}
-                                disabled={updatingRoutineItemId === item.item_id}
-                              >
-                                {updatingRoutineItemId === item.item_id
-                                  ? "Saving..."
-                                  : item.is_completed
-                                    ? "Undo"
-                                    : "Done today"}
-                              </Button>
-                            </div>
-                          ))}
+                    return (
+                      <div key={routine.routine_id} className="parent-dashboard__routine-block">
+                        <div className="parent-dashboard__routine-block-header">
+                          <div>
+                            <h4>{routine.title}</h4>
+                            <p>{routine.description || "No extra note added."}</p>
+                          </div>
+                          <Badge tone={routineDone === routineTotal && routineTotal > 0 ? "mint" : "warm"}>
+                            {routineDone}/{routineTotal} Today
+                          </Badge>
                         </div>
-                      ) : (
-                        <p className="page-text">No routine items yet.</p>
-                      )}
-                    </div>
-                  ))}
+
+                        <ProgressBar
+                          value={routineDone}
+                          max={Math.max(routineTotal, 1)}
+                          label={`${routine.title} routine progress`}
+                        />
+
+                        <div className="parent-dashboard__routine-block-actions">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedRoutineId(String(routine.routine_id));
+                              scrollToRoutineItemForm();
+                            }}
+                          >
+                            Add Step
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleDeleteRoutine(routine)}
+                            disabled={deletingRoutineId === routine.routine_id}
+                          >
+                            <OpenMojiIcon name="trash" className="parent-dashboard__button-icon" />
+                            {deletingRoutineId === routine.routine_id ? "Deleting..." : "Delete"}
+                          </Button>
+                        </div>
+
+                        {routine.items?.length > 0 ? (
+                          <div className="parent-dashboard__routine-items">
+                            {routine.items.map((item) => (
+                              <div key={item.item_id} className="parent-dashboard__routine-item-row">
+                                <span className="parent-dashboard__routine-item-status" aria-hidden="true">
+                                  <OpenMojiIcon name={item.is_completed ? "check" : "calendar"} />
+                                </span>
+                                <div>
+                                  <strong>{item.title}</strong>
+                                  {item.description ? <p>{item.description}</p> : null}
+                                </div>
+                                <Badge tone={item.reminder_time ? "warm" : "default"}>
+                                  {item.reminder_time
+                                    ? String(item.reminder_time).slice(0, 5)
+                                    : "Any time"}
+                                </Badge>
+                                <div className="parent-dashboard__routine-item-actions">
+                                  <Button
+                                    type="button"
+                                    variant={item.is_completed ? "secondary" : "primary"}
+                                    size="sm"
+                                    onClick={() => handleToggleRoutineItem(routine.routine_id, item)}
+                                    disabled={updatingRoutineItemId === item.item_id}
+                                  >
+                                    {updatingRoutineItemId === item.item_id
+                                      ? "Saving..."
+                                      : item.is_completed
+                                        ? "Undo"
+                                        : "Done Today"}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => handleDeleteRoutineItem(routine.routine_id, item)}
+                                    disabled={deletingRoutineItemId === item.item_id}
+                                  >
+                                    {deletingRoutineItemId === item.item_id ? "Deleting..." : "Delete"}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="page-text">No steps have been added to this routine yet.</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div
@@ -2022,8 +1895,8 @@ const checkRoutineReminders = useCallback(() => {
                   <div className="parent-dashboard__empty-icon" aria-hidden="true">
                     <OpenMojiIcon name="calendar" />
                   </div>
-                  <h4>No routines yet</h4>
-                  <p>Create the first routine.</p>
+                  <h4>No Routines Yet</h4>
+                  <p>Create a routine for a regular part of the day, then add the steps your child needs.</p>
                 </div>
               )}
             </Card>
@@ -2031,13 +1904,16 @@ const checkRoutineReminders = useCallback(() => {
             <Card className="parent-dashboard__collection-card parent-dashboard__routine-note-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">How it works</p>
-                  <h3>Daily reset</h3>
+                  <p className="eyebrow">How It Works</p>
+                  <h3>Routine Steps</h3>
                 </div>
               </div>
-              <p className="page-text">
-                Mark items done as your child completes them today. Tomorrow, the same routine starts fresh.
-              </p>
+              <div className="parent-dashboard__insight-notes">
+                <p>Create a routine for a regular part of the day, like morning or bedtime.</p>
+                <p>Add small items inside it so the routine is easy to follow.</p>
+                <p>Mark each item Done Today when your child finishes it.</p>
+                <p>Use Undo if an item was marked done by mistake.</p>
+              </div>
             </Card>
 
           </div>
@@ -2050,21 +1926,24 @@ const checkRoutineReminders = useCallback(() => {
             >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add routine</p>
-                  <h3>Create routine</h3>
+                  <p className="eyebrow">New Routine</p>
+                  <h3>Create A Daily Checklist</h3>
+                  <p className="page-text">
+                    Start with one routine, like Morning, After School, or Bedtime.
+                  </p>
                 </div>
               </div>
 
               <div className="parent-dashboard__form-grid parent-dashboard__routine-form-grid">
                 <input
                   type="text"
-                  placeholder="Routine title"
+                  placeholder="Routine name, e.g. Bedtime"
                   value={routineTitle}
                   onChange={(event) => setRoutineTitle(event.target.value)}
                 />
 
                 <textarea
-                  placeholder="Routine description"
+                  placeholder="Parent note (optional)"
                   value={routineDescription}
                   onChange={(event) => setRoutineDescription(event.target.value)}
                   rows={3}
@@ -2072,32 +1951,43 @@ const checkRoutineReminders = useCallback(() => {
 
                 <input
                   type="text"
-                  placeholder="First routine item"
+                  placeholder="First step, e.g. Brush teeth"
                   value={routineItemTitle}
                   onChange={(event) => setRoutineItemTitle(event.target.value)}
                 />
 
                 <input
                   type="time"
-                  aria-label="First routine item reminder time"
+                  aria-label="First step time"
                   value={routineItemReminder}
                   onChange={(event) => setRoutineItemReminder(event.target.value)}
                 />
 
                 {routineMessage ? (
                   <p className="parent-dashboard__message">{routineMessage}</p>
-                ) : null}
+                ) : (
+                  <p className="parent-dashboard__helper-text">
+                    The time is optional. Leave it blank if the step can happen any time.
+                  </p>
+                )}
 
                 <Button onClick={handleCreateRoutine} disabled={!hasChildAccount}>
                   Create Routine
                 </Button>
               </div>
             </Card>
-            <Card className="parent-dashboard__form-card parent-dashboard__routine-form-card" variant="default">
+            <Card
+              id="add-routine-item-form"
+              className="parent-dashboard__form-card parent-dashboard__routine-form-card"
+              variant="default"
+            >
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">Add item</p>
-                  <h3>Routine item</h3>
+                  <p className="eyebrow">Add Step</p>
+                  <h3>Add To An Existing Routine</h3>
+                  <p className="page-text">
+                    Choose a routine, then add the next small step your child should follow.
+                  </p>
                 </div>
               </div>
 
@@ -2106,7 +1996,7 @@ const checkRoutineReminders = useCallback(() => {
                   value={selectedRoutineId}
                   onChange={(event) => setSelectedRoutineId(event.target.value)}
                 >
-                  <option value="">Select routine</option>
+                  <option value="">Choose a routine</option>
                   {routineBlocks.map((routine) => (
                     <option key={routine.routine_id} value={routine.routine_id}>
                       {routine.title}
@@ -2116,13 +2006,13 @@ const checkRoutineReminders = useCallback(() => {
 
                 <input
                   type="text"
-                  placeholder="Routine item title"
+                  placeholder="Step name, e.g. Put pyjamas on"
                   value={existingRoutineItemTitle}
                   onChange={(event) => setExistingRoutineItemTitle(event.target.value)}
                 />
 
                 <textarea
-                  placeholder="Item description"
+                  placeholder="Helpful note (optional)"
                   value={existingRoutineItemDescription}
                   onChange={(event) => setExistingRoutineItemDescription(event.target.value)}
                   rows={3}
@@ -2130,41 +2020,24 @@ const checkRoutineReminders = useCallback(() => {
 
                 <input
                   type="time"
-                  aria-label="Routine item reminder time"
+                  aria-label="Step time"
                   value={existingRoutineItemReminder}
                   onChange={(event) => setExistingRoutineItemReminder(event.target.value)}
                 />
 
                 {routineItemMessage ? (
                   <p className="parent-dashboard__message">{routineItemMessage}</p>
-                ) : null}
+                ) : (
+                  <p className="parent-dashboard__helper-text">
+                    Add one step at a time so the routine stays easy to follow.
+                  </p>
+                )}
 
                 <Button onClick={handleCreateRoutineItemForExistingRoutine} disabled={!hasChildAccount}>
-                  Add Routine Item
+                  Add Step
                 </Button>
               </div>
             </Card>
-            <Card className="parent-dashboard__form-card parent-dashboard__routine-reminder-card" variant="soft">
-              <div className="parent-dashboard__section-header">
-                <div>
-                  <p className="eyebrow">Reminders</p>
-                  <h3>Browser reminders</h3>
-                </div>
-              </div>
-
-              <p className="page-text">
-                Works while this page stays open.
-              </p>
-
-              {reminderNotificationMessage ? (
-                <p className="parent-dashboard__message">{reminderNotificationMessage}</p>
-              ) : null}
-
-              <Button variant="secondary" onClick={handleEnableReminderNotifications}>
-                Enable Reminders
-              </Button>
-            </Card>
-
           </div>
         </div>
       ) : null}

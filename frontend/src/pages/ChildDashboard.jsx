@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Badge from "../components/ui/Badge";
 import BuddyIcon from "../components/ui/BuddyIcon";
@@ -27,6 +27,7 @@ function ChildDashboard() {
   const [showAllQuests, setShowAllQuests] = useState(false);
   const [questPage, setQuestPage] = useState(1);
   const [showBuddyPicker, setShowBuddyPicker] = useState(false);
+  const questListRef = useRef(null);
 
   useEffect(() => {
     async function loadData() {
@@ -94,6 +95,24 @@ function ChildDashboard() {
     window.dispatchEvent(new Event("preferencesUpdated"));
   };
 
+  const openQuestList = (page = 1) => {
+    setQuestPage(page);
+    setShowAllQuests(true);
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const questListTop =
+          questListRef.current?.getBoundingClientRect().top ?? 0;
+        const stickyHeaderOffset = 140;
+
+        window.scrollTo({
+          behavior: "smooth",
+          top: window.scrollY + questListTop - stickyHeaderOffset,
+        });
+      });
+    });
+  };
+
   if (isLoadingBoard) {
     return <p className="page-text">Loading dashboard...</p>;
   }
@@ -131,7 +150,8 @@ function ChildDashboard() {
     )
     .sort((a, b) => (b.priority_rank || 0) - (a.priority_rank || 0));
 
-  const featuredTask = readyTasks[0] || completedTasks[0] || null;
+  const featuredTask = readyTasks[0] || null;
+  const hasFinishedEverything = childTasks.length > 0 && readyTasks.length === 0;
   const completedCount = completedTasks.length;
   const pointsBalance = points?.points_balance ?? 0;
   const totalQuestCount = childTasks.length;
@@ -165,7 +185,9 @@ function ChildDashboard() {
     : 1;
   const featuredStepText = featuredTask
     ? `${featuredProgressValue} / ${featuredProgressMax} steps`
-    : "No steps waiting";
+    : hasFinishedEverything
+      ? `${completedCount} quest${completedCount === 1 ? "" : "s"} finished`
+      : "No steps waiting";
 
   const getQuestStatus = (task) => {
     const completed =
@@ -215,7 +237,7 @@ function ChildDashboard() {
             <span className="child-dashboard__heading-openmoji" aria-hidden="true">
               <OpenMojiIcon name="compass" />
             </span>
-            Hi {displayName}, your quest hub is ready.
+            Hi {displayName}, Your Quest Hub Is Ready.
           </h2>
           <p className="page-text">Pick one quest. Your buddy will stay with you.</p>
         </div>
@@ -224,13 +246,13 @@ function ChildDashboard() {
             <span className="child-dashboard__status-openmoji" aria-hidden="true">
               <OpenMojiIcon name="sparkles" />
             </span>
-            <span>{readyTasks.length} ready</span>
+            <span>To Do - {readyTasks.length}</span>
           </Badge>
           <Badge tone="mint" className="child-dashboard__status-badge">
             <span className="child-dashboard__status-openmoji" aria-hidden="true">
               <OpenMojiIcon name="check" />
             </span>
-            <span>{completedCount} done</span>
+            <span>Done - {completedCount}</span>
           </Badge>
         </div>
       </Card>
@@ -249,13 +271,21 @@ function ChildDashboard() {
                 <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="compass" />
                 </span>
-                Start quest
+                {hasFinishedEverything ? "All Done" : "Start Quest"}
               </p>
               <h3 className="child-dashboard__mission-title">
-                {featuredTask ? featuredTask.title : "Nothing to do right now"}
+                {featuredTask
+                  ? featuredTask.title
+                  : hasFinishedEverything
+                    ? "Everything is finished"
+                    : "Nothing to do right now"}
               </h3>
               <p className="child-dashboard__mission-copy">
-                {featuredTask ? getQuestStatus(featuredTask).message : "You can visit rewards or rest for now."}
+                {featuredTask
+                  ? getQuestStatus(featuredTask).message
+                  : hasFinishedEverything
+                    ? "You can look back at completed quests whenever you want."
+                    : "You can visit rewards or rest for now."}
               </p>
             </div>
             <div className="child-dashboard__focus-side">
@@ -301,6 +331,41 @@ function ChildDashboard() {
                 </Button>
               </div>
             </>
+          ) : hasFinishedEverything ? (
+            <>
+              <div className="child-dashboard__mission-progress">
+                <div className="child-dashboard__mission-progress-label">
+                  <span>{featuredStepText}</span>
+                  <span>Completed</span>
+                </div>
+                <ProgressBar
+                  value={completedCount}
+                  max={Math.max(completedCount, 1)}
+                  label="Completed quests"
+                />
+              </div>
+
+              <div className="child-dashboard__focus-action-row">
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() => {
+                    const firstCompletedIndex = allQuestTasks.findIndex((task) =>
+                      completedTasks.some(
+                        (completedTask) => String(completedTask.task_id) === String(task.task_id)
+                      )
+                    );
+                    openQuestList(
+                      firstCompletedIndex >= 0
+                        ? Math.floor(firstCompletedIndex / questPageSize) + 1
+                        : 1
+                    );
+                  }}
+                >
+                  Check Completed Quests
+                </Button>
+              </div>
+            </>
           ) : (
             <div className="child-dashboard__focus-action-row">
               <Button as={Link} to="/rewards" variant="secondary" size="lg">
@@ -311,7 +376,7 @@ function ChildDashboard() {
         </Card>
 
         {showAllQuests ? (
-        <Card className="child-dashboard__missions-list nf-enter-card nf-enter-card--3" variant="default">
+        <Card ref={questListRef} className="child-dashboard__missions-list nf-enter-card nf-enter-card--3" variant="default">
           <div className="child-dashboard__section-row">
             <div>
               <p className="eyebrow child-dashboard__eyebrow-icon">
@@ -324,7 +389,7 @@ function ChildDashboard() {
                 <span className="child-dashboard__section-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="books" />
                 </span>
-                Today&apos;s quests
+                Today&apos;s Quests
               </h3>
             </div>
             <Button type="button" variant="secondary" size="sm" onClick={() => setShowAllQuests(false)}>
@@ -424,7 +489,7 @@ function ChildDashboard() {
                 <span className="child-dashboard__section-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="books" />
                 </span>
-                {readyTasks.length} ready, {completedCount} done
+                To Do - {readyTasks.length} | Done - {completedCount}
               </h3>
               <p className="page-text">Only open this if you want to see everything.</p>
             </div>
@@ -432,8 +497,7 @@ function ChildDashboard() {
               type="button"
               variant="secondary"
               onClick={() => {
-                setQuestPage(1);
-                setShowAllQuests(true);
+                openQuestList(1);
               }}
             >
               See All Quests
@@ -448,13 +512,13 @@ function ChildDashboard() {
                 <span className="child-dashboard__tiny-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="gift" />
                 </span>
-                Treasure jar
+                Treasure Jar
               </p>
               <h3 className="child-dashboard__section-title">
                 <span className="child-dashboard__section-openmoji" aria-hidden="true">
                   <OpenMojiIcon name="star" />
                 </span>
-                Your quest stars
+                Your Quest Stars
               </h3>
             </div>
             <div className="child-dashboard__reward-count" aria-hidden="true">
@@ -491,7 +555,12 @@ function ChildDashboard() {
               </p>
               <h3 className="child-dashboard__section-title">
                 <span className="child-dashboard__section-openmoji" aria-hidden="true">
-                  <OpenMojiIcon name="speech" />
+                  <BuddyIcon
+                    type={savedCharacterStyle}
+                    label=""
+                    decorative
+                    className="child-dashboard__section-buddy-icon"
+                  />
                 </span>
                 {savedCharacterLabel} is here
               </h3>

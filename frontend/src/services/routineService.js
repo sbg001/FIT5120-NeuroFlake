@@ -128,6 +128,7 @@ export async function createRoutine({
   if (!result.error) {
     invalidateCachePrefix("routines:");
     invalidateCachePrefix("routine-blocks:");
+    invalidateCachePrefix("parent-dashboard-support:");
   }
 
   return result;
@@ -159,6 +160,7 @@ export async function createRoutineItem({
     invalidateCachePrefix(`routine-items:${routine_id}`);
     invalidateCachePrefix("routines:");
     invalidateCachePrefix("routine-blocks:");
+    invalidateCachePrefix("parent-dashboard-support:");
   }
 
   return result;
@@ -180,6 +182,45 @@ export async function updateRoutineItem(itemId, isCompleted) {
     invalidateCachePrefix("routine-items:");
     invalidateCachePrefix("routines:");
     invalidateCachePrefix("routine-blocks:");
+    invalidateCachePrefix("parent-dashboard-support:");
+  }
+
+  return result;
+}
+
+export async function deleteRoutine(routineId) {
+  if (!routineId) {
+    return { data: null, error: "Routine not found." };
+  }
+
+  const result = await apiRequest(`/api/routines/${routineId}`, {
+    method: "DELETE",
+  });
+
+  if (!result.error) {
+    invalidateCachePrefix("routine-items:");
+    invalidateCachePrefix("routines:");
+    invalidateCachePrefix("routine-blocks:");
+    invalidateCachePrefix("parent-dashboard-support:");
+  }
+
+  return result;
+}
+
+export async function deleteRoutineItem(itemId) {
+  if (!itemId) {
+    return { data: null, error: "Routine step not found." };
+  }
+
+  const result = await apiRequest(`/api/routine-items/${itemId}`, {
+    method: "DELETE",
+  });
+
+  if (!result.error) {
+    invalidateCachePrefix("routine-items:");
+    invalidateCachePrefix("routines:");
+    invalidateCachePrefix("routine-blocks:");
+    invalidateCachePrefix("parent-dashboard-support:");
   }
 
   return result;

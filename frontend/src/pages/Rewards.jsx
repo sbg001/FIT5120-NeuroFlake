@@ -7,11 +7,8 @@ import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import PageHeader from "../components/ui/PageHeader";
 import {
   claimReward,
-  getPointsBalance,
-  getRewardTransactions,
   getRewardMilestoneMessage,
-  getParentApprovedRewards,
-  getTasks,
+  getRewardsSummary,
   getChildProfile,
 } from "../services";
 
@@ -95,36 +92,21 @@ function Rewards() {
         return;
       }
 
-      const [pointsResult, transactionsResult, parentRewardsResult, tasksResult] =
-        await Promise.all([
-          getPointsBalance(resolvedChildId),
-          getRewardTransactions(resolvedChildId),
-          getParentApprovedRewards(resolvedChildId),
-          getTasks(resolvedChildId),
-        ]);
-
-      const pointsBalance = pointsResult.data?.points_balance ?? 0;
-      const transactions = transactionsResult.data || [];
+      const summaryResult = await getRewardsSummary(resolvedChildId);
+      const summaryData = summaryResult.data || {};
+      const points = summaryData.points || { child_id: resolvedChildId, points_balance: 0 };
+      const pointsBalance = points.points_balance ?? 0;
+      const transactions = summaryData.transactions || [];
       const latestSummary = buildLatestRewardSummary(pointsBalance, transactions);
 
-      const childTasks = (tasksResult.data || [])
-        .filter((task) => String(task.task_id) !== String(latestSummary.task_id))
-        .filter(
-          (task) =>
-            task.status !== "completed" &&
-            Number(task.completed_steps || 0) < Number(task.total_steps || 0)
-        );
-
-      setPointsData(pointsResult.data);
+      setPointsData(points);
       setLatestRewardSummary(latestSummary);
       setRewardTransactions(transactions);
-      setParentRewards(parentRewardsResult.data || []);
-      setNextTaskId(childTasks[0]?.task_id || null);
+      setParentRewards(summaryData.rewards || []);
+      setNextTaskId(summaryData.next_task?.task_id || null);
       setLoadError(
         childResult.error ||
-          pointsResult.error ||
-          parentRewardsResult.error ||
-          tasksResult.error ||
+          summaryResult.error ||
           ""
       );
     }

@@ -5,14 +5,11 @@ import Card from "../components/ui/Card";
 import PageHeader from "../components/ui/PageHeader";
 import ProgressBar from "../components/ui/ProgressBar";
 import {
-  createRewardTransaction,
-  getPointsBalance,
   getTasks,
   getTaskSteps,
   getChildProfile,
   completeStep,
-  completeTask,
-  updatePointsBalance,
+  completeTaskWithReward,
 } from "../services";
 
 const soundMap = {
@@ -217,47 +214,21 @@ function FocusMode() {
       return;
     }
 
-    const completeResult = await completeTask(selectedTaskId);
+    const completedStepCount = Math.max(taskSteps.length, 1);
+    const earnedPoints = completedStepCount * 10;
+    const completeResult = await completeTaskWithReward({
+      child_id: currentTask.child_id,
+      task_id: currentTask.task_id,
+      points_earned: earnedPoints,
+      steps_completed: completedStepCount,
+    });
 
     if (completeResult.error) {
       setFocusMessage("The mission could not be completed yet. Please try again.");
       return;
     }
 
-    const pointsResult = await getPointsBalance(currentTask.child_id);
-
-    if (pointsResult.error) {
-      setFocusMessage("The mission is done, but the points balance could not be loaded.");
-      return;
-    }
-
-    const currentPoints = Number(pointsResult.data?.points_balance || 0);
-    const completedStepCount = Math.max(taskSteps.length, 1);
-    const earnedPoints = completedStepCount * 10;
-    const updatedPoints = currentPoints + earnedPoints;
-
-    const transactionResult = await createRewardTransaction({
-      child_id: currentTask.child_id,
-      task_id: currentTask.task_id,
-      points_earned: earnedPoints,
-      steps_completed: completedStepCount,
-      transaction_type: "earn",
-    });
-
-    if (transactionResult.error) {
-      setFocusMessage("The mission was completed, but reward points could not be recorded.");
-      return;
-    }
-
-    const updatePointsResult = await updatePointsBalance(
-      currentTask.child_id,
-      updatedPoints
-    );
-
-    if (updatePointsResult.error) {
-      setFocusMessage("The mission was completed, but the points balance could not be updated.");
-      return;
-    }
+    const updatedPoints = completeResult.data?.points?.points_balance ?? 0;
 
     localStorage.setItem(alreadyRewardedKey, "true");
     setAvailableTasks((prevTasks) =>

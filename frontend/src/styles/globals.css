@@ -1170,6 +1170,11 @@ textarea::placeholder {
   height: 32px;
 }
 
+.child-dashboard__section-buddy-icon {
+  width: 32px;
+  height: 32px;
+}
+
 .child-dashboard__status-openmoji {
   width: 18px;
   height: 18px;
@@ -1903,6 +1908,32 @@ textarea::placeholder {
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.75fr);
 }
 
+.parent-dashboard__routine-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 30px;
+}
+
+.parent-dashboard__routine-hero h3 {
+  margin: 0;
+}
+
+.parent-dashboard__routine-hero-actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.parent-dashboard__routine-hero-actions span {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-align: right;
+}
+
 .parent-dashboard__routine-board,
 .parent-dashboard__routine-form-card,
 .parent-dashboard__routine-reminder-card,
@@ -1963,6 +1994,11 @@ textarea::placeholder {
   background: rgba(255, 249, 235, 0.7);
 }
 
+.parent-dashboard__routine-next--done {
+  border-color: rgba(61, 180, 128, 0.22);
+  background: rgba(234, 248, 243, 0.82);
+}
+
 .parent-dashboard__routine-next > span {
   display: grid;
   place-items: center;
@@ -2000,6 +2036,14 @@ textarea::placeholder {
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.parent-dashboard__routine-block-actions,
+.parent-dashboard__routine-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .parent-dashboard__routine-block h4,
@@ -3160,6 +3204,38 @@ textarea::placeholder {
   display: grid;
   gap: 14px;
   justify-items: start;
+}
+
+.focus-review-steps {
+  display: grid;
+  gap: 14px;
+}
+
+.focus-review-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid rgba(126, 158, 202, 0.2);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.focus-review-step__number {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-pill);
+  background: rgba(119, 216, 187, 0.2);
+  color: var(--color-mint-strong);
+  font-weight: 900;
+}
+
+.focus-review-step .focus-step-card__title {
+  max-width: none;
+  font-size: 1.15rem;
 }
 
 .focus-step-card__body--with-timer {
@@ -5735,6 +5811,27 @@ textarea::placeholder {
   .parent-dashboard__routine-summary,
   .parent-dashboard__routine-item-row {
     grid-template-columns: 1fr;
+  }
+
+  .parent-dashboard__routine-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .parent-dashboard__routine-hero-actions {
+    justify-items: stretch;
+    min-width: 0;
+  }
+
+  .parent-dashboard__routine-hero-actions span {
+    text-align: left;
+  }
+
+  .parent-dashboard__routine-block-header,
+  .parent-dashboard__routine-block-actions,
+  .parent-dashboard__routine-item-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .parent-dashboard__routine-item-status {

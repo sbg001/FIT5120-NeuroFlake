@@ -10,15 +10,12 @@ import ProgressBar from "../components/ui/ProgressBar";
 import TaskAssistantModal from "../components/ui/TaskAssistantModal";
 import {
   completeStep,
-  completeTask,
-  createRewardTransaction,
+  completeTaskWithReward,
   createTaskStep,
   getChildPreferences,
-  getPointsBalance,
   getTaskById,
   getTaskSteps,
   saveEmotionSelection,
-  updatePointsBalance,
   updateTaskStepCount,
 } from "../services";
 
@@ -157,6 +154,7 @@ function TaskFlow() {
   }, [isSoundPlaying, selectedSound]);
 
   const currentStep = steps[currentStepIndex];
+  const isReviewMode = String(task?.status || "").toLowerCase() === "completed";
   const progressValue = currentStepDone ? currentStepIndex + 1 : currentStepIndex;
   const isLastStep = currentStepIndex === steps.length - 1;
   const modeIcon = isFocusActive ? "target" : "compass";
@@ -279,22 +277,18 @@ function TaskFlow() {
       return;
     }
 
-    await completeTask(taskId);
-
-    const pointsResult = await getPointsBalance(task.child_id);
-    const currentPoints = pointsResult.data?.points_balance ?? 0;
     const earnedPoints = 10;
-    const updatedPoints = currentPoints + earnedPoints;
-
-    await createRewardTransaction({
+    const result = await completeTaskWithReward({
       child_id: task.child_id,
       task_id: task.task_id,
       points_earned: earnedPoints,
       steps_completed: steps.length,
-      transaction_type: "earn",
     });
 
-    await updatePointsBalance(task.child_id, updatedPoints);
+    if (result.error) {
+      setSupportMessage(result.error);
+      return;
+    }
 
     localStorage.setItem(alreadyRewardedKey, "true");
 
@@ -302,7 +296,14 @@ function TaskFlow() {
       prevTask ? { ...prevTask, status: "completed" } : prevTask
     );
 
-    navigate("/rewards", { state: { showCelebration: true } });
+    navigate("/rewards", {
+      state: {
+        showCelebration: true,
+        pointsEarned: earnedPoints,
+        updatedPointsBalance: result.data?.points?.points_balance,
+        taskTitle: task.title,
+      },
+    });
   };
 
   const handleDone = async () => {
@@ -430,6 +431,106 @@ function TaskFlow() {
   if (!taskId) return <p className="page-text">No task selected</p>;
   if (loading) return <p className="page-text">Loading task...</p>;
   if (!task) return <p className="page-text">No task available</p>;
+
+  if (isReviewMode) {
+    return (
+      <section className="page-section focus-experience">
+        {loadError ? (
+          <Card className="content-card" variant="soft">
+            <p className="page-text">{loadError}</p>
+          </Card>
+        ) : null}
+
+        <Card className="content-card focus-experience__top-card" variant="soft">
+          <div className="focus-experience__mission-summary">
+            <PageHeader
+              eyebrow="Quest Review"
+              title={task.title}
+              description="This quest is finished. You can look back without changing anything."
+            />
+            <ProgressBar
+              value={steps.length}
+              max={Math.max(steps.length, 1)}
+              label="Quest review progress"
+              className="task-progress"
+            />
+          </div>
+          <div className="mission-flow-mode" aria-label="Finished quest status">
+            <div className="mission-flow-mode__icon" aria-hidden="true">
+              <OpenMojiIcon name="check" />
+            </div>
+            <div className="mission-flow-mode__copy">
+              <p className="eyebrow task-flow__eyebrow-icon">
+                <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="books" />
+                </span>
+                Completed
+              </p>
+              <p>All steps are saved here for review.</p>
+            </div>
+            <div className="mission-flow-mode__actions">
+              <Button type="button" variant="secondary" onClick={() => navigate("/child")}>
+                <span className="task-flow__button-icon" aria-hidden="true">
+                  <OpenMojiIcon name="compass" />
+                </span>
+                <span>Back to Quests</span>
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="hero-card focus-step-card" variant="glow">
+          <div className="focus-step-card__meta">
+            <div className="focus-step-card__mode">
+              <span className="focus-step-card__eyebrow">
+                <span className="task-flow__tiny-openmoji" aria-hidden="true">
+                  <OpenMojiIcon name="memo" />
+                </span>
+                Steps You Finished
+              </span>
+            </div>
+            <span className="focus-step-card__status task-flow__status-icon">
+              <span className="task-flow__badge-openmoji" aria-hidden="true">
+                <OpenMojiIcon name="check" />
+              </span>
+              <span>{steps.length} step{steps.length === 1 ? "" : "s"}</span>
+            </span>
+          </div>
+
+          <div className="focus-review-steps">
+            {steps.map((step, index) => (
+              <div key={step.step_id || index} className="focus-review-step">
+                <div className="focus-review-step__number" aria-hidden="true">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="focus-step-card__title">
+                    {step.step_description || step.step_title}
+                  </h3>
+                  {step.step_description &&
+                  step.step_description !== step.step_title ? (
+                    <p className="focus-step-card__support-text">{step.step_title}</p>
+                  ) : null}
+                  {step.example_text ? (
+                    <div className="focus-step-card__example">
+                      <span className="task-flow__note-openmoji" aria-hidden="true">
+                        <OpenMojiIcon name="lightbulb" />
+                      </span>
+                      <span>Try this: {step.example_text}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+
+            {steps.length === 0 ? (
+              <p className="page-text">No saved steps are available for this quest.</p>
+            ) : null}
+          </div>
+        </Card>
+      </section>
+    );
+  }
 
   if (!taskReady) {
     return (

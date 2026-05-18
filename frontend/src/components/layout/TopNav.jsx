@@ -6,7 +6,7 @@ import { clearRequestCache } from "../../services/requestCache";
 function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const publicGuestPaths = ["/", "/about", "/login", "/privacy-policy", "/terms-and-conditions"];
+  const publicGuestPaths = ["/", "/about", "/data", "/login", "/privacy-policy", "/terms-and-conditions"];
   const isPublicGuestPath = publicGuestPaths.includes(location.pathname);
   const isLoggedIn = !isPublicGuestPath && !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
@@ -15,6 +15,7 @@ function TopNav() {
   const childNavItems = [
     { to: "/child", label: "Child Dashboard" },
     { to: "/rewards", label: "Rewards" },
+    { to: "/data", label: "Data Insights" },
   ];
 
   const parentNavItems = [
@@ -22,12 +23,14 @@ function TopNav() {
     { to: "/parent/rewards", label: "Rewards" },
     { to: "/parent/insights", label: "Insights" },
     { to: "/parent/support", label: "Routine" },
+    { to: "/data", label: "Data Insights" },
     { to: "/settings", label: "Settings" },
   ];
 
   const guestNavItems = [
     { to: "/", label: "Home" },
     { to: "/about", label: "About" },
+    { to: "/data", label: "Data Insights" },
   ];
 
   const navItems = !isLoggedIn

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import OpenMojiIcon from "../components/ui/OpenMojiIcon";
 import PageHeader from "../components/ui/PageHeader";
 import {
   getChildrenByParent,
@@ -19,6 +20,10 @@ function Settings() {
   const [childPasswordConfirm, setChildPasswordConfirm] = useState("");
   const [parentMessage, setParentMessage] = useState("");
   const [childMessage, setChildMessage] = useState("");
+  const parentEmail =
+    parentProfile?.email || localStorage.getItem("current_user_email") || "No email found";
+  const childUsername =
+    childProfile?.username || localStorage.getItem("current_user_username") || "No username found";
 
   useEffect(() => {
     async function loadSettingsProfiles() {
@@ -104,69 +109,107 @@ function Settings() {
     <section className="page-section settings-page">
       <PageHeader
         eyebrow="Settings"
-        title="Profile settings"
-        description="Manage parent and child account access."
+        title="Account Settings"
+        description="Update parent and child passwords."
       />
 
       <div className="settings-page__grid">
         <Card className="settings-page__card" variant="glow">
           <div className="settings-page__header">
-            <div>
-              <p className="eyebrow">Parent profile</p>
-              <h3>{parentProfile?.name || "Parent"}</h3>
-              <p className="page-text">{parentProfile?.email || "No email saved"}</p>
+            <div className="settings-page__account">
+              <span className="settings-page__icon" aria-hidden="true">
+                <OpenMojiIcon name="memo" />
+              </span>
+              <div>
+                <p className="eyebrow">Parent</p>
+                <h3>{parentProfile?.name || "Parent"}</h3>
+                <p className="page-text">{parentEmail}</p>
+              </div>
             </div>
             <Badge tone="warm">Parent</Badge>
           </div>
 
+          <div className="settings-page__details" aria-label="Parent login details">
+            <div>
+              <span>Email</span>
+              <strong>{parentEmail}</strong>
+            </div>
+            <div>
+              <span>Password</span>
+              <strong>********</strong>
+            </div>
+          </div>
+
           <div className="settings-page__form">
+            <p className="settings-page__helper">Change the parent login password.</p>
             <input
               type="password"
-              placeholder="New parent password"
+              placeholder="New password"
               value={parentPassword}
               onChange={(event) => setParentPassword(event.target.value)}
             />
             <input
               type="password"
-              placeholder="Confirm parent password"
+              placeholder="Confirm password"
               value={parentPasswordConfirm}
               onChange={(event) => setParentPasswordConfirm(event.target.value)}
             />
             {parentMessage ? <p className="parent-dashboard__message">{parentMessage}</p> : null}
-            <Button onClick={handleUpdateParentPassword}>Update Parent Password</Button>
+            <Button onClick={handleUpdateParentPassword}>
+              <OpenMojiIcon name="check" className="settings-page__button-icon" />
+              Save Password
+            </Button>
           </div>
         </Card>
 
         <Card className="settings-page__card" variant="soft">
           <div className="settings-page__header">
-            <div>
-              <p className="eyebrow">Child profile</p>
-              <h3>{childProfile?.name || "No child profile"}</h3>
-              <p className="page-text">
-                {childProfile?.username ? `Username: ${childProfile.username}` : "Create a child profile first."}
-              </p>
+            <div className="settings-page__account">
+              <span className="settings-page__icon" aria-hidden="true">
+                <OpenMojiIcon name="baby" />
+              </span>
+              <div>
+                <p className="eyebrow">Child</p>
+                <h3>{childProfile?.name || "No child profile"}</h3>
+                <p className="page-text">
+                  {childProfile?.user_id ? childUsername : "Create a child profile first."}
+                </p>
+              </div>
             </div>
             <Badge tone="mint">Child</Badge>
           </div>
 
+          <div className="settings-page__details" aria-label="Child login details">
+            <div>
+              <span>Username</span>
+              <strong>{childProfile?.user_id ? childUsername : "Not set"}</strong>
+            </div>
+            <div>
+              <span>Password</span>
+              <strong>{childProfile?.user_id ? "********" : "Not set"}</strong>
+            </div>
+          </div>
+
           <div className="settings-page__form">
+            <p className="settings-page__helper">Change the child login password.</p>
             <input
               type="password"
-              placeholder="New child password"
+              placeholder="New password"
               value={childPassword}
               onChange={(event) => setChildPassword(event.target.value)}
               disabled={!childProfile?.user_id}
             />
             <input
               type="password"
-              placeholder="Confirm child password"
+              placeholder="Confirm password"
               value={childPasswordConfirm}
               onChange={(event) => setChildPasswordConfirm(event.target.value)}
               disabled={!childProfile?.user_id}
             />
             {childMessage ? <p className="parent-dashboard__message">{childMessage}</p> : null}
             <Button onClick={handleUpdateChildPassword} disabled={!childProfile?.user_id}>
-              Update Child Password
+              <OpenMojiIcon name="check" className="settings-page__button-icon" />
+              Save Password
             </Button>
           </div>
         </Card>

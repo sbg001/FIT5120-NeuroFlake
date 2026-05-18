@@ -1,4 +1,5 @@
 import os
+import time
 
 import psycopg2
 from psycopg2 import extensions
@@ -12,6 +13,11 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
 DB_POOL = None
+DB_CONNECT_TIMEOUT_SECONDS = 10
+DB_LOCK_TIMEOUT = "5s"
+DB_STATEMENT_TIMEOUT = "15s"
+DB_STARTUP_RETRIES = 3
+DB_RETRY_DELAY_SECONDS = 2
 
 
 class PooledConnectionProxy:
@@ -39,8 +45,13 @@ def ensure_database_columns():
     conn = None
     cur = None
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(
+            DATABASE_URL,
+            connect_timeout=DB_CONNECT_TIMEOUT_SECONDS,
+        )
         cur = conn.cursor()
+        cur.execute("SET lock_timeout = %s", (DB_LOCK_TIMEOUT,))
+        cur.execute("SET statement_timeout = %s", (DB_STATEMENT_TIMEOUT,))
         cur.execute(
             """
             ALTER TABLE users
@@ -67,16 +78,41 @@ def ensure_database_columns():
             conn.close()
 
 
+def run_with_database_retries(action_name, action):
+    last_error = None
+    for attempt in range(1, DB_STARTUP_RETRIES + 1):
+        try:
+            return action()
+        except OperationalError as exc:
+            last_error = exc
+            if attempt == DB_STARTUP_RETRIES:
+                break
+
+            print(
+                f"{action_name} failed on attempt {attempt}/{DB_STARTUP_RETRIES}. "
+                f"Retrying in {DB_RETRY_DELAY_SECONDS}s..."
+            )
+            time.sleep(DB_RETRY_DELAY_SECONDS)
+
+    raise RuntimeError(
+        f"{action_name} failed after {DB_STARTUP_RETRIES} attempts."
+    ) from last_error
+
+
 def initialize_db_pool():
     global DB_POOL
     if not DATABASE_URL:
         raise RuntimeError("Database URL is not configured.")
-    ensure_database_columns()
+    run_with_database_retries("Database migration check", ensure_database_columns)
     if DB_POOL is None:
-        DB_POOL = SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,
-            dsn=DATABASE_URL,
+        DB_POOL = run_with_database_retries(
+            "Database connection pool startup",
+            lambda: SimpleConnectionPool(
+                minconn=1,
+                maxconn=10,
+                dsn=DATABASE_URL,
+                connect_timeout=DB_CONNECT_TIMEOUT_SECONDS,
+            ),
         )
 
 

@@ -264,6 +264,39 @@ async def get_children(parent_id: str):
         raise HTTPException(status_code=500, detail="Could not load child accounts.")
 
 
+@router.get("/api/auth/parents/{parent_id}")
+async def get_parent(parent_id: str):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            SELECT *
+            FROM users
+            WHERE user_id = %s AND role = 'parent'
+            LIMIT 1
+            """,
+            (parent_id,),
+        )
+
+        parent = cur.fetchone()
+
+        cur.close()
+        conn.close()
+
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent account not found.")
+
+        return user_row_to_dict(parent)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get parent error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Could not load parent account.")
+
+
 @router.put("/api/auth/children/{child_id}/password")
 async def update_child_password(child_id: str, request: UpdateChildPasswordRequest):
     parent_id = request.parentId

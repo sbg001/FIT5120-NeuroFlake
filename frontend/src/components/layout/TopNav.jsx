@@ -41,6 +41,8 @@ function TopNav() {
     localStorage.removeItem("current_user_id");
     localStorage.removeItem("current_user_role");
     localStorage.removeItem("current_user_name");
+    localStorage.removeItem("current_user_email");
+    localStorage.removeItem("current_user_username");
     localStorage.removeItem("current_child_id");
     navigate("/");
   };

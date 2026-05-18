@@ -1005,10 +1005,10 @@ const maxWeeklyEmotionValue = Math.max(
     },
     support: {
       eyebrow: "Routine",
-      title: "Routine Tools",
+      title: "Routines",
       description: hasChildAccount
-        ? `Set up daily routine steps for ${childProfile.name}.`
-        : "Create a child account to use routine tools.",
+        ? `Daily steps for ${childProfile.name}.`
+        : "Create a child account to add routines.",
     },
   }[activeSection];
 
@@ -1294,7 +1294,7 @@ const maxWeeklyEmotionValue = Math.max(
                     <div key={routine.routine_id} className="parent-dashboard__routine-card">
                       <div>
                         <strong>{routine.title}</strong>
-                        <p>{routine.description || "No extra note added."}</p>
+                        <p>{routine.description || "No note."}</p>
                       </div>
                       <Badge tone="mint">
                         {routine.completed_count || 0}/{routine.total_count || 0}
@@ -1709,17 +1709,17 @@ const maxWeeklyEmotionValue = Math.max(
 
             <Card className="parent-dashboard__routine-hero" variant="glow">
               <div>
-                <p className="eyebrow">Today&apos;s Routine Check</p>
-                <h3>Use this when the day has repeated steps.</h3>
+                <p className="eyebrow">Today</p>
+                <h3>Daily checklist</h3>
                 <p className="page-text">
-                  Morning, homework, bedtime, or any daily routine can live here. Add the steps once, then mark what is done today.
+                  Add routines like morning, homework, or bedtime. Mark each step when it is done.
                 </p>
               </div>
               <div className="parent-dashboard__routine-hero-actions">
                 <Button type="button" onClick={scrollToRoutineForm}>
-                  Create Routine
+                  New Routine
                 </Button>
-                <span>{routineTotals.complete} of {routineTotals.total} steps done today</span>
+                <span>{routineTotals.complete}/{routineTotals.total} steps done</span>
               </div>
             </Card>
 
@@ -1727,9 +1727,9 @@ const maxWeeklyEmotionValue = Math.max(
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Routines</p>
-                  <h3>Manage Routines</h3>
+                  <h3>Routine List</h3>
                   <p className="page-text">
-                    Open a routine to check off steps, add new steps, or remove routines you no longer use.
+                    Check steps, add new ones, or remove old routines.
                   </p>
                 </div>
                 <Badge tone="sky">{routineBlocks.length} Routines</Badge>
@@ -1737,15 +1737,15 @@ const maxWeeklyEmotionValue = Math.max(
 
               <div className="parent-dashboard__routine-summary">
                 <div>
-                  <span>Total Items</span>
+                  <span>Steps</span>
                   <strong>{totalRoutineItems}</strong>
                 </div>
                 <div>
-                  <span>Done Today</span>
+                  <span>Done</span>
                   <strong>{routineTotals.complete}</strong>
                 </div>
                 <div>
-                  <span>Today</span>
+                  <span>Complete</span>
                   <strong>{routineConsistency}%</strong>
                 </div>
               </div>
@@ -1760,7 +1760,7 @@ const maxWeeklyEmotionValue = Math.max(
                     <OpenMojiIcon name="hourglass" />
                   </span>
                   <div>
-                    <p>Next step to help with</p>
+                    <p>Next step</p>
                     <strong>{nextRoutineItem.title}</strong>
                     <p>
                       {nextRoutineItem.routineTitle}
@@ -1776,8 +1776,8 @@ const maxWeeklyEmotionValue = Math.max(
                     <OpenMojiIcon name="check" />
                   </span>
                   <div>
-                    <strong>All routine steps are done today.</strong>
-                    <p>Use Undo on any step if it was marked done by mistake.</p>
+                    <strong>All steps are done today.</strong>
+                    <p>Use Undo if needed.</p>
                   </div>
                 </div>
               ) : null}
@@ -1793,7 +1793,7 @@ const maxWeeklyEmotionValue = Math.max(
                         <div className="parent-dashboard__routine-block-header">
                           <div>
                             <h4>{routine.title}</h4>
-                            <p>{routine.description || "No extra note added."}</p>
+                            <p>{routine.description || "No note."}</p>
                           </div>
                           <Badge tone={routineDone === routineTotal && routineTotal > 0 ? "mint" : "warm"}>
                             {routineDone}/{routineTotal} Today
@@ -1858,7 +1858,7 @@ const maxWeeklyEmotionValue = Math.max(
                                       ? "Saving..."
                                       : item.is_completed
                                         ? "Undo"
-                                        : "Done Today"}
+                                        : "Done"}
                                   </Button>
                                   <Button
                                     type="button"
@@ -1896,7 +1896,7 @@ const maxWeeklyEmotionValue = Math.max(
                     <OpenMojiIcon name="calendar" />
                   </div>
                   <h4>No Routines Yet</h4>
-                  <p>Create a routine for a regular part of the day, then add the steps your child needs.</p>
+                  <p>Add the first routine, then add its steps.</p>
                 </div>
               )}
             </Card>
@@ -1904,15 +1904,14 @@ const maxWeeklyEmotionValue = Math.max(
             <Card className="parent-dashboard__collection-card parent-dashboard__routine-note-card" variant="soft">
               <div className="parent-dashboard__section-header">
                 <div>
-                  <p className="eyebrow">How It Works</p>
-                  <h3>Routine Steps</h3>
+                  <p className="eyebrow">Guide</p>
+                  <h3>Simple Routine Tips</h3>
                 </div>
               </div>
               <div className="parent-dashboard__insight-notes">
-                <p>Create a routine for a regular part of the day, like morning or bedtime.</p>
-                <p>Add small items inside it so the routine is easy to follow.</p>
-                <p>Mark each item Done Today when your child finishes it.</p>
-                <p>Use Undo if an item was marked done by mistake.</p>
+                <p>Use short step names.</p>
+                <p>Keep one routine for each part of the day.</p>
+                <p>Mark steps as Done when your child finishes them.</p>
               </div>
             </Card>
 
@@ -1927,9 +1926,9 @@ const maxWeeklyEmotionValue = Math.max(
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">New Routine</p>
-                  <h3>Create A Daily Checklist</h3>
+                  <h3>Create Routine</h3>
                   <p className="page-text">
-                    Start with one routine, like Morning, After School, or Bedtime.
+                    Start with Morning, After School, or Bedtime.
                   </p>
                 </div>
               </div>
@@ -1967,7 +1966,7 @@ const maxWeeklyEmotionValue = Math.max(
                   <p className="parent-dashboard__message">{routineMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    The time is optional. Leave it blank if the step can happen any time.
+                    Time is optional.
                   </p>
                 )}
 
@@ -1984,9 +1983,9 @@ const maxWeeklyEmotionValue = Math.max(
               <div className="parent-dashboard__section-header">
                 <div>
                   <p className="eyebrow">Add Step</p>
-                  <h3>Add To An Existing Routine</h3>
+                  <h3>Add Step</h3>
                   <p className="page-text">
-                    Choose a routine, then add the next small step your child should follow.
+                    Choose a routine and add one step.
                   </p>
                 </div>
               </div>
@@ -2029,7 +2028,7 @@ const maxWeeklyEmotionValue = Math.max(
                   <p className="parent-dashboard__message">{routineItemMessage}</p>
                 ) : (
                   <p className="parent-dashboard__helper-text">
-                    Add one step at a time so the routine stays easy to follow.
+                    Keep each step short and clear.
                   </p>
                 )}
 

@@ -62,6 +62,18 @@ function Login() {
     localStorage.setItem("current_user_role", user.role);
     localStorage.setItem("current_user_name", user.name);
 
+    if (user.email) {
+      localStorage.setItem("current_user_email", user.email);
+    } else {
+      localStorage.removeItem("current_user_email");
+    }
+
+    if (user.username) {
+      localStorage.setItem("current_user_username", user.username);
+    } else {
+      localStorage.removeItem("current_user_username");
+    }
+
     if (String(user.role).toLowerCase() === "parent") {
       navigate("/parent");
     } else {

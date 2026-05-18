@@ -190,16 +190,36 @@ export async function getParentProfile() {
     localStorage.getItem("current_user_role") || ""
   ).toLowerCase();
   const currentUserName = localStorage.getItem("current_user_name");
+  const currentUserEmail = localStorage.getItem("current_user_email");
+  const currentUserUsername = localStorage.getItem("current_user_username");
 
   if (currentUserId && currentUserRole === "parent") {
+    const result = await apiRequest(`/api/auth/parents/${currentUserId}`, {
+      method: "GET",
+    });
+
+    if (!result.error && result.data) {
+      if (result.data.email) {
+        localStorage.setItem("current_user_email", result.data.email);
+      }
+
+      if (result.data.username) {
+        localStorage.setItem("current_user_username", result.data.username);
+      }
+
+      return result;
+    }
+
     return {
       data: {
         ...mockParentProfile,
         user_id: currentUserId,
         role: "parent",
         name: currentUserName || mockParentProfile.name,
+        email: currentUserEmail || mockParentProfile.email,
+        username: currentUserUsername || mockParentProfile.username,
       },
-      error: null,
+      error: result.error,
     };
   }
 

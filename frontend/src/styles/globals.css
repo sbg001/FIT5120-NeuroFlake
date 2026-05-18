@@ -727,6 +727,7 @@ p {
 }
 
 .login-form input,
+input,
 select,
 textarea {
   width: 100%;

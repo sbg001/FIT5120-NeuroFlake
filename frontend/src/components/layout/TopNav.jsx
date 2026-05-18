@@ -6,16 +6,13 @@ import { clearRequestCache } from "../../services/requestCache";
 function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const publicGuestPaths = ["/", "/about", "/data", "/login", "/privacy-policy", "/terms-and-conditions"];
-  const isPublicGuestPath = publicGuestPaths.includes(location.pathname);
-  const isLoggedIn = !isPublicGuestPath && !!localStorage.getItem("current_user_id");
+  const isLoggedIn = !!localStorage.getItem("current_user_id");
   const currentRole = String(localStorage.getItem("current_user_role") || "").toLowerCase();
   const currentName = localStorage.getItem("current_user_name");
 
   const childNavItems = [
     { to: "/child", label: "Child Dashboard" },
     { to: "/rewards", label: "Rewards" },
-    { to: "/data", label: "Data Insights" },
   ];
 
   const parentNavItems = [
@@ -23,7 +20,6 @@ function TopNav() {
     { to: "/parent/rewards", label: "Rewards" },
     { to: "/parent/insights", label: "Insights" },
     { to: "/parent/support", label: "Routine" },
-    { to: "/data", label: "Data Insights" },
     { to: "/settings", label: "Settings" },
   ];
 
